@@ -209,7 +209,36 @@ Take `primarybutton` (simple + pathfield) and `fourcoltiles` (multifield contain
 4. JSX → `blocks/<name>/<name>.js`. Plain ES modules. Port the `.html`-appending logic. Call `moveInstrumentation()` whenever an element is replaced. Guard every optional cell.
 5. SCSS → `blocks/<name>/<name>.css`, flattened and scoped under `.<name>.block`.
 
-**Phase 3 — Remaining 16 components**, simple ones first, containers last.
+**Phase 2 results — the authoring loop is proven.** Verified in the Universal Editor against real
+authored content, not inferred. Three rules were established the hard way and now live in `AGENTS.md`:
+
+1. **The block folder must match the slugified `template.name`, not the definition `id`.** EDS derives
+   the class and asset path from the name, so "Primary Button" fetches `/blocks/primary-button/...`.
+   Six folders were named after ids, every request 404'd, and `decorate()` never ran. Invisible to every
+   normal signal: definition 200s, palette offers it, authoring works, lint passes.
+2. **A block must be listed in the `section` filter** in `models/_section.json` or it never appears in
+   the palette. Adding a block is two edits, not one.
+3. **Field grouping works exactly as the linter models it** — confirmed live. The four `cta_*` fields
+   arrive as separate `<p>` elements inside **one** cell. Reading the row's combined `textContent`
+   matches nothing, so values silently fall back to defaults; each must be read from its own child.
+
+Also confirmed: `link` + `linkText` + `linkTitle` collapse into a single anchor carrying href, text and
+title, exactly as `image` + `imageAlt` collapse into a picture.
+
+Still unverified: **child instrumentation**. No tiles were ever authored, so whether `moveInstrumentation`
+keeps children selectable and reorderable is untested. That pattern is shared by `threecoltiles`,
+`missions`, `tabs` and `onecolbannercarousel`, so it should be closed out before those are built.
+
+**Phase 3 — Remaining components.** Seven built (`primarybutton`, `secondarybutton`, `imagesection`,
+`subheader`, `onecolfeature`, `fourcoltiles`+`tile`, `testimonial`+`testimony`). `richtext` and
+`freeform` need no block at all — both are plain rich-text containers, and EDS handles rich text as
+default content.
+
+Nine remain, all genuinely complex: `masthead` (Brightcove video), `onecolbanner` and `onecolnews`
+(9–10 fields, will need grouping), `threecoltiles`, `onecolbannercarousel`, `tabs` (**nested**
+multifield — a container inside a container, which the 4-cell model may not accommodate), `missions`
+(29 fields, two CTAs, four logo+alt pairs), plus `header` and `footer`, which have **no dialog at all**
+and should become `nav` and `footer` documents rather than blocks.
 
 **Phase 4 — Verify** (see below), then write up what the pilot taught before starting `mab-aem`.
 
