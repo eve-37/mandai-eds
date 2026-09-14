@@ -40,29 +40,36 @@ function readParent(rows) {
 
   rows.forEach((row) => {
     const anchor = row.querySelector('a');
-    if (anchor && !parent.ctaHref) {
+
+    if (anchor) {
+      // The grouped cta_ cell. Confirmed against author-rendered HTML: the four
+      // cta_ fields arrive as separate <p> elements inside ONE cell, e.g.
+      //   <div><p><a href="/">index page</a></p><p>green</p><p>true</p></div>
+      // so each value has to be read from its own child. Testing the row's
+      // combined textContent would see "index pagegreentrue" and match nothing,
+      // silently leaving variant and new-tab at their defaults.
       parent.ctaHref = anchor.getAttribute('href') || '';
       parent.ctaText = anchor.textContent.trim();
+
+      const parts = [...row.querySelectorAll('p, div')]
+        .map((el) => el.textContent.trim().toLowerCase())
+        .filter(Boolean);
+      parts.forEach((part) => {
+        if (VARIANTS.includes(part)) parent.ctaVariant = part;
+        else if (part === 'true' || part === 'false') parent.ctaNewTab = part === 'true';
+      });
+      return;
     }
 
     const text = cellText(row);
     const lower = text.toLowerCase();
 
-    if (MASKS.includes(lower)) {
-      parent.mask = lower;
-    } else if (VARIANTS.includes(lower)) {
-      parent.ctaVariant = lower;
-    } else if (lower === 'true' || lower === 'false') {
-      parent.ctaNewTab = lower === 'true';
-    } else if (!anchor && text) {
-      plain.push(text);
-    }
+    if (MASKS.includes(lower)) parent.mask = lower;
+    else if (text) plain.push(text);
   });
 
-  // The cta cell groups several values, so its text can arrive concatenated.
-  // Strip anything already claimed before treating the rest as title/subtitle.
-  const leftovers = plain.filter((t) => t !== parent.ctaText);
-  [parent.title = '', parent.subtitle = ''] = leftovers;
+  // Whatever is left, in order, is the title then the subtitle.
+  [parent.title = '', parent.subtitle = ''] = plain;
 
   return parent;
 }
@@ -79,14 +86,14 @@ function buildDots(track, tiles) {
   if (tiles.length < 2) return null;
 
   const dots = document.createElement('div');
-  dots.className = 'fourcoltiles-dots';
+  dots.className = 'four-column-tiles-dots';
   dots.setAttribute('role', 'tablist');
   dots.setAttribute('aria-label', 'Choose a tile');
 
   tiles.forEach((tile, index) => {
     const dot = document.createElement('button');
     dot.type = 'button';
-    dot.className = 'fourcoltiles-dot';
+    dot.className = 'four-column-tiles-dot';
     dot.setAttribute('role', 'tab');
     dot.setAttribute('aria-label', `Go to tile ${index + 1}`);
     dot.addEventListener('click', () => {
@@ -138,25 +145,25 @@ export default function decorate(block) {
 
   if (parent.title) {
     const heading = document.createElement('h2');
-    heading.className = 'fourcoltiles-title';
+    heading.className = 'four-column-tiles-title';
     heading.textContent = parent.title;
     inner.append(heading);
   }
 
   if (parent.subtitle) {
     const desc = document.createElement('p');
-    desc.className = 'fourcoltiles-subtitle';
+    desc.className = 'four-column-tiles-subtitle';
     desc.textContent = parent.subtitle;
     inner.append(desc);
   }
 
   // Tiles.
   const track = document.createElement('ul');
-  track.className = 'fourcoltiles-track';
+  track.className = 'four-column-tiles-track';
 
   const tiles = tileRows.map((row) => {
     const li = document.createElement('li');
-    li.className = 'fourcoltiles-item';
+    li.className = 'four-column-tiles-item';
     // Carry the authoring instrumentation across, or the Universal Editor
     // cannot select, reorder or delete the tile.
     moveInstrumentation(row, li);
@@ -164,7 +171,7 @@ export default function decorate(block) {
     const picture = row.querySelector('picture');
     if (picture) {
       const photo = document.createElement('div');
-      photo.className = 'fourcoltiles-item-photo';
+      photo.className = 'four-column-tiles-item-photo';
       photo.append(picture);
       li.append(photo);
     }
@@ -175,7 +182,7 @@ export default function decorate(block) {
       .find((t) => t);
     if (caption) {
       const name = document.createElement('div');
-      name.className = 'fourcoltiles-item-name';
+      name.className = 'four-column-tiles-item-name';
       const h4 = document.createElement('h4');
       h4.textContent = caption;
       name.append(h4);
@@ -192,14 +199,14 @@ export default function decorate(block) {
     if (dots) inner.append(dots);
   }
 
-  // CTA. Same visual treatment as the primarybutton block, which this component
+  // CTA. Same visual treatment as the primary-button block, which this component
   // embedded directly in React.
   if (parent.ctaHref || parent.ctaText) {
     const ctaWrap = document.createElement('div');
-    ctaWrap.className = 'fourcoltiles-cta';
+    ctaWrap.className = 'four-column-tiles-cta';
 
     const shape = document.createElement('div');
-    shape.className = `fourcoltiles-cta-shape ${parent.ctaVariant || 'green'}`;
+    shape.className = `four-column-tiles-cta-shape ${parent.ctaVariant || 'green'}`;
 
     const cta = document.createElement(parent.ctaHref ? 'a' : 'span');
     if (parent.ctaHref) {
@@ -221,7 +228,7 @@ export default function decorate(block) {
   if (!inner.children.length) {
     if (isEditMode) {
       const placeholder = document.createElement('p');
-      placeholder.className = 'fourcoltiles-placeholder';
+      placeholder.className = 'four-column-tiles-placeholder';
       placeholder.textContent = 'Four Column Tiles — add a title and some tiles';
       inner.append(placeholder);
     } else {

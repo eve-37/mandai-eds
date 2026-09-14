@@ -5,16 +5,16 @@
  * single image in SectionLayout with mask-1 and no background.
  *
  * The band itself is .rb-section in styles/styles.css - shared with
- * fourcoltiles, onecolfeature and testimonial rather than redefined here.
+ * four-column-tiles, one-column-feature and testimonial rather than redefined here.
  */
 
-.imagesection .imagesection-figure img {
+.image-section .image-section-figure img {
   display: block;
   width: 100%;
   height: auto;
 }
 
-.imagesection .imagesection-placeholder {
+.image-section .image-section-placeholder {
   margin: 0;
   border: 1px dashed var(--rb-brown);
   padding: 12px 16px;

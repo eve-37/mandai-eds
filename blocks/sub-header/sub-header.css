@@ -9,30 +9,30 @@
  * any script runs, and resizing needs no listener.
  */
 
-.subheader .subheader-wrapper {
+.sub-header .sub-header-wrapper {
   width: 100%;
   padding: 60px 24px 80px;
-  background-image: var(--subheader-bg-mobile);
+  background-image: var(--sub-header-bg-mobile);
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
 
-.subheader .subheader-content {
+.sub-header .sub-header-content {
   max-width: 640px;
   margin: 0 auto;
   text-align: center;
 }
 
-.subheader .subheader-heading {
+.sub-header .sub-header-heading {
   margin: 0;
 }
 
-.subheader .subheader-desc {
+.sub-header .sub-header-desc {
   margin-top: 16px;
 }
 
-.subheader .subheader-placeholder {
+.sub-header .sub-header-placeholder {
   margin: 0;
   border: 1px dashed var(--rb-brown);
   padding: 12px 16px;
@@ -41,8 +41,8 @@
 }
 
 @media (width >= 992px) {
-  .subheader .subheader-wrapper {
+  .sub-header .sub-header-wrapper {
     padding: 120px 32px 140px;
-    background-image: var(--subheader-bg-desktop);
+    background-image: var(--sub-header-bg-desktop);
   }
 }

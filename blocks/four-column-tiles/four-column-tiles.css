@@ -25,13 +25,13 @@
  * with its assets in /assets/section/. This block just applies the classes.
  */
 
-.fourcoltiles .fourcoltiles-title,
-.fourcoltiles .fourcoltiles-subtitle {
+.four-column-tiles .four-column-tiles-title,
+.four-column-tiles .four-column-tiles-subtitle {
   margin: 0 auto;
   text-align: center;
 }
 
-.fourcoltiles .fourcoltiles-subtitle {
+.four-column-tiles .four-column-tiles-subtitle {
   max-width: 640px;
   margin-top: 16px;
 }
@@ -41,7 +41,7 @@
  * and the negative margin lets tiles bleed to the viewport edge on mobile so the
  * peek of the next tile reads as intentional.
  */
-.fourcoltiles .fourcoltiles-track {
+.four-column-tiles .four-column-tiles-track {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: calc(100% / 1.1);
@@ -59,17 +59,17 @@
   scrollbar-width: none;
 }
 
-.fourcoltiles .fourcoltiles-track::-webkit-scrollbar {
+.four-column-tiles .four-column-tiles-track::-webkit-scrollbar {
   display: none;
 }
 
-.fourcoltiles .fourcoltiles-item {
+.four-column-tiles .four-column-tiles-item {
   display: flex;
   flex-direction: column;
   scroll-snap-align: start;
 }
 
-.fourcoltiles .fourcoltiles-item-photo img {
+.four-column-tiles .four-column-tiles-item-photo img {
   display: block;
   width: 100%;
   height: auto;
@@ -77,25 +77,25 @@
   object-fit: cover;
 }
 
-.fourcoltiles .fourcoltiles-item-name {
+.four-column-tiles .four-column-tiles-item-name {
   flex: 1;
   padding-top: 16px;
   text-align: center;
 }
 
-.fourcoltiles .fourcoltiles-item-name h4 {
+.four-column-tiles .four-column-tiles-item-name h4 {
   margin: 0;
 }
 
 /* dots */
-.fourcoltiles .fourcoltiles-dots {
+.four-column-tiles .four-column-tiles-dots {
   display: flex;
   gap: 8px;
   justify-content: center;
   margin-top: 24px;
 }
 
-.fourcoltiles .fourcoltiles-dot {
+.four-column-tiles .four-column-tiles-dot {
   width: 10px;
   height: 10px;
   border: 0;
@@ -105,34 +105,34 @@
   cursor: pointer;
 }
 
-.fourcoltiles .fourcoltiles-dot.active {
+.four-column-tiles .four-column-tiles-dot.active {
   background-color: var(--rb-dark-green);
 }
 
-.fourcoltiles .fourcoltiles-dot:focus-visible {
+.four-column-tiles .four-column-tiles-dot:focus-visible {
   outline: 2px solid var(--rb-dark-green);
   outline-offset: 2px;
 }
 
-/* CTA - same treatment as the primarybutton block */
-.fourcoltiles .fourcoltiles-cta {
+/* CTA - same treatment as the primary-button block */
+.four-column-tiles .four-column-tiles-cta {
   margin-top: 40px;
   text-align: center;
 }
 
-.fourcoltiles .fourcoltiles-cta-shape {
+.four-column-tiles .four-column-tiles-cta-shape {
   display: inline-block;
   width: 220px;
   text-align: center;
   cursor: pointer;
-  mask-image: url('../primarybutton/button-shape.svg');
+  mask-image: url('../primary-button/button-shape.svg');
   mask-size: contain;
   mask-repeat: no-repeat;
   mask-position: center;
 }
 
-.fourcoltiles .fourcoltiles-cta-shape a,
-.fourcoltiles .fourcoltiles-cta-shape span {
+.four-column-tiles .four-column-tiles-cta-shape a,
+.four-column-tiles .four-column-tiles-cta-shape span {
   display: inline-block;
   width: 100%;
   padding: 16px 0;
@@ -142,36 +142,36 @@
   white-space: nowrap;
 }
 
-.fourcoltiles .fourcoltiles-cta-shape.green {
+.four-column-tiles .four-column-tiles-cta-shape.green {
   background-color: var(--rb-mid-green);
 }
 
-.fourcoltiles .fourcoltiles-cta-shape.green a,
-.fourcoltiles .fourcoltiles-cta-shape.green span {
+.four-column-tiles .four-column-tiles-cta-shape.green a,
+.four-column-tiles .four-column-tiles-cta-shape.green span {
   color: var(--rb-light-beige);
 }
 
-.fourcoltiles .fourcoltiles-cta-shape.yellow {
+.four-column-tiles .four-column-tiles-cta-shape.yellow {
   background-color: var(--rb-yellow);
 }
 
-.fourcoltiles .fourcoltiles-cta-shape.yellow a,
-.fourcoltiles .fourcoltiles-cta-shape.yellow span {
+.four-column-tiles .four-column-tiles-cta-shape.yellow a,
+.four-column-tiles .four-column-tiles-cta-shape.yellow span {
   color: var(--rb-dark-green);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .fourcoltiles .fourcoltiles-cta-shape.green:hover {
+  .four-column-tiles .four-column-tiles-cta-shape.green:hover {
     background-color: var(--rb-bright-green);
   }
 
-  .fourcoltiles .fourcoltiles-cta-shape.yellow:hover {
+  .four-column-tiles .four-column-tiles-cta-shape.yellow:hover {
     background-color: var(--rb-light-yellow);
   }
 }
 
 /* Authoring-only affordance. */
-.fourcoltiles .fourcoltiles-placeholder {
+.four-column-tiles .four-column-tiles-placeholder {
   margin: 0;
   border: 1px dashed var(--rb-brown);
   padding: 12px 16px;
@@ -181,14 +181,14 @@
 
 /* 2 tiles from the source's 767px breakpoint */
 @media (width >= 768px) {
-  .fourcoltiles .fourcoltiles-track {
+  .four-column-tiles .four-column-tiles-track {
     grid-auto-columns: calc((100% - 16px) / 2);
   }
 }
 
 /* 4 tiles, and the desktop section metrics, from the source's 992px breakpoint */
 @media (width >= 992px) {
-  .fourcoltiles .fourcoltiles-track {
+  .four-column-tiles .four-column-tiles-track {
     grid-auto-columns: calc((100% - 48px) / 4);
     margin-inline: 0;
     padding-inline: 0;
@@ -196,7 +196,7 @@
   }
 
   /* Four or fewer tiles all fit, so there is nothing to scroll to. */
-  .fourcoltiles .fourcoltiles-track:not(:has(> :nth-child(5))) {
+  .four-column-tiles .four-column-tiles-track:not(:has(> :nth-child(5))) {
     overflow-x: visible;
   }
 }

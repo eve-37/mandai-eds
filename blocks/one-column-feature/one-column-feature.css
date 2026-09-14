@@ -12,26 +12,26 @@
  * The band itself is .rb-section in styles/styles.css.
  */
 
-.onecolfeature .onecolfeature-layout {
+.one-column-feature .one-column-feature-layout {
   display: grid;
   gap: 24px;
 }
 
-.onecolfeature .onecolfeature-desc h2 {
+.one-column-feature .one-column-feature-desc h2 {
   margin: 0;
 }
 
-.onecolfeature .onecolfeature-desc p {
+.one-column-feature .one-column-feature-desc p {
   margin-top: 16px;
 }
 
-.onecolfeature .onecolfeature-image img {
+.one-column-feature .one-column-feature-image img {
   display: block;
   width: 100%;
   height: auto;
 }
 
-.onecolfeature .onecolfeature-placeholder {
+.one-column-feature .one-column-feature-placeholder {
   margin: 0;
   border: 1px dashed var(--rb-brown);
   padding: 12px 16px;
@@ -40,18 +40,18 @@
 }
 
 @media (width >= 768px) {
-  .onecolfeature .onecolfeature-layout {
+  .one-column-feature .one-column-feature-layout {
     grid-template-columns: 5fr 7fr;
     align-items: center;
     gap: 32px;
   }
 
   /* Image to the right, copy to the left, without reordering the DOM. */
-  .onecolfeature .onecolfeature-desc {
+  .one-column-feature .one-column-feature-desc {
     grid-column: 1;
   }
 
-  .onecolfeature .onecolfeature-image {
+  .one-column-feature .one-column-feature-image {
     grid-column: 2;
     grid-row: 1;
   }

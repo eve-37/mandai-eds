@@ -280,6 +280,35 @@ it up automatically — a new block needs no edit to anything in `models/`.
 `core/franklin/components/block/v1/block/item`, a model for the child, and a `filters` entry naming the
 accepted children.
 
+## The block folder must match the slugified `template.name`
+
+EDS derives the block's CSS class and its asset path from `template.name` in the definition, **not** from
+the definition `id`. `"name": "Primary Button"` makes the page render `<div class="primary-button">` and
+fetch `/blocks/primary-button/primary-button.js`. A folder named after the `id` (`primarybutton/`) 404s,
+`decorate()` never runs, and the block renders as raw stacked rows.
+
+This fails quietly in the worst way: the definition serves 200, the palette shows the component, the
+author can place it, lint passes, and the JS file exists — it is simply never requested.
+
+If you hit this, rename the **folder**, and leave the definition and model `id` alone. Authored instances
+store `model: "<id>"`, so changing an id breaks the properties rail on every block already placed.
+
+Check every block resolves — this prints a row per block and any 404 is the bug:
+
+```bash
+node -e "
+const d=require('./component-definition.json');
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-\$/g,'');
+for (const g of d.groups) for (const c of g.components) {
+  const n=c.plugins?.xwalk?.page?.template?.name; if(!n) continue;
+  const s=slug(n);
+  console.log((require('fs').existsSync('blocks/'+s)?'ok  ':'MISS').padEnd(6), c.id.padEnd(18), n.padEnd(22), '-> blocks/'+s);
+}"
+```
+
+Child components (`tile`, `testimony`) need no folder — they render as rows inside their parent block,
+and EDS only loads JS and CSS for the top-level block.
+
 ## Adding a block is TWO edits, not one
 
 Creating `blocks/<name>/_<name>.json` is not enough. A block that is defined but not listed in the

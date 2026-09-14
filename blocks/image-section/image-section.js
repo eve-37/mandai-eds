@@ -3,7 +3,7 @@ import { moveInstrumentation } from '../../scripts/scripts.js';
 /**
  * Image Section.
  *
- * Named `imagesection`, not `image`: the boilerplate already ships an `image`
+ * Named `image-section`, not `image`: the boilerplate already ships an `image`
  * default-content component and the ids would collide. The AEM component is a
  * plain image wrapped in the masked section band, which is the only reason it
  * needs a block rather than default content.
@@ -15,7 +15,7 @@ export default function decorate(block) {
   if (!picture) {
     if (isEditMode) {
       const placeholder = document.createElement('p');
-      placeholder.className = 'imagesection-placeholder';
+      placeholder.className = 'image-section-placeholder';
       placeholder.textContent = 'Image Section — pick an image';
       block.replaceChildren(placeholder);
     } else {
@@ -31,7 +31,7 @@ export default function decorate(block) {
   inner.className = 'rb-section-inner';
 
   const figure = document.createElement('div');
-  figure.className = 'imagesection-figure';
+  figure.className = 'image-section-figure';
 
   const sourceRow = picture.closest('div[data-aue-prop], div');
   figure.append(picture);

@@ -30,7 +30,7 @@ export default function decorate(block) {
   if (!title && !desc && !desktop) {
     if (isEditMode) {
       const placeholder = document.createElement('p');
-      placeholder.className = 'subheader-placeholder';
+      placeholder.className = 'sub-header-placeholder';
       placeholder.textContent = 'Sub Header — add a title and a background';
       block.replaceChildren(placeholder);
     } else {
@@ -40,17 +40,17 @@ export default function decorate(block) {
   }
 
   const wrapper = document.createElement('div');
-  wrapper.className = 'subheader-wrapper';
+  wrapper.className = 'sub-header-wrapper';
   // Mobile falls back to the desktop image when only one is supplied.
-  if (desktop) wrapper.style.setProperty('--subheader-bg-desktop', `url("${desktop}")`);
-  if (mobile || desktop) wrapper.style.setProperty('--subheader-bg-mobile', `url("${mobile || desktop}")`);
+  if (desktop) wrapper.style.setProperty('--sub-header-bg-desktop', `url("${desktop}")`);
+  if (mobile || desktop) wrapper.style.setProperty('--sub-header-bg-mobile', `url("${mobile || desktop}")`);
 
   const content = document.createElement('div');
-  content.className = 'subheader-content';
+  content.className = 'sub-header-content';
 
   if (title) {
     const h2 = document.createElement('h2');
-    h2.className = 'subheader-heading';
+    h2.className = 'sub-header-heading';
     h2.textContent = title;
     if (textRows[0]) moveInstrumentation(textRows[0], h2);
     content.append(h2);
@@ -58,7 +58,7 @@ export default function decorate(block) {
 
   if (desc) {
     const p = document.createElement('p');
-    p.className = 'subheader-desc';
+    p.className = 'sub-header-desc';
     p.textContent = desc;
     if (textRows[1]) moveInstrumentation(textRows[1], p);
     content.append(p);

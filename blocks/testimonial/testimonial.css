@@ -4,7 +4,7 @@
  * Ported from rb-aem-react-app/src/components/Testimonial/Testimonial.js/.scss.
  *
  * Carousel is native scroll-snap rather than Slick - same decision as
- * fourcoltiles. One quote per view at every width, matching the source.
+ * four-column-tiles. One quote per view at every width, matching the source.
  *
  * Markup is blockquote + cite rather than two divs. The content is literally a
  * quotation and its attribution, and the semantic elements cost nothing.

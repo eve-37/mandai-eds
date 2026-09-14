@@ -7,7 +7,7 @@ function cellText(el) {
 /**
  * Testimonial - a heading plus a carousel of quotes.
  *
- * Same scroll-snap approach as fourcoltiles rather than Slick, for the same
+ * Same scroll-snap approach as four-column-tiles rather than Slick, for the same
  * reason: no jQuery, and native momentum, keyboard and screen-reader behaviour.
  * One quote at a time at every breakpoint, which is what the source did.
  */

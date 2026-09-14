@@ -29,7 +29,7 @@ export default function decorate(block) {
   if (!imageRow && !title) {
     if (isEditMode) {
       const placeholder = document.createElement('p');
-      placeholder.className = 'onecolfeature-placeholder';
+      placeholder.className = 'one-column-feature-placeholder';
       placeholder.textContent = 'One Column Feature — add a title and an image';
       block.replaceChildren(placeholder);
     } else {
@@ -42,10 +42,10 @@ export default function decorate(block) {
   section.className = `rb-section ${mask || 'mask-1'} bg-beige`;
 
   const inner = document.createElement('div');
-  inner.className = 'rb-section-inner onecolfeature-layout';
+  inner.className = 'rb-section-inner one-column-feature-layout';
 
   const copy = document.createElement('div');
-  copy.className = 'onecolfeature-desc';
+  copy.className = 'one-column-feature-desc';
   if (title) {
     const h2 = document.createElement('h2');
     h2.textContent = title.text;
@@ -60,7 +60,7 @@ export default function decorate(block) {
   }
 
   const figure = document.createElement('div');
-  figure.className = 'onecolfeature-image';
+  figure.className = 'one-column-feature-image';
   const picture = imageRow?.querySelector('picture');
   if (picture) {
     figure.append(picture);
