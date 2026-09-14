@@ -229,16 +229,50 @@ Still unverified: **child instrumentation**. No tiles were ever authored, so whe
 keeps children selectable and reorderable is untested. That pattern is shared by `threecoltiles`,
 `missions`, `tabs` and `onecolbannercarousel`, so it should be closed out before those are built.
 
-**Phase 3 — Remaining components.** Seven built (`primarybutton`, `secondarybutton`, `imagesection`,
-`subheader`, `onecolfeature`, `fourcoltiles`+`tile`, `testimonial`+`testimony`). `richtext` and
-`freeform` need no block at all — both are plain rich-text containers, and EDS handles rich text as
-default content.
+**Phase 3 — all eighteen rb-aem components handled.** ✅
 
-Nine remain, all genuinely complex: `masthead` (Brightcove video), `onecolbanner` and `onecolnews`
-(9–10 fields, will need grouping), `threecoltiles`, `onecolbannercarousel`, `tabs` (**nested**
-multifield — a container inside a container, which the 4-cell model may not accommodate), `missions`
-(29 fields, two CTAs, four logo+alt pairs), plus `header` and `footer`, which have **no dialog at all**
-and should become `nav` and `footer` documents rather than blocks.
+| Blocks (14 folders) | |
+|---|---|
+| Simple | `primary-button`, `secondary-button`, `image-section`, `sub-header`, `one-column-feature` |
+| Containers | `four-column-tiles`+`tile`, `testimonial`+`testimony`, `three-column-tiles`+`threecoltile`, `one-column-banner-carousel`+`banner`, `missions`+`mission` |
+| Other | `one-column-banner`, `one-column-news`, `masthead`, `tabs`+`rbtab`+`rbtabtile` |
+
+`richtext` and `freeform` need **no block** — both are plain rich-text containers and EDS handles rich
+text as default content. `header` and `footer` have **no dialog**, so they stay as the `/nav` and
+`/footer` documents; the boilerplate's own JS is kept untouched and only the brand was applied.
+
+Shared code extracted along the way, so blocks do not repeat themselves:
+
+- `scripts/rb-helpers.js` — `resolveHref`, the grouped `cta_` reader, the CTA builder, scroll-snap
+  dots, the editor placeholder, and the parent-vs-child row test.
+- `styles/styles.css` — `.rb-section` (the torn-edge band), `.rb-cta` (the masked button),
+  `.rb-track`/`.rb-dots` (carousels), `.rb-placeholder`.
+- `tests/blocks.test.mjs` — 16 tests run in CI. The boilerplate ships lint and nothing else, which is
+  why blocks could reach production unverified in the first place.
+
+### Still to verify
+
+Two things rest on inference rather than observation, and both are cheap to settle by authoring one
+instance each:
+
+1. **`tabs` is the only nested container** (tabs → tab → tile). `component-filters.json` expresses it
+   and the linter accepts it, but **the DOM shape AEM emits for a container inside a container has not
+   been seen**. `tabs.js` currently accepts either plausible shape and says so at the top of the file.
+   Author one, look at the markup, then delete the branch that is wrong.
+2. **Only two blocks have ever been authored** (`primary-button`, `four-column-tiles`, and the latter
+   without tiles). The other twelve are lint-clean and unit-tested but have never rendered from real
+   content.
+
+### Known follow-ups
+
+- **Fonts**: the Nunito TTFs are ~460KB. Subset to woff2 before go-live — the exact `pyftsubset`
+  command is in `styles/fonts.css`.
+- **Fallback faces** carry no `size-adjust`; it has to be measured, not guessed.
+- **`sitemap.xml` emits `https://undefined/`** — a missing site host in the aem.live config.
+- **Font Awesome** was not ported (278KB of SCSS for three usages); those icons belong in EDS's SVG
+  icon system per block.
+- **Button green** is `#187432` hardcoded in the source but `#177432` in the brand variable. The token
+  is used here; worth settling with whoever owns the brand.
 
 **Phase 4 — Verify** (see below), then write up what the pilot taught before starting `mab-aem`.
 
