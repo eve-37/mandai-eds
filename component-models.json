@@ -309,6 +309,71 @@
     ]
   },
   {
+    "id": "imagesection",
+    "fields": [
+      {
+        "component": "reference",
+        "name": "image",
+        "label": "Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "imageAlt",
+        "label": "Image Alt",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
+    "id": "onecolfeature",
+    "fields": [
+      {
+        "component": "text",
+        "name": "title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "desc",
+        "label": "Description",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "image",
+        "label": "Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "imageAlt",
+        "label": "Image Alt",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "mask",
+        "label": "Border Pattern Type",
+        "valueType": "string",
+        "value": "mask-1",
+        "options": [
+          {
+            "name": "Pattern 1",
+            "value": "mask-1"
+          },
+          {
+            "name": "Pattern 2",
+            "value": "mask-2"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "id": "primarybutton",
     "fields": [
       {
@@ -374,6 +439,134 @@
         "name": "linkNewTab",
         "label": "Open in new tab",
         "valueType": "boolean"
+      }
+    ]
+  },
+  {
+    "id": "secondarybutton",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "link",
+        "label": "CTA Link",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "linkText",
+        "label": "CTA Name",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "linkTitle",
+        "label": "CTA Title",
+        "description": "Optional. Tooltip and accessible name where the CTA text alone is not descriptive.",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "variant",
+        "label": "CTA Color Type",
+        "description": "Color type of the CTA button",
+        "valueType": "string",
+        "value": "green",
+        "options": [
+          {
+            "name": "Green",
+            "value": "green"
+          },
+          {
+            "name": "Yellow",
+            "value": "yellow"
+          }
+        ]
+      },
+      {
+        "component": "select",
+        "name": "position",
+        "label": "CTA Button Position",
+        "valueType": "string",
+        "value": "center",
+        "options": [
+          {
+            "name": "Left",
+            "value": "left"
+          },
+          {
+            "name": "Center",
+            "value": "center"
+          },
+          {
+            "name": "Right",
+            "value": "right"
+          }
+        ]
+      },
+      {
+        "component": "boolean",
+        "name": "linkNewTab",
+        "label": "Open in new tab",
+        "valueType": "boolean"
+      }
+    ]
+  },
+  {
+    "id": "subheader",
+    "fields": [
+      {
+        "component": "text",
+        "name": "title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "desc",
+        "label": "Description",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "backgroundDesktop",
+        "label": "Background (desktop)",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "backgroundMobile",
+        "label": "Background (mobile)",
+        "multi": false,
+        "valueType": "string"
+      }
+    ]
+  },
+  {
+    "id": "testimonial",
+    "fields": [
+      {
+        "component": "text",
+        "name": "title",
+        "label": "Title",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
+    "id": "testimony",
+    "fields": [
+      {
+        "component": "text",
+        "name": "message",
+        "label": "Message",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "name",
+        "label": "Name",
+        "valueType": "string"
       }
     ]
   }

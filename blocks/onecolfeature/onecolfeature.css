@@ -1,0 +1,58 @@
+/*
+ * One Column Feature
+ *
+ * Ported from rb-aem-react-app/src/components/OneColFeature/OneColFeature.js/.scss.
+ *
+ * The source used Bootstrap's column ordering (order 1/2 at md, reversed at xs)
+ * to put the image right on desktop and below the text on mobile. Here the copy
+ * comes first in the DOM - which is the correct reading and tab order on mobile -
+ * and CSS grid moves the image to the right on desktop. No order juggling, and
+ * nothing depends on Bootstrap.
+ *
+ * The band itself is .rb-section in styles/styles.css.
+ */
+
+.onecolfeature .onecolfeature-layout {
+  display: grid;
+  gap: 24px;
+}
+
+.onecolfeature .onecolfeature-desc h2 {
+  margin: 0;
+}
+
+.onecolfeature .onecolfeature-desc p {
+  margin-top: 16px;
+}
+
+.onecolfeature .onecolfeature-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.onecolfeature .onecolfeature-placeholder {
+  margin: 0;
+  border: 1px dashed var(--rb-brown);
+  padding: 12px 16px;
+  color: var(--rb-mid-green);
+  text-align: center;
+}
+
+@media (width >= 768px) {
+  .onecolfeature .onecolfeature-layout {
+    grid-template-columns: 5fr 7fr;
+    align-items: center;
+    gap: 32px;
+  }
+
+  /* Image to the right, copy to the left, without reordering the DOM. */
+  .onecolfeature .onecolfeature-desc {
+    grid-column: 1;
+  }
+
+  .onecolfeature .onecolfeature-image {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

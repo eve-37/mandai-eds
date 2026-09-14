@@ -20,49 +20,10 @@
  * 3. Bootstrap's grid is gone. The source pulled the whole of bootstrap.min.css
  *    for a handful of Container/Row/Col wrappers; this is a few lines of grid.
  *
- * The section wrapper below (.fourcoltiles-section) is a port of the shared
- * SectionLayout component, which many other rb-aem components also use. It is
- * kept local to this block for now rather than promoted into styles/styles.css,
- * so the global critical CSS stays small. EXTRACT IT when the second consumer
- * arrives - at that point the mask and background assets should move to a shared
- * folder too.
- *
- * Only the green background is carried over, since that is the only one this
- * component uses. SectionLayout also defines bg-beige, bg-brown, bg-dark-green
- * and bg-missions; bring each across when a component needs it rather than
- * shipping ~800KB of unused JPEGs.
+ * The torn-edge band is NOT defined here. SectionLayout is shared by several
+ * components, so it lives in styles/styles.css as .rb-section / .rb-section-inner
+ * with its assets in /assets/section/. This block just applies the classes.
  */
-
-.fourcoltiles .fourcoltiles-section {
-  width: 100%;
-  margin-top: -50px;
-  padding: 60px 0 80px;
-  background-color: var(--rb-light-beige);
-  background-image: url('bg-green-mobile.jpg');
-  background-repeat: no-repeat;
-  background-position: top;
-  background-size: cover;
-}
-
-.fourcoltiles .fourcoltiles-section.mask-1 {
-  mask-image: url('section-mask-1-desktop.svg');
-  mask-size: cover;
-  mask-repeat: no-repeat;
-  mask-position: top;
-}
-
-.fourcoltiles .fourcoltiles-section.mask-2 {
-  mask-image: url('section-mask-2-desktop.svg');
-  mask-size: cover;
-  mask-repeat: no-repeat;
-  mask-position: top;
-}
-
-.fourcoltiles .fourcoltiles-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
 
 .fourcoltiles .fourcoltiles-title,
 .fourcoltiles .fourcoltiles-subtitle {
@@ -227,17 +188,6 @@
 
 /* 4 tiles, and the desktop section metrics, from the source's 992px breakpoint */
 @media (width >= 992px) {
-  .fourcoltiles .fourcoltiles-section {
-    margin-top: -70px;
-    padding: 120px 0 140px;
-    background-image: url('bg-green-desktop.jpg');
-    background-position: bottom;
-  }
-
-  .fourcoltiles .fourcoltiles-inner {
-    padding: 0 32px;
-  }
-
   .fourcoltiles .fourcoltiles-track {
     grid-auto-columns: calc((100% - 48px) / 4);
     margin-inline: 0;

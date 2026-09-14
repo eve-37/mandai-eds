@@ -485,3 +485,85 @@ main .section.highlight {
   margin: 0;
   padding: 40px 0;
 }
+
+/*
+ * Shared section treatment - the torn-edge band that most Ranger Buddies
+ * components sit inside. Ported from the SectionLayout React component, which
+ * fourcoltiles, imagesection, testimonial and onecolfeature all wrap themselves
+ * in. It lives here rather than in each block because four blocks would
+ * otherwise carry four copies of the same rules and assets.
+ *
+ * Only the rules are global; the background images load only when a block
+ * actually applies one of the bg-* classes, so this costs nothing on a page
+ * that uses none of them.
+ *
+ * Usage from a block:  <div class="rb-section mask-1 bg-green">
+ *
+ * Backgrounds present: green, beige, dark-green. SectionLayout also defines
+ * bg-brown and bg-missions - add those (and their JPEGs) when a component needs
+ * them rather than shipping unused ones.
+ */
+.rb-section {
+  width: 100%;
+  margin-top: -50px;
+  padding: 60px 0 80px;
+  background-color: var(--rb-light-beige);
+  background-repeat: no-repeat;
+  background-position: top;
+  background-size: cover;
+}
+
+.rb-section.mask-1 {
+  mask-image: url('/assets/section/section-mask-1-desktop.svg');
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  mask-position: top;
+}
+
+.rb-section.mask-2 {
+  mask-image: url('/assets/section/section-mask-2-desktop.svg');
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  mask-position: top;
+}
+
+.rb-section.bg-green { background-image: url('/assets/section/bg-green-mobile.jpg'); }
+.rb-section.bg-beige { background-image: url('/assets/section/bg-beige-mobile.jpg'); }
+
+/* Text on the dark band has to invert, or it fails contrast outright. */
+.rb-section.bg-dark-green {
+  background-image: url('/assets/section/bg-dark-green-mobile.jpg');
+  color: var(--rb-light-beige);
+}
+
+.rb-section.bg-dark-green a:any-link {
+  color: var(--rb-yellow);
+}
+
+/* The inner column every section shares. */
+.rb-section-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+@media (width >= 992px) {
+  .rb-section {
+    margin-top: -70px;
+    padding: 120px 0 140px;
+  }
+
+  .rb-section.bg-green { background-image: url('/assets/section/bg-green-desktop.jpg'); }
+  .rb-section.bg-beige { background-image: url('/assets/section/bg-beige-desktop.jpg'); }
+  .rb-section.bg-dark-green { background-image: url('/assets/section/bg-dark-green-desktop.jpg'); }
+
+  .rb-section.bg-green,
+  .rb-section.bg-beige,
+  .rb-section.bg-dark-green {
+    background-position: bottom;
+  }
+
+  .rb-section-inner {
+    padding: 0 32px;
+  }
+}

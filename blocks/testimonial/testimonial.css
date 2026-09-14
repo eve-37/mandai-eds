@@ -1,0 +1,77 @@
+/*
+ * Testimonial
+ *
+ * Ported from rb-aem-react-app/src/components/Testimonial/Testimonial.js/.scss.
+ *
+ * Carousel is native scroll-snap rather than Slick - same decision as
+ * fourcoltiles. One quote per view at every width, matching the source.
+ *
+ * Markup is blockquote + cite rather than two divs. The content is literally a
+ * quotation and its attribution, and the semantic elements cost nothing.
+ *
+ * The source wrapped the quote in literal " characters in JSX. Those are
+ * generated here in CSS instead, so they are decoration rather than text a
+ * screen reader reads out and a translator has to handle.
+ *
+ * The band is .rb-section.bg-dark-green in styles/styles.css, which also
+ * inverts the text colour - without that the dark-green background fails
+ * contrast outright.
+ */
+
+.testimonial .testimonial-heading {
+  margin: 0 0 32px;
+  text-align: center;
+}
+
+.testimonial .testimonial-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 100%;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.testimonial .testimonial-track::-webkit-scrollbar {
+  display: none;
+}
+
+.testimonial .testimonial-item {
+  scroll-snap-align: center;
+  text-align: left;
+}
+
+.testimonial .testimonial-quote {
+  margin: 0;
+  font-size: var(--body-font-size-m);
+}
+
+/* Decorative quote marks - not read out, not translated. */
+.testimonial .testimonial-quote::before { content: '\201C'; }
+.testimonial .testimonial-quote::after { content: '\201D'; }
+
+.testimonial .testimonial-user {
+  display: block;
+  margin-top: 16px;
+  font-family: var(--heading-font-family-alt);
+  font-style: normal;
+}
+
+.testimonial .testimonial-placeholder {
+  margin: 0;
+  border: 1px dashed var(--rb-brown);
+  padding: 12px 16px;
+  color: var(--rb-mid-green);
+  text-align: center;
+}
+
+@media (width >= 768px) {
+  .testimonial .testimonial-track {
+    grid-auto-columns: 80%;
+  }
+}

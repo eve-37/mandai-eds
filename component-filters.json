@@ -44,5 +44,11 @@
     "components": [
       "tile"
     ]
+  },
+  {
+    "id": "testimonial",
+    "components": [
+      "testimony"
+    ]
   }
 ]

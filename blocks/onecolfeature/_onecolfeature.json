@@ -1,0 +1,30 @@
+{
+  "definitions": [
+    {
+      "title": "One Column Feature",
+      "id": "onecolfeature",
+      "plugins": {
+        "xwalk": {
+          "page": {
+            "resourceType": "core/franklin/components/block/v1/block",
+            "template": { "name": "One Column Feature", "model": "onecolfeature" }
+          }
+        }
+      }
+    }
+  ],
+  "models": [
+    {
+      "id": "onecolfeature",
+      "fields": [
+        { "component": "text", "name": "title", "label": "Title", "valueType": "string" },
+        { "component": "text", "name": "desc", "label": "Description", "valueType": "string" },
+        { "component": "reference", "name": "image", "label": "Image", "multi": false, "valueType": "string" },
+        { "component": "text", "name": "imageAlt", "label": "Image Alt", "valueType": "string" },
+        { "component": "select", "name": "mask", "label": "Border Pattern Type", "valueType": "string", "value": "mask-1",
+          "options": [ { "name": "Pattern 1", "value": "mask-1" }, { "name": "Pattern 2", "value": "mask-2" } ] }
+      ]
+    }
+  ],
+  "filters": []
+}

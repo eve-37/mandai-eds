@@ -1,0 +1,76 @@
+{
+  "definitions": [
+    {
+      "title": "Secondary Button",
+      "id": "secondarybutton",
+      "plugins": {
+        "xwalk": {
+          "page": {
+            "resourceType": "core/franklin/components/block/v1/block",
+            "template": {
+              "name": "Secondary Button",
+              "model": "secondarybutton"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "models": [
+    {
+      "id": "secondarybutton",
+      "fields": [
+        {
+          "component": "aem-content",
+          "name": "link",
+          "label": "CTA Link",
+          "valueType": "string"
+        },
+        {
+          "component": "text",
+          "name": "linkText",
+          "label": "CTA Name",
+          "valueType": "string"
+        },
+        {
+          "component": "text",
+          "name": "linkTitle",
+          "label": "CTA Title",
+          "description": "Optional. Tooltip and accessible name where the CTA text alone is not descriptive.",
+          "valueType": "string"
+        },
+        {
+          "component": "select",
+          "name": "variant",
+          "label": "CTA Color Type",
+          "description": "Color type of the CTA button",
+          "valueType": "string",
+          "value": "green",
+          "options": [
+            { "name": "Green", "value": "green" },
+            { "name": "Yellow", "value": "yellow" }
+          ]
+        },
+        {
+          "component": "select",
+          "name": "position",
+          "label": "CTA Button Position",
+          "valueType": "string",
+          "value": "center",
+          "options": [
+            { "name": "Left", "value": "left" },
+            { "name": "Center", "value": "center" },
+            { "name": "Right", "value": "right" }
+          ]
+        },
+        {
+          "component": "boolean",
+          "name": "linkNewTab",
+          "label": "Open in new tab",
+          "valueType": "boolean"
+        }
+      ]
+    }
+  ],
+  "filters": []
+}

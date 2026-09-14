@@ -129,11 +129,12 @@ export default function decorate(block) {
   const parent = readParent(rows.filter((row) => !isTileRow(row)));
   const isEditMode = block.hasAttribute('data-aue-resource');
 
+  // Shared section treatment from styles/styles.css, not block-local.
   const section = document.createElement('div');
-  section.className = `fourcoltiles-section ${parent.mask || 'mask-1'}`;
+  section.className = `rb-section ${parent.mask || 'mask-1'} bg-green`;
 
   const inner = document.createElement('div');
-  inner.className = 'fourcoltiles-inner';
+  inner.className = 'rb-section-inner';
 
   if (parent.title) {
     const heading = document.createElement('h2');

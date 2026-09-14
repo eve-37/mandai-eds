@@ -1,0 +1,48 @@
+/*
+ * Sub Header
+ *
+ * Ported from rb-aem-react-app/src/components/SubHeader/SubHeader.js/.scss.
+ *
+ * The source swapped the desktop and mobile background in JavaScript, tracking
+ * an isMobile flag in component state. Both URLs are passed to CSS as custom
+ * properties instead and a media query picks - the image is then correct before
+ * any script runs, and resizing needs no listener.
+ */
+
+.subheader .subheader-wrapper {
+  width: 100%;
+  padding: 60px 24px 80px;
+  background-image: var(--subheader-bg-mobile);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+.subheader .subheader-content {
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.subheader .subheader-heading {
+  margin: 0;
+}
+
+.subheader .subheader-desc {
+  margin-top: 16px;
+}
+
+.subheader .subheader-placeholder {
+  margin: 0;
+  border: 1px dashed var(--rb-brown);
+  padding: 12px 16px;
+  color: var(--rb-mid-green);
+  text-align: center;
+}
+
+@media (width >= 992px) {
+  .subheader .subheader-wrapper {
+    padding: 120px 32px 140px;
+    background-image: var(--subheader-bg-desktop);
+  }
+}

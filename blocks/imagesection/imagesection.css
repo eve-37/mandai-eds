@@ -1,0 +1,23 @@
+/*
+ * Image Section
+ *
+ * Ported from rb-aem-react-app/src/components/Image/Image.js, which wraps a
+ * single image in SectionLayout with mask-1 and no background.
+ *
+ * The band itself is .rb-section in styles/styles.css - shared with
+ * fourcoltiles, onecolfeature and testimonial rather than redefined here.
+ */
+
+.imagesection .imagesection-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.imagesection .imagesection-placeholder {
+  margin: 0;
+  border: 1px dashed var(--rb-brown);
+  padding: 12px 16px;
+  color: var(--rb-mid-green);
+  text-align: center;
+}
