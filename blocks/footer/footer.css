@@ -1,3 +1,15 @@
+/*
+ * Footer.
+ *
+ * Deliberately unchanged. It is written entirely against --light-color,
+ * --body-font-size-* and the other shared tokens, which styles/styles.css now
+ * points at the Ranger Buddies palette - so it is already branded and there is
+ * nothing here worth overriding. footer.js is untouched too.
+ *
+ * Content comes from the /footer document. Neither the rb-aem header nor footer
+ * component has a dialog, which is why both become documents rather than
+ * blocks: there are no authorable fields to model.
+ */
 footer {
   background-color: var(--light-color);
   font-size: var(--body-font-size-xs);

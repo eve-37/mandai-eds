@@ -1,6 +1,21 @@
 /* header and nav layout */
 header .nav-wrapper {
   background-color: var(--background-color);
+
+  /*
+   * The torn lower edge of the nav bar, from the Ranger Buddies header. This
+   * and the nav font below are the only brand-specific rules here: everything
+   * else already picks up the palette and fonts through the shared tokens in
+   * styles/styles.css, which is exactly why those token names were kept.
+   *
+   * header.js is untouched. It already handles the mobile menu, Escape to
+   * close, focus-loss and expanded state properly - all things the source
+   * React header did not - so there is no behaviour worth porting over it.
+   */
+  background-image: url('/assets/header-nav.svg');
+  background-repeat: no-repeat;
+  background-position: bottom;
+  background-size: cover;
   width: 100%;
   z-index: 2;
   position: fixed;
@@ -18,7 +33,7 @@ header nav {
   max-width: 1248px;
   height: var(--nav-height);
   padding: 0 24px;
-  font-family: var(--body-font-family);
+  font-family: var(--heading-font-family-alt);
 }
 
 header nav[aria-expanded='true'] {
