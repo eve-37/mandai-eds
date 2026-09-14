@@ -1,0 +1,126 @@
+{
+  "definitions": [
+    {
+      "title": "Four Column Tiles",
+      "id": "fourcoltiles",
+      "plugins": {
+        "xwalk": {
+          "page": {
+            "resourceType": "core/franklin/components/block/v1/block",
+            "template": {
+              "name": "Four Column Tiles",
+              "model": "fourcoltiles",
+              "filter": "fourcoltiles"
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "Tile",
+      "id": "tile",
+      "plugins": {
+        "xwalk": {
+          "page": {
+            "resourceType": "core/franklin/components/block/v1/block/item",
+            "template": {
+              "name": "Tile",
+              "model": "tile"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "models": [
+    {
+      "id": "fourcoltiles",
+      "fields": [
+        {
+          "component": "text",
+          "name": "title",
+          "label": "Title",
+          "valueType": "string"
+        },
+        {
+          "component": "text",
+          "name": "subtitle",
+          "label": "Subtitle",
+          "valueType": "string"
+        },
+        {
+          "component": "select",
+          "name": "mask",
+          "label": "Border Pattern Type",
+          "valueType": "string",
+          "value": "mask-1",
+          "options": [
+            { "name": "Pattern 1", "value": "mask-1" },
+            { "name": "Pattern 2", "value": "mask-2" }
+          ]
+        },
+        {
+          "component": "aem-content",
+          "name": "cta_link",
+          "label": "CTA URL",
+          "valueType": "string"
+        },
+        {
+          "component": "text",
+          "name": "cta_linkText",
+          "label": "CTA Name",
+          "valueType": "string"
+        },
+        {
+          "component": "select",
+          "name": "cta_variant",
+          "label": "CTA Color Type",
+          "valueType": "string",
+          "value": "green",
+          "options": [
+            { "name": "Green", "value": "green" },
+            { "name": "Yellow", "value": "yellow" }
+          ]
+        },
+        {
+          "component": "boolean",
+          "name": "cta_newTab",
+          "label": "Open CTA in new tab",
+          "valueType": "boolean"
+        }
+      ]
+    },
+    {
+      "id": "tile",
+      "fields": [
+        {
+          "component": "reference",
+          "name": "image",
+          "label": "Image",
+          "multi": false,
+          "valueType": "string"
+        },
+        {
+          "component": "text",
+          "name": "imageAlt",
+          "label": "Image Alt",
+          "valueType": "string"
+        },
+        {
+          "component": "text",
+          "name": "caption",
+          "label": "Caption",
+          "valueType": "string"
+        }
+      ]
+    }
+  ],
+  "filters": [
+    {
+      "id": "fourcoltiles",
+      "components": [
+        "tile"
+      ]
+    }
+  ]
+}

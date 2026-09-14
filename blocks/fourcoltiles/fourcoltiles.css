@@ -1,0 +1,252 @@
+/*
+ * Four Column Tiles
+ *
+ * Ported from rb-aem-react-app/src/components/FourColTiles/{FourColTiles,Tile}.scss
+ * and SectionLayout.scss.
+ *
+ * Three deliberate departures from the source, all agreed before building:
+ *
+ * 1. The carousel is native CSS scroll-snap, not Slick. Slick is jQuery-based,
+ *    and third-party JS is the usual reason an EDS site loses its Lighthouse
+ *    score. Scroll-snap reproduces the 4 / 2 / 1.1 slide counts including the
+ *    mobile peek, and keeps momentum scrolling, keyboard and screen-reader
+ *    behaviour that a hand-rolled carousel would have to reimplement. The feel
+ *    differs slightly: native inertia rather than Slick's tween.
+ *
+ * 2. Equal-height captions come from the grid, not the react-equal-height
+ *    library measuring boxes in JS. align-items: stretch does the same job with
+ *    no script and no layout thrash.
+ *
+ * 3. Bootstrap's grid is gone. The source pulled the whole of bootstrap.min.css
+ *    for a handful of Container/Row/Col wrappers; this is a few lines of grid.
+ *
+ * The section wrapper below (.fourcoltiles-section) is a port of the shared
+ * SectionLayout component, which many other rb-aem components also use. It is
+ * kept local to this block for now rather than promoted into styles/styles.css,
+ * so the global critical CSS stays small. EXTRACT IT when the second consumer
+ * arrives - at that point the mask and background assets should move to a shared
+ * folder too.
+ *
+ * Only the green background is carried over, since that is the only one this
+ * component uses. SectionLayout also defines bg-beige, bg-brown, bg-dark-green
+ * and bg-missions; bring each across when a component needs it rather than
+ * shipping ~800KB of unused JPEGs.
+ */
+
+.fourcoltiles .fourcoltiles-section {
+  width: 100%;
+  margin-top: -50px;
+  padding: 60px 0 80px;
+  background-color: var(--rb-light-beige);
+  background-image: url('bg-green-mobile.jpg');
+  background-repeat: no-repeat;
+  background-position: top;
+  background-size: cover;
+}
+
+.fourcoltiles .fourcoltiles-section.mask-1 {
+  mask-image: url('section-mask-1-desktop.svg');
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  mask-position: top;
+}
+
+.fourcoltiles .fourcoltiles-section.mask-2 {
+  mask-image: url('section-mask-2-desktop.svg');
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  mask-position: top;
+}
+
+.fourcoltiles .fourcoltiles-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.fourcoltiles .fourcoltiles-title,
+.fourcoltiles .fourcoltiles-subtitle {
+  margin: 0 auto;
+  text-align: center;
+}
+
+.fourcoltiles .fourcoltiles-subtitle {
+  max-width: 640px;
+  margin-top: 16px;
+}
+
+/*
+ * The track. scroll-padding keeps a snapped tile clear of the container edge,
+ * and the negative margin lets tiles bleed to the viewport edge on mobile so the
+ * peek of the next tile reads as intentional.
+ */
+.fourcoltiles .fourcoltiles-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc(100% / 1.1);
+  gap: 16px;
+  margin: 40px -24px 0;
+  padding: 0 24px;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 24px;
+  align-items: stretch;
+
+  /* Hide the scrollbar; the dots are the affordance. */
+  scrollbar-width: none;
+}
+
+.fourcoltiles .fourcoltiles-track::-webkit-scrollbar {
+  display: none;
+}
+
+.fourcoltiles .fourcoltiles-item {
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+}
+
+.fourcoltiles .fourcoltiles-item-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.fourcoltiles .fourcoltiles-item-name {
+  flex: 1;
+  padding-top: 16px;
+  text-align: center;
+}
+
+.fourcoltiles .fourcoltiles-item-name h4 {
+  margin: 0;
+}
+
+/* dots */
+.fourcoltiles .fourcoltiles-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.fourcoltiles .fourcoltiles-dot {
+  width: 10px;
+  height: 10px;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  background-color: var(--rb-dark-beige);
+  cursor: pointer;
+}
+
+.fourcoltiles .fourcoltiles-dot.active {
+  background-color: var(--rb-dark-green);
+}
+
+.fourcoltiles .fourcoltiles-dot:focus-visible {
+  outline: 2px solid var(--rb-dark-green);
+  outline-offset: 2px;
+}
+
+/* CTA - same treatment as the primarybutton block */
+.fourcoltiles .fourcoltiles-cta {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.fourcoltiles .fourcoltiles-cta-shape {
+  display: inline-block;
+  width: 220px;
+  text-align: center;
+  cursor: pointer;
+  mask-image: url('../primarybutton/button-shape.svg');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.fourcoltiles .fourcoltiles-cta-shape a,
+.fourcoltiles .fourcoltiles-cta-shape span {
+  display: inline-block;
+  width: 100%;
+  padding: 16px 0;
+  font-family: var(--heading-font-family-alt);
+  font-size: 18px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.fourcoltiles .fourcoltiles-cta-shape.green {
+  background-color: var(--rb-mid-green);
+}
+
+.fourcoltiles .fourcoltiles-cta-shape.green a,
+.fourcoltiles .fourcoltiles-cta-shape.green span {
+  color: var(--rb-light-beige);
+}
+
+.fourcoltiles .fourcoltiles-cta-shape.yellow {
+  background-color: var(--rb-yellow);
+}
+
+.fourcoltiles .fourcoltiles-cta-shape.yellow a,
+.fourcoltiles .fourcoltiles-cta-shape.yellow span {
+  color: var(--rb-dark-green);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fourcoltiles .fourcoltiles-cta-shape.green:hover {
+    background-color: var(--rb-bright-green);
+  }
+
+  .fourcoltiles .fourcoltiles-cta-shape.yellow:hover {
+    background-color: var(--rb-light-yellow);
+  }
+}
+
+/* Authoring-only affordance. */
+.fourcoltiles .fourcoltiles-placeholder {
+  margin: 0;
+  border: 1px dashed var(--rb-brown);
+  padding: 12px 16px;
+  color: var(--rb-mid-green);
+  text-align: center;
+}
+
+/* 2 tiles from the source's 767px breakpoint */
+@media (width >= 768px) {
+  .fourcoltiles .fourcoltiles-track {
+    grid-auto-columns: calc((100% - 16px) / 2);
+  }
+}
+
+/* 4 tiles, and the desktop section metrics, from the source's 992px breakpoint */
+@media (width >= 992px) {
+  .fourcoltiles .fourcoltiles-section {
+    margin-top: -70px;
+    padding: 120px 0 140px;
+    background-image: url('bg-green-desktop.jpg');
+    background-position: bottom;
+  }
+
+  .fourcoltiles .fourcoltiles-inner {
+    padding: 0 32px;
+  }
+
+  .fourcoltiles .fourcoltiles-track {
+    grid-auto-columns: calc((100% - 48px) / 4);
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-left: 0;
+  }
+
+  /* Four or fewer tiles all fit, so there is nothing to scroll to. */
+  .fourcoltiles .fourcoltiles-track:not(:has(> :nth-child(5))) {
+    overflow-x: visible;
+  }
+}
