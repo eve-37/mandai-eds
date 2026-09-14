@@ -118,52 +118,62 @@ Six multifield components become container blocks (parent definition + `"filter"
 | ✅ EDS repo | `mandai-eds/` — cloned from `adobe-rnd/aem-boilerplate-xwalk`, git history removed, re-initialised, pristine scaffold committed. |
 | ✅ Toolchain verified | `npm run build:json` regenerates the root JSON byte-identically (clean `git status`); `npm run lint` passes (eslint + stylelint). |
 | ✅ AGENTS.md | Both scaffolds ship their own; a "Mandai project specifics" section was **appended** to each, never overwritten. `CLAUDE.md` in both already points at `AGENTS.md`. |
-| ⬜ GitHub | Blocked on interactive auth — see the runbook below. |
+| ✅ GitHub repos | `eve-37/mandai-eds` and `eve-37/mandai-aem-cloud`, both private, pushed. The `Build` workflow (lint) passes on `main`. |
+| ✅ fstab | Points at `author-p144127-e1488012` with the `eve-37/mandai-eds` delivery path. |
+| ⬜ Code Sync | Not yet installed — the site is unregistered. See below. |
+| ⬜ UE site | Not yet created in AEM. |
+
+### Environment
+
+| | |
+|---|---|
+| EDS repo | `eve-37/mandai-eds` (private) |
+| AEM project repo | `eve-37/mandai-aem-cloud` (private) |
+| AEM author | `https://author-p144127-e1488012.adobeaemcloud.com` — program 144127, env 1488012 |
+| Preview | `https://main--mandai-eds--eve-37.aem.page/` |
+| Live | `https://main--mandai-eds--eve-37.aem.live/` |
+
+Owner is a **personal account**. Moving the repos to `MandaiWildlifeReserves` later changes the
+`aem.page` URL, so settle that before anyone bookmarks or shares links.
 
 ### GitHub runbook
 
-Owner: **personal account** (repos can move to the `MandaiWildlifeReserves` org later, but the
-`aem.page` URL changes when they do, so decide before anyone bookmarks it).
+Two environment facts worth keeping, because both cost time to rediscover:
 
-`gh` has two accounts, `eve-37` (active) and `eveseow`, and **both keyring tokens are invalid**. SSH is
-also unusable from the agent sandbox — `github.com` does not resolve over SSH there, while HTTPS to the
-API works — so remotes must be **HTTPS**, not `git@github.com`.
+- **The agent sandbox blocks Keychain access**, so `gh` reports "the token in keyring is invalid" and
+  TLS failures (`x509: OSStatus -26276`) even when auth is perfectly fine. Every `gh` and `git push`
+  call has to run with the sandbox disabled. A human terminal is unaffected.
+- **SSH does not resolve from the sandbox**, so remotes are **HTTPS**, not `git@github.com`.
 
-Step 1, in a human terminal (interactive, cannot be automated):
+The boilerplate's `cleanup-on-create` workflow **did not fire** — it triggers on branch *creation*,
+which does not happen when pushing an existing history into a new repo. Its work was done by hand:
+`{repo}`/`{owner}` substituted in `README.md`, `AGENTS.md` and the PR template, and the workflow plus
+`.renovaterc.json` removed. Nothing further is owed here.
+
+### Remaining steps, both browser-only
+
+**1. Install aem-code-sync** on `eve-37/mandai-eds`: <https://github.com/apps/aem-code-sync/installations/new>
+
+Until then the site is unregistered and every URL 404s with `x-error: Missing configuration (404)` —
+which is the config service saying it has no record of the site, not a content or code problem. Confirm
+it worked with:
 
 ```bash
-gh auth logout -h github.com -u eve-37
-gh auth logout -h github.com -u eveseow
-gh auth login            # choose HTTPS, authenticate in browser
+curl -s -o /dev/null -w '%{http_code}\n' \
+  "https://main--mandai-eds--eve-37.aem.page/blocks/cards/cards.js"     # expect 200
 ```
 
-`gh auth login` rather than `gh auth refresh`, so both stale keyring entries are cleared instead of
-re-authenticating into the same broken state.
+**2. Create the Universal Editor site** in AEM on `author-p144127-e1488012`, via the Sites wizard.
 
-Step 2, once that succeeds:
+Then check the content source in the config service at
+<https://tools.aem.live/tools/site-admin/index.html>. Two traps:
 
-```bash
-OWNER=$(gh api user --jq .login)
-gh repo create "$OWNER/mandai-eds"       --private --source=mandai-eds       --remote=origin --push
-gh repo create "$OWNER/mandai-aem-cloud" --private --source=mandai-aem-cloud --remote=origin --push
-```
-
-On first push the boilerplate's `cleanup-on-create` workflow substitutes `{repo}` / `{owner}` in
-`README.md`, `AGENTS.md` and `.github/pull_request_template.md`, then deletes itself. If it does not
-fire, run it manually with `gh workflow run cleanup-on-create.yaml` or substitute the placeholders by
-hand — they are cosmetic, not load-bearing.
-
-Step 3 — install the **aem-code-sync** GitHub App on `mandai-eds` (browser only):
-<https://github.com/apps/aem-code-sync/installations/new>
-
-Step 4 — create the Universal Editor site in AEM against the existing AEMaaCS environment, then point
-`fstab.yaml` at it. The boilerplate currently points at Adobe's own author instance:
-
-```yaml
-url: "https://author-p130360-e1272151.adobeaemcloud.com/bin/franklin.delivery/adobe-rnd/aem-boilerplate-xwalk/main"
-```
-
-which must become `https://author-p<program>-e<env>.adobeaemcloud.com/bin/franklin.delivery/<owner>/mandai-eds/main`.
+- Once Code Sync registers the site, **`fstab.yaml` stops being consulted** — the config service holds
+  the content source from then on, and a correct-looking fstab proves nothing.
+- A content source pointing at `api.aem.live/<org>/sites/<site>/source` is **circular**. It should be
+  `https://author-p144127-e1488012.adobeaemcloud.com/bin/franklin.delivery/eve-37/mandai-eds/main`.
+  AEM reports preview as successful even when the fetch behind it failed, so read the `x-error` header
+  rather than trusting the success message.
 
 Two traps worth knowing before debugging anything here:
 
