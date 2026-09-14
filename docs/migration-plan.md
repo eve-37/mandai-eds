@@ -120,8 +120,13 @@ Six multifield components become container blocks (parent definition + `"filter"
 | ✅ AGENTS.md | Both scaffolds ship their own; a "Mandai project specifics" section was **appended** to each, never overwritten. `CLAUDE.md` in both already points at `AGENTS.md`. |
 | ✅ GitHub repos | `eve-37/mandai-eds` and `eve-37/mandai-aem-cloud`, both private, pushed. The `Build` workflow (lint) passes on `main`. |
 | ✅ fstab | Points at `author-p144127-e1488012` with the `eve-37/mandai-eds` delivery path. |
-| ⬜ Code Sync | Not yet installed — the site is unregistered. See below. |
-| ⬜ UE site | Not yet created in AEM. |
+| ✅ Code Sync | Installed on `eve-37/mandai-eds`. Verified: the served `styles/styles.css` hashes identical to local. |
+| ✅ UE site | Created via the Sites wizard against the existing repo, and published. `/`, `/nav`, `/footer` all 200; preview and live both 200. |
+
+Phase 0 is complete — the loop is proven end to end, from a local edit through Code Sync to the CDN.
+
+The site currently holds the boilerplate's sample content (hero, columns, cards). Useful as a control:
+if a block ever misbehaves, check whether the stock blocks still render before suspecting the pipeline.
 
 ### Environment
 

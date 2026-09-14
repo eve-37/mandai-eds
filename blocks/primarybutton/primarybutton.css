@@ -1,0 +1,105 @@
+/*
+ * Primary Button
+ *
+ * Ported from rb-aem-react-app/src/components/PrimaryButton/PrimaryButton.scss.
+ *
+ * The torn edge is the whole point of this button: the element is masked with
+ * an SVG rather than given a border-radius. All four source SVGs
+ * (Button-{Green,Yellow}-{Default,Hover}.svg) turned out to have IDENTICAL
+ * geometry and differ only in fill, and fill is irrelevant to a mask - so one
+ * file, button-shape.svg, serves every variant and state. The colour comes from
+ * background-color underneath.
+ *
+ * Two deliberate departures from the source:
+ *
+ *  - The source markup wraps the primary button in `.rb-btn-secondary-container`,
+ *    which is a copy-paste slip in PrimaryButton.js - it pulls the SECONDARY
+ *    button's container width. Renamed here rather than reproduced.
+ *  - The source hardcodes #187432 for the button green while the brand variable
+ *    $rb-mid-green is #177432. This uses the token. Worth confirming with whoever
+ *    owns the brand which of the two is correct.
+ *
+ * The `data-analytics` JSON blob the React component emitted is NOT ported. It
+ * targets the old `wrs` data layer, which does not exist on this site, and EDS
+ * ships its own RUM collection. Re-add deliberately if that data layer is
+ * actually being carried over.
+ */
+
+.primarybutton .primarybutton-container {
+  width: 100%;
+}
+
+.primarybutton .primarybutton-container.left { text-align: left; }
+.primarybutton .primarybutton-container.center { text-align: center; }
+.primarybutton .primarybutton-container.right { text-align: right; }
+
+.primarybutton .primarybutton-shape {
+  display: inline-block;
+  width: 220px;
+  text-align: center;
+  cursor: pointer;
+  mask-image: url('button-shape.svg');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.primarybutton .primarybutton-shape a,
+.primarybutton .primarybutton-shape span {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  padding: 16px 0;
+  font-family: var(--heading-font-family-alt);
+  font-size: 18px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* green - the default variant */
+.primarybutton .primarybutton-shape.green {
+  background-color: var(--rb-mid-green);
+}
+
+.primarybutton .primarybutton-shape.green a,
+.primarybutton .primarybutton-shape.green span {
+  color: var(--rb-light-beige);
+}
+
+/* yellow */
+.primarybutton .primarybutton-shape.yellow {
+  background-color: var(--rb-yellow);
+}
+
+.primarybutton .primarybutton-shape.yellow a,
+.primarybutton .primarybutton-shape.yellow span {
+  color: var(--rb-dark-green);
+}
+
+/*
+ * Hover only where hover genuinely exists, as the source does - otherwise the
+ * state sticks after a tap on touch devices.
+ */
+@media (hover: hover) and (pointer: fine) {
+  .primarybutton .primarybutton-shape.green:hover {
+    background-color: var(--rb-bright-green);
+  }
+
+  .primarybutton .primarybutton-shape.yellow:hover {
+    background-color: var(--rb-light-yellow);
+  }
+
+  .primarybutton .primarybutton-shape:hover a {
+    text-decoration: none;
+  }
+}
+
+/* Authoring-only affordance, so an unconfigured block can still be selected. */
+.primarybutton .primarybutton-placeholder {
+  margin: 0;
+  border: 1px dashed var(--rb-brown);
+  padding: 12px 16px;
+  color: var(--rb-mid-green);
+  font-size: var(--body-font-size-s);
+  text-align: center;
+}
