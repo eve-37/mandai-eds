@@ -63,7 +63,9 @@
         "onecolbanner",
         "onecolnews",
         "masthead",
-        "onecolbannercarousel"
+        "onecolbannercarousel",
+        "rbtabs",
+        "missions"
       ]
     }
   ]

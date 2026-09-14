@@ -27,7 +27,9 @@
       "onecolbanner",
       "onecolnews",
       "masthead",
-      "onecolbannercarousel"
+      "onecolbannercarousel",
+      "rbtabs",
+      "missions"
     ]
   },
   {
@@ -58,9 +60,27 @@
     ]
   },
   {
+    "id": "missions",
+    "components": [
+      "mission"
+    ]
+  },
+  {
     "id": "onecolbannercarousel",
     "components": [
       "banner"
+    ]
+  },
+  {
+    "id": "rbtabs",
+    "components": [
+      "rbtab"
+    ]
+  },
+  {
+    "id": "rbtab",
+    "components": [
+      "rbtabtile"
     ]
   },
   {

@@ -219,6 +219,37 @@
           }
         },
         {
+          "title": "Missions",
+          "id": "missions",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block",
+                "template": {
+                  "name": "Missions",
+                  "model": "missions",
+                  "filter": "missions"
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "Mission",
+          "id": "mission",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block/item",
+                "template": {
+                  "name": "Mission",
+                  "model": "mission"
+                }
+              }
+            }
+          }
+        },
+        {
           "title": "One Column Banner Carousel",
           "id": "onecolbannercarousel",
           "plugins": {
@@ -334,6 +365,53 @@
                 "template": {
                   "name": "Sub Header",
                   "model": "subheader"
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "Tabs",
+          "id": "rbtabs",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block",
+                "template": {
+                  "name": "Tabs",
+                  "model": "rbtabs",
+                  "filter": "rbtabs"
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "Tab",
+          "id": "rbtab",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block/item",
+                "template": {
+                  "name": "Tab",
+                  "model": "rbtab",
+                  "filter": "rbtab"
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "Tab Tile",
+          "id": "rbtabtile",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block/item",
+                "template": {
+                  "name": "Tab Tile",
+                  "model": "rbtabtile"
                 }
               }
             }

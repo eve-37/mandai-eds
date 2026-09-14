@@ -371,6 +371,217 @@
     ]
   },
   {
+    "id": "missions",
+    "fields": [
+      {
+        "component": "text",
+        "name": "content_title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "content_desc",
+        "label": "Description",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "content_mask",
+        "label": "Border Pattern Type",
+        "valueType": "string",
+        "value": "mask-1",
+        "options": [
+          {
+            "name": "Pattern 1",
+            "value": "mask-1"
+          },
+          {
+            "name": "Pattern 2",
+            "value": "mask-2"
+          }
+        ]
+      },
+      {
+        "component": "reference",
+        "name": "image",
+        "label": "Banner Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "imageAlt",
+        "label": "Banner Image Alt",
+        "valueType": "string"
+      },
+      {
+        "component": "aem-content",
+        "name": "cta_link",
+        "label": "CTA URL",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "cta_linkText",
+        "label": "CTA Name",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "cta_variant",
+        "label": "CTA Color Type",
+        "valueType": "string",
+        "value": "green",
+        "options": [
+          {
+            "name": "Green",
+            "value": "green"
+          },
+          {
+            "name": "Yellow",
+            "value": "yellow"
+          }
+        ]
+      },
+      {
+        "component": "boolean",
+        "name": "cta_newTab",
+        "label": "Open CTA in new tab",
+        "valueType": "boolean"
+      },
+      {
+        "component": "aem-content",
+        "name": "detail_link",
+        "label": "Detailed CTA URL",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "detail_linkText",
+        "label": "Detailed CTA Name",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "detail_variant",
+        "label": "Detailed CTA Color Type",
+        "valueType": "string",
+        "value": "green",
+        "options": [
+          {
+            "name": "Green",
+            "value": "green"
+          },
+          {
+            "name": "Yellow",
+            "value": "yellow"
+          }
+        ]
+      },
+      {
+        "component": "boolean",
+        "name": "detail_newTab",
+        "label": "Open Detailed CTA in new tab",
+        "valueType": "boolean"
+      }
+    ]
+  },
+  {
+    "id": "mission",
+    "fields": [
+      {
+        "component": "text",
+        "name": "content_title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "content_daterange",
+        "label": "Date Range",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "content_location",
+        "label": "Location",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "content_desc",
+        "label": "Description",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "image",
+        "label": "Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "imageAlt",
+        "label": "Image Alt",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "logos_1",
+        "label": "Logo 1",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "logos_1Alt",
+        "label": "Logo 1 Alt",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "logos_2",
+        "label": "Logo 2",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "logos_2Alt",
+        "label": "Logo 2 Alt",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "logos_3",
+        "label": "Logo 3",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "logos_3Alt",
+        "label": "Logo 3 Alt",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "logos_4",
+        "label": "Logo 4",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "logos_4Alt",
+        "label": "Logo 4 Alt",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
     "id": "onecolbannercarousel",
     "fields": []
   },
@@ -868,6 +1079,113 @@
         "label": "Background (mobile)",
         "multi": false,
         "valueType": "string"
+      }
+    ]
+  },
+  {
+    "id": "rbtabs",
+    "fields": []
+  },
+  {
+    "id": "rbtab",
+    "fields": [
+      {
+        "component": "text",
+        "name": "content_tabName",
+        "label": "Tab Name",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "content_title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "aem-content",
+        "name": "cta_link",
+        "label": "CTA URL",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "cta_linkText",
+        "label": "CTA Name",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "cta_variant",
+        "label": "CTA Color Type",
+        "valueType": "string",
+        "value": "green",
+        "options": [
+          {
+            "name": "Green",
+            "value": "green"
+          },
+          {
+            "name": "Yellow",
+            "value": "yellow"
+          }
+        ]
+      },
+      {
+        "component": "boolean",
+        "name": "cta_newTab",
+        "label": "Open CTA in new tab",
+        "valueType": "boolean"
+      }
+    ]
+  },
+  {
+    "id": "rbtabtile",
+    "fields": [
+      {
+        "component": "text",
+        "name": "content_title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "content_desc",
+        "label": "Description",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "image",
+        "label": "Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "imageAlt",
+        "label": "Image Alt",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "align",
+        "label": "Text Align",
+        "valueType": "string",
+        "value": "left",
+        "options": [
+          {
+            "name": "Left",
+            "value": "left"
+          },
+          {
+            "name": "Center",
+            "value": "center"
+          },
+          {
+            "name": "Right",
+            "value": "right"
+          }
+        ]
       }
     ]
   },

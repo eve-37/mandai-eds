@@ -1,0 +1,123 @@
+/*
+ * Missions
+ *
+ * Ported from rb-aem-react-app/src/components/Missions/.
+ *
+ * The largest component in the set: 29 dialog fields, which become 13 parent
+ * fields in four cells and 14 child fields in three. Two separate CTA groups
+ * (cta_ and detail_) are what forced the grouping to be this aggressive.
+ *
+ * The source rendered the info panel TWICE - once desktop-only, once
+ * mobile-only, via Bootstrap d-none/d-lg-block - so the same title, copy and
+ * CTA existed twice in the DOM. Screen readers read both. Here it is written
+ * once and CSS grid moves it.
+ *
+ * The expand/collapse toggle is kept but is a real button with aria-expanded
+ * and aria-controls, rather than a div with an onClick handler.
+ *
+ * Section band and CTA are shared - styles/styles.css.
+ */
+
+.missions .missions-head {
+  display: grid;
+  gap: 24px;
+}
+
+.missions .missions-info h3 {
+  margin: 0;
+}
+
+.missions .missions-info p {
+  margin: 16px 0 24px;
+}
+
+.missions .missions-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.missions .missions-toggle {
+  display: block;
+  margin: 32px auto 0;
+  border: 0;
+  padding: 8px 0;
+  background: none;
+  color: var(--rb-dark-green);
+  font-family: var(--heading-font-family-alt);
+  font-size: var(--body-font-size-s);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.missions .missions-toggle:focus-visible {
+  outline: 2px solid var(--rb-dark-green);
+  outline-offset: 2px;
+}
+
+.missions .missions-list {
+  display: grid;
+  gap: 24px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.missions .missions-item {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.missions .missions-item-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.missions .missions-item-body h3 {
+  margin: 0;
+}
+
+.missions .missions-item-meta {
+  margin: 8px 0 0;
+  font-family: var(--heading-font-family-alt);
+  font-size: var(--body-font-size-s);
+}
+
+.missions .missions-item-logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.missions .missions-item-logos img {
+  max-height: 48px;
+  width: auto;
+}
+
+.missions .missions-detail-cta {
+  margin-top: 32px;
+  text-align: center;
+}
+
+@media (width >= 992px) {
+  .missions .missions-head {
+    grid-template-columns: 5fr 7fr;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .missions .missions-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .missions .missions-item {
+    flex-direction: row;
+  }
+
+  .missions .missions-item-media {
+    flex: 0 0 40%;
+  }
+}

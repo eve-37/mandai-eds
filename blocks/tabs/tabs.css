@@ -1,0 +1,86 @@
+/*
+ * Tabs
+ *
+ * Ported from rb-aem-react-app/src/components/Tabs/.
+ *
+ * The only component with NESTED containers: tabs -> tab -> tile. The DOM shape
+ * AEM emits for that has not been verified in the editor, so tabs.js accepts
+ * either plausible shape - see the note there, and simplify it once confirmed.
+ *
+ * Accessibility is upgraded rather than ported. The source used <li onClick>
+ * with an id of the array index, which is unreachable by keyboard and
+ * unannounced. This uses a real tablist: buttons with aria-selected, panels
+ * with aria-labelledby, and left/right arrow navigation.
+ */
+
+.tabs .tabs-nav-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  justify-content: center;
+}
+
+.tabs .tabs-nav-item {
+  border: 0;
+  border-radius: 2em;
+  padding: 8px 20px;
+  background-color: var(--rb-dark-beige);
+  color: var(--rb-dark-green);
+  font-family: var(--heading-font-family-alt);
+  font-size: var(--body-font-size-s);
+  cursor: pointer;
+}
+
+.tabs .tabs-nav-item.active {
+  background-color: var(--rb-mid-green);
+  color: var(--rb-light-beige);
+}
+
+.tabs .tabs-nav-item:focus-visible {
+  outline: 2px solid var(--rb-dark-green);
+  outline-offset: 2px;
+}
+
+.tabs .tabs-panel {
+  padding-top: 32px;
+}
+
+.tabs .tabs-panel-title {
+  margin: 0 0 24px;
+  text-align: center;
+}
+
+.tabs .tabs-tiles {
+  display: grid;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tabs .tabs-tile.align-center { text-align: center; }
+.tabs .tabs-tile.align-right { text-align: right; }
+
+.tabs .tabs-tile-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.tabs .tabs-tile h3 {
+  margin: 16px 0 0;
+}
+
+.tabs .tabs-panel-cta {
+  margin-top: 32px;
+  text-align: center;
+}
+
+@media (width >= 768px) {
+  .tabs .tabs-tiles {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
