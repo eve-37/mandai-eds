@@ -280,6 +280,33 @@ it up automatically — a new block needs no edit to anything in `models/`.
 `core/franklin/components/block/v1/block/item`, a model for the child, and a `filters` entry naming the
 accepted children.
 
+## Adding a block is TWO edits, not one
+
+Creating `blocks/<name>/_<name>.json` is not enough. A block that is defined but not listed in the
+**section filter** never appears in the Universal Editor's component palette, so an author simply
+cannot place it — and nothing anywhere reports an error. The definition is served correctly, the JS and
+CSS deploy fine, and the block is still unusable.
+
+So every new placeable block needs its id added to the `filters` array in **`models/_section.json`**,
+alongside `text`, `image`, `button` and the rest.
+
+Child components are the exception: `tile` and `testimony` stay out of the section filter, because they
+are reachable through their own container's filter (`fourcoltiles`, `testimonial`) and should not be
+placeable on their own.
+
+Check it before saying a block is done — this returns nothing when correct:
+
+```bash
+node -e "
+const f=require('./component-filters.json'), d=require('./component-definition.json');
+const sec=f.find(x=>x.id==='section').components;
+const children=new Set(f.flatMap(x=>['section','main'].includes(x.id)?[]:x.components));
+const missing=d.groups.flatMap(g=>g.components.map(c=>c.id))
+  .filter(id=>!sec.includes(id)&&!children.has(id)&&id!=='section');
+console.log(missing.length?'NOT PLACEABLE: '+missing.join(', '):'all blocks placeable');
+"
+```
+
 ## Block rules that bite
 
 - **Field order in the model is the contract.** Cells arrive positionally; `decorate()` has no property

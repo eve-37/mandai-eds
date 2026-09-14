@@ -50,7 +50,15 @@
         "hero",
         "cards",
         "columns",
-        "fragment"
+        "fragment",
+
+        "primarybutton",
+        "secondarybutton",
+        "imagesection",
+        "subheader",
+        "onecolfeature",
+        "fourcoltiles",
+        "testimonial"
       ]
     }
   ]
