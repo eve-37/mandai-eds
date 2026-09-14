@@ -1,0 +1,43 @@
+{
+  "definitions": [
+    {
+      "title": "One Column Banner Carousel",
+      "id": "onecolbannercarousel",
+      "plugins": { "xwalk": { "page": {
+        "resourceType": "core/franklin/components/block/v1/block",
+        "template": { "name": "One Column Banner Carousel", "model": "onecolbannercarousel", "filter": "onecolbannercarousel" }
+      } } }
+    },
+    {
+      "title": "Banner",
+      "id": "banner",
+      "plugins": { "xwalk": { "page": {
+        "resourceType": "core/franklin/components/block/v1/block/item",
+        "template": { "name": "Banner", "model": "banner" }
+      } } }
+    }
+  ],
+  "models": [
+    { "id": "onecolbannercarousel", "fields": [] },
+    {
+      "id": "banner",
+      "fields": [
+        { "component": "text", "name": "content_title", "label": "Title", "valueType": "string" },
+        { "component": "text", "name": "content_desc", "label": "Description", "valueType": "string" },
+        { "component": "reference", "name": "bg_desktop", "label": "Background (desktop)", "multi": false, "valueType": "string" },
+        { "component": "reference", "name": "bg_mobile", "label": "Background (mobile)", "multi": false, "valueType": "string" },
+        { "component": "aem-content", "name": "cta_link", "label": "CTA URL", "valueType": "string" },
+        { "component": "text", "name": "cta_linkText", "label": "CTA Name", "valueType": "string" },
+        { "component": "select", "name": "cta_variant", "label": "CTA Color Type", "valueType": "string", "value": "green",
+          "options": [ { "name": "Green", "value": "green" }, { "name": "Yellow", "value": "yellow" } ] },
+        { "component": "boolean", "name": "cta_newTab", "label": "Open CTA in new tab", "valueType": "boolean" },
+        { "component": "select", "name": "style_mask", "label": "Border Pattern Type", "valueType": "string", "value": "mask-1",
+          "options": [ { "name": "Pattern 1", "value": "mask-1" }, { "name": "Pattern 2", "value": "mask-2" } ] },
+        { "component": "select", "name": "style_align", "label": "Text Align", "valueType": "string", "value": "left",
+          "options": [ { "name": "Left", "value": "left" }, { "name": "Center", "value": "center" }, { "name": "Right", "value": "right" } ] },
+        { "component": "boolean", "name": "style_gradient", "label": "Gradient overlay", "valueType": "boolean" }
+      ]
+    }
+  ],
+  "filters": [ { "id": "onecolbannercarousel", "components": [ "banner" ] } ]
+}

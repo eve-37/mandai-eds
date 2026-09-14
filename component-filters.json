@@ -25,7 +25,9 @@
       "testimonial",
       "threecoltiles",
       "onecolbanner",
-      "onecolnews"
+      "onecolnews",
+      "masthead",
+      "onecolbannercarousel"
     ]
   },
   {
@@ -53,6 +55,12 @@
     "id": "fourcoltiles",
     "components": [
       "tile"
+    ]
+  },
+  {
+    "id": "onecolbannercarousel",
+    "components": [
+      "banner"
     ]
   },
   {
