@@ -10,63 +10,131 @@
  * governing permissions and limitations under the License.
  */
 
+/*
+ * Mandai design tokens, ported from the Ranger Buddies brand at
+ * Mandai-AEM/rb-aem/rb-aem-react-app/src/scss/{Variables,Base}.scss.
+ *
+ * The boilerplate's own token NAMES are kept (--background-color, --text-color,
+ * --body-font-family, --heading-font-size-*, ...) because scripts/aem.js and the
+ * stock blocks reference them. Renaming them would silently break cards, columns,
+ * hero, header and footer. Brand values are exposed as --rb-* alongside, so a
+ * block can reach for a specific brand colour when the semantic token is wrong.
+ */
+
 :root {
-  /* colors */
-  --background-color: white;
-  --light-color: #f8f8f8;
-  --dark-color: #505050;
-  --text-color: #131313;
-  --link-color: #3b63fb;
-  --link-hover-color: #1d3ecf;
+  /* brand palette - the raw values, straight from scss/Variables.scss */
+  --rb-light-beige: #ece5d6;
+  --rb-dark-beige: #ded3b7;
+  --rb-brown: #cfb78b;
+  --rb-bright-green: #30a249;
+  --rb-mid-green: #177432;
+  --rb-dark-green: #00441f;
+  --rb-yellow: #ffc907;
+  --rb-light-yellow: #ffdf7d;
+  --rb-white: #fff;
+
+  /* semantic colours - what the boilerplate and blocks actually consume */
+  --background-color: var(--rb-light-beige);
+  --light-color: var(--rb-dark-beige);
+  --dark-color: var(--rb-dark-green);
+  --text-color: var(--rb-dark-green);
+  --link-color: var(--rb-mid-green);
+  --link-hover-color: var(--rb-bright-green);
 
   /* fonts */
-  --body-font-family: roboto, roboto-fallback, sans-serif;
-  --heading-font-family: roboto-condensed, roboto-condensed-fallback, sans-serif;
+  --body-font-family: nunito, nunito-fallback, helvetica, arial, sans-serif;
+  --heading-font-family: arco, arco-fallback, helvetica, arial, sans-serif;
 
-  /* body sizes */
-  --body-font-size-m: 22px;
-  --body-font-size-s: 19px;
-  --body-font-size-xs: 17px;
+  /*
+   * h3-h6 use Nunito ExtraBold rather than the display face. Base.scss splits
+   * headings this way: h1/h2 Arco, h3/h4 Nunito ExtraBold.
+   */
+  --heading-font-family-alt: nunito-extrabold, nunito-fallback, helvetica, arial, sans-serif;
 
-  /* heading sizes */
-  --heading-font-size-xxl: 55px;
-  --heading-font-size-xl: 44px;
-  --heading-font-size-l: 34px;
-  --heading-font-size-m: 27px;
-  --heading-font-size-s: 24px;
-  --heading-font-size-xs: 22px;
+  /*
+   * Body sizes. Defaults are the MOBILE values and the media query below scales
+   * up - the source SCSS was written the other way round (desktop default,
+   * max-width override), so these are inverted deliberately.
+   */
+  --body-font-size-m: 1.125rem;   /* p / .body-text-1 */
+  --body-font-size-s: 1rem;       /* .body-text-2, larger on mobile than desktop */
+  --body-font-size-xs: 0.875rem;
+
+  /* heading sizes - mobile */
+  --heading-font-size-xxl: 2.25rem;
+  --heading-font-size-xl: 2rem;
+  --heading-font-size-l: 1.75rem;
+  --heading-font-size-m: 1.5rem;
+  --heading-font-size-s: 1.25rem;
+  --heading-font-size-xs: 1.125rem;
+
+  /* heading line heights - mobile. The source gives explicit pairs, not a ratio. */
+  --heading-line-height-xxl: 2.813rem;
+  --heading-line-height-xl: 2.25rem;
+  --heading-line-height-l: 2.188rem;
+  --heading-line-height-m: 1.875rem;
+  --heading-line-height-s: 1.5rem;
+  --heading-line-height-xs: 1.4rem;
+  --body-line-height: 24px;
 
   /* nav height */
-  --nav-height: 64px;
+  --nav-height: 75px;
 }
 
-/* fallback fonts */
+/*
+ * Breakpoints, for reference. These CANNOT be tokens: a custom property is not
+ * allowed in a media query condition, so every media query below hardcodes the
+ * value. Keep the two in step by hand.
+ *
+ *   smallest-mobile   320px      md (main)        992px
+ *   small-mobile      374px      tablet-landscape 1024px
+ *   xs                480px      lg              1200px
+ *   sm                768px      design          1440px
+ *
+ * 992px is the one that matters - it is the only breakpoint Base.scss uses.
+ * Note this differs from the boilerplate's stock 900px.
+ */
+
+/*
+ * Fallback faces, to limit layout shift while the webfont loads.
+ *
+ * size-adjust is NOT set because the correct percentage has to be measured
+ * against the real font metrics, and a guessed value causes the shift it is
+ * meant to prevent. To set them properly, compare the fallback's cap height and
+ * avg char width against Nunito/Arco (for example via
+ * https://screenspan.net/fallback) and add `size-adjust: <n>%` here.
+ */
 @font-face {
-  font-family: roboto-condensed-fallback;
-  size-adjust: 88.82%;
-  src: local('Arial');
+  font-family: nunito-fallback;
+  src: local('Helvetica'), local('Arial');
 }
 
 @font-face {
-  font-family: roboto-fallback;
-  size-adjust: 99.529%;
-  src: local('Arial');
+  font-family: arco-fallback;
+  src: local('Helvetica'), local('Arial');
 }
 
-@media (width >= 900px) {
+@media (width >= 992px) {
   :root {
-    /* body sizes */
-    --body-font-size-m: 18px;
-    --body-font-size-s: 16px;
-    --body-font-size-xs: 14px;
+    /* body sizes - desktop. body-text-2 gets SMALLER here, per Base.scss. */
+    --body-font-size-s: 0.875rem;
+    --body-font-size-xs: 0.75rem;
 
-    /* heading sizes */
-    --heading-font-size-xxl: 45px;
-    --heading-font-size-xl: 36px;
-    --heading-font-size-l: 28px;
-    --heading-font-size-m: 22px;
-    --heading-font-size-s: 20px;
-    --heading-font-size-xs: 18px;
+    /* heading sizes - desktop */
+    --heading-font-size-xxl: 3.125rem;
+    --heading-font-size-xl: 2.75rem;
+    --heading-font-size-l: 2.375rem;
+    --heading-font-size-m: 1.625rem;
+    --heading-font-size-s: 1.375rem;
+    --heading-font-size-xs: 1.25rem;
+
+    /* heading line heights - desktop */
+    --heading-line-height-xxl: 3.875rem;
+    --heading-line-height-xl: 3.25rem;
+    --heading-line-height-l: 3.125rem;
+    --heading-line-height-m: 1.875rem;
+    --heading-line-height-s: 1.625rem;
+    --heading-line-height-xs: 1.5rem;
   }
 }
 
@@ -78,10 +146,23 @@ body {
   font-family: var(--body-font-family);
   font-size: var(--body-font-size-m);
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
 body.appear {
   display: block;
+}
+
+/*
+ * Scroll lock, used by the header's mobile menu and any modal. Ported from
+ * Base.scss `body.no-scroll`, minus its `padding-right: 0 !important`, which
+ * was undoing a scrollbar-compensation the SPA shell applied and has no
+ * equivalent here.
+ */
+body.no-scroll {
+  width: 100%;
+  position: sticky;
+  overflow: hidden;
 }
 
 header {
@@ -106,18 +187,52 @@ h5,
 h6 {
   margin-top: 0.8em;
   margin-bottom: 0.25em;
-  font-family: var(--heading-font-family);
-  font-weight: 600;
-  line-height: 1.25;
+  font-weight: 700;
   scroll-margin: 40px;
 }
 
-h1 { font-size: var(--heading-font-size-xxl); }
-h2 { font-size: var(--heading-font-size-xl); }
-h3 { font-size: var(--heading-font-size-l); }
-h4 { font-size: var(--heading-font-size-m); }
-h5 { font-size: var(--heading-font-size-s); }
-h6 { font-size: var(--heading-font-size-xs); }
+/* Display face for the two largest headings only. */
+h1,
+h2 {
+  font-family: var(--heading-font-family);
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--heading-font-family-alt);
+}
+
+h1 {
+  font-size: var(--heading-font-size-xxl);
+  line-height: var(--heading-line-height-xxl);
+}
+
+h2 {
+  font-size: var(--heading-font-size-xl);
+  line-height: var(--heading-line-height-xl);
+}
+
+h3 {
+  font-size: var(--heading-font-size-l);
+  line-height: var(--heading-line-height-l);
+}
+
+h4 {
+  font-size: var(--heading-font-size-m);
+  line-height: var(--heading-line-height-m);
+}
+
+h5 {
+  font-size: var(--heading-font-size-s);
+  line-height: var(--heading-line-height-s);
+}
+
+h6 {
+  font-size: var(--heading-font-size-xs);
+  line-height: var(--heading-line-height-xs);
+}
 
 p,
 dl,
@@ -127,6 +242,27 @@ pre,
 blockquote {
   margin-top: 0.8em;
   margin-bottom: 0.25em;
+}
+
+p {
+  font-size: var(--body-font-size-m);
+  line-height: var(--body-line-height);
+}
+
+/*
+ * Body text utilities carried over from Base.scss. Blocks ported from the React
+ * components reference these class names, so they stay available globally.
+ */
+.body-text-1,
+.body-text-1 p {
+  font-size: var(--body-font-size-m);
+  line-height: var(--body-line-height);
+}
+
+.body-text-2,
+.body-text-2 p {
+  font-size: var(--body-font-size-s);
+  line-height: var(--body-line-height);
 }
 
 code,
@@ -156,16 +292,31 @@ button {
 /* links */
 a:any-link {
   color: var(--link-color);
-  text-decoration: none;
+  text-decoration: underline;
   overflow-wrap: break-word;
 }
 
-a:hover {
-  color: var(--link-hover-color);
-  text-decoration: underline;
+/*
+ * Hover styling only where hover actually exists. Base.scss guards every hover
+ * this way; on touch it otherwise sticks after a tap.
+ */
+@media (hover: hover) and (pointer: fine) {
+  a:hover {
+    color: var(--link-hover-color);
+    text-decoration: underline;
+  }
 }
 
-/* buttons */
+/*
+ * Buttons.
+ *
+ * These are the boilerplate's generic buttons, recoloured to the brand. They are
+ * NOT the Ranger Buddies button treatment: the real one masks the element with
+ * an SVG (assets/images/button/Button-Green-Default.svg) to give it a torn
+ * edge, and is a fixed 220px / 140px wide. That belongs in the primarybutton and
+ * secondarybutton blocks, together with the SVG, rather than in global CSS -
+ * default content links styled as buttons should not inherit a masked shape.
+ */
 p.button-wrapper {
   margin: 12px 0;
 }
@@ -181,8 +332,9 @@ button.button {
   border: 2px solid transparent;
   border-radius: 2.4em;
   padding: 0.5em 1.2em;
-  font: inherit;
-  font-weight: 500;
+  font-family: var(--heading-font-family-alt);
+  font-size: var(--body-font-size-m);
+  font-weight: 700;
   line-height: 1.25;
   text-decoration: none;
   cursor: pointer;
@@ -199,83 +351,93 @@ button.button:disabled {
 
 a.button.primary,
 button.button.primary {
-  border-color: var(--text-color);
-  background-color: var(--text-color);
-  color: var(--background-color);
+  border-color: var(--rb-mid-green);
+  background-color: var(--rb-mid-green);
+  color: var(--rb-light-beige);
 }
 
-a.button.primary:hover,
+@media (hover: hover) and (pointer: fine) {
+  a.button.primary:hover,
+  button.button.primary:hover {
+    border-color: var(--rb-bright-green);
+    background-color: var(--rb-bright-green);
+    color: var(--rb-light-beige);
+  }
+}
+
 a.button.primary:focus-visible,
-button.button.primary:hover,
 button.button.primary:focus-visible {
-  border-color: var(--dark-color);
-  background-color: var(--dark-color);
-  color: var(--light-color);
+  border-color: var(--rb-bright-green);
+  background-color: var(--rb-bright-green);
+  color: var(--rb-light-beige);
 }
 
 a.button.primary[aria-disabled="true"],
-a.button.primary[aria-disabled="true"]:hover,
-a.button.primary[aria-disabled="true"]:focus-visible,
-button.button.primary:disabled,
-button.button.primary:disabled:hover,
-button.button.primary:disabled:focus-visible {
-  background-color: var(--light-color);
-  border-color: var(--light-color);
-  color: var(--dark-color);
+button.button.primary:disabled {
+  background-color: var(--rb-dark-beige);
+  border-color: var(--rb-dark-beige);
+  color: var(--rb-brown);
 }
 
 a.button.secondary,
 button.button.secondary {
-  border-color: var(--text-color);
+  border-color: var(--rb-mid-green);
   background-color: transparent;
-  color: var(--text-color);
+  color: var(--rb-mid-green);
 }
 
-a.button.secondary:hover,
+@media (hover: hover) and (pointer: fine) {
+  a.button.secondary:hover,
+  button.button.secondary:hover {
+    border-color: var(--rb-bright-green);
+    background-color: var(--rb-dark-beige);
+    color: var(--rb-dark-green);
+  }
+}
+
 a.button.secondary:focus-visible,
-button.button.secondary:hover,
 button.button.secondary:focus-visible {
-  border-color: var(--dark-color);
-  background-color: var(--light-color);
-  color: var(--dark-color);
+  border-color: var(--rb-bright-green);
+  background-color: var(--rb-dark-beige);
+  color: var(--rb-dark-green);
 }
 
 a.button.secondary[aria-disabled="true"],
-a.button.secondary[aria-disabled="true"]:hover,
-a.button.secondary[aria-disabled="true"]:focus-visible,
-button.button.secondary:disabled,
-button.button.secondary:disabled:hover,
-button.button.secondary:disabled:focus-visible {
-  background-color: var(--light-color);
-  border-color: var(--light-color);
-  color: var(--dark-color);
+button.button.secondary:disabled {
+  background-color: transparent;
+  border-color: var(--rb-dark-beige);
+  color: var(--rb-brown);
 }
 
-/* high-impact call-to-action */
+/* high-impact call-to-action - the yellow variant of the RB button */
 a.button.accent,
 button.button.accent {
-  border-color: var(--link-color);
-  background-color: var(--link-color);
-  color: var(--background-color);
+  border-color: var(--rb-yellow);
+  background-color: var(--rb-yellow);
+  color: var(--rb-dark-green);
 }
 
-a.button.accent:hover,
+@media (hover: hover) and (pointer: fine) {
+  a.button.accent:hover,
+  button.button.accent:hover {
+    border-color: var(--rb-light-yellow);
+    background-color: var(--rb-light-yellow);
+    color: var(--rb-dark-green);
+  }
+}
+
 a.button.accent:focus-visible,
-button.button.accent:hover,
 button.button.accent:focus-visible {
-  border-color: var(--link-hover-color);
-  background-color: var(--link-hover-color);
+  border-color: var(--rb-light-yellow);
+  background-color: var(--rb-light-yellow);
+  color: var(--rb-dark-green);
 }
 
 a.button.accent[aria-disabled="true"],
-a.button.accent[aria-disabled="true"]:hover,
-a.button.accent[aria-disabled="true"]:focus-visible,
-button.button.accent:disabled,
-button.button.accent:disabled:hover,
-button.button.accent:disabled:focus-visible {
-  background-color: var(--light-color);
-  border-color: var(--light-color);
-  color: var(--dark-color);
+button.button.accent:disabled {
+  background-color: var(--rb-dark-beige);
+  border-color: var(--rb-dark-beige);
+  color: var(--rb-brown);
 }
 
 main img {
@@ -310,7 +472,7 @@ main > .section:first-of-type {
   margin-top: 0;
 }
 
-@media (width >= 900px) {
+@media (width >= 992px) {
   main > .section > div {
     padding: 0 32px;
   }
