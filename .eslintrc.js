@@ -19,4 +19,11 @@ module.exports = {
     'linebreak-style': ['error', 'unix'], // enforce unix linebreaks
     'no-param-reassign': [2, { props: false }], // allow modifying properties of param
   },
+  overrides: [
+    {
+      // The test runner reports results on stdout; that is its whole job.
+      files: ['tests/**/*.mjs'],
+      rules: { 'no-console': 'off' },
+    },
+  ],
 };

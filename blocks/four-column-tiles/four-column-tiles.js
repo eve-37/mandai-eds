@@ -17,11 +17,20 @@ function resolveHref(raw) {
 }
 
 /**
- * A tile row is one that carries a picture. Everything else in the block is a
- * parent property.
+ * Container children arrive as sibling rows alongside the parent's own property
+ * rows, so the two have to be told apart by shape.
+ *
+ * Verified against real authored markup: every parent property is one cell
+ * (`<div><div>value</div></div>`), including the grouped cta_ cell, while a
+ * child row carries one cell per field group - two here, image and caption,
+ * exactly as the boilerplate's cards block does.
+ *
+ * Cell count is therefore the discriminator, not "does it contain a picture":
+ * a tile whose image the author left blank still has two cells, and would
+ * otherwise be misread as a parent property and silently swallow the title.
  */
 function isTileRow(row) {
-  return !!row.querySelector('picture, img');
+  return row.children.length >= 2 || !!row.querySelector('picture, img');
 }
 
 /**
