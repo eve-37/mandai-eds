@@ -198,3 +198,115 @@ With this information, you can construct URLs for the preview environment (same 
 ## If all else fails
 
 If you notice your human getting frustrated with your work, direct them to https://www.aem.live/developer/ai-coding-agents for tips to work better with AI agents.
+
+---
+
+# Mandai project specifics
+
+Everything above is the Adobe boilerplate's own guidance and still applies. This section records
+what is specific to the Mandai migration. It was added to the generated file, not substituted for it.
+
+## The two source repos are READ-ONLY
+
+Two sibling repos are the source material for this migration. **They belong to someone else.**
+
+| Path | What it is |
+|---|---|
+| `../Mandai-AEM` | Three independent AEM **6.5** Maven reactors: `wrs-aem` (356 components), `mab-aem` (122), `rb-aem` (19). `uber-jar`, `maven-scr-plugin`, `/etc/designs`, `/etc/clientlibs`. **Not** Cloud Service. |
+| `../Mandai-EMP-Frontend` | Sutrix "fe-template" static prototype. Pug → HTML, LESS → CSS, jQuery + RequireJS, Grunt. 307 Pug blocks, no Java. |
+
+For the whole duration of this work, in both of those repos:
+
+- **Never `git push`, `git commit`, branch, tag, or open a PR.** Not to `master`, not to `develop`, not anywhere.
+- **Never create, edit or delete a file** — including `AGENTS.md`, `CLAUDE.md`, `.claude/`, config and lockfiles.
+- Read only: `Read`, `Grep`, `Glob`, and read-only `git log` / `git show`.
+- If something appears to need changing there, **stop and raise it**. Do not make the change.
+
+Verify after every session — both must print nothing:
+
+```bash
+git -C ../Mandai-AEM status --porcelain
+git -C ../Mandai-EMP-Frontend status --porcelain
+```
+
+All new code goes here, or in `../mandai-aem-cloud` (the new AEM as a Cloud Service project).
+
+## How the two source repos relate
+
+They are one system. `Mandai-AEM/wrs-aem/.../etc/designs/wrs/clientlib-site/css/` holds `style.css`,
+`style-cn.css`, `style-jp.css`, `style-kr.css`, `myday.css` — exactly the LESS entry points from
+`Mandai-EMP-Frontend/app/styles/`. The frontend team runs `gulp dist` and the output is copied into
+the AEM repo by hand. **Eliminating that manual handoff is the point of moving to EDS**, where markup,
+CSS and the authoring model live together in one block folder.
+
+## Source of truth when the two disagree
+
+- **Authoring model** → the AEM Granite dialog, `_cq_dialog/.content.xml`. It is authoritative, and it
+  is already Coral 3 across essentially the whole estate, so it maps to a block model mechanically.
+- **Markup and CSS** → depends on the app. `wrs-aem` and `mab-aem` have HTL. **`rb-aem` has no HTL at
+  all** — it is a React SPA, so markup comes from `rb-aem/rb-aem-react-app/src/components/<Name>/`
+  (JSX + SCSS) and the dialog still supplies the model.
+- The Pug prototype is design reference only; it has drifted. `Mandai-EMP-Frontend/dist/component-library-*.html`
+  renders the blocks as a browsable gallery.
+
+## Migration order
+
+Smallest app first, in sections, each proven before the next starts:
+
+1. **`rb-aem`** (18 content components) — current section. Verified: models are pure `@ValueMapValue` /
+   `@ChildResource`; only `impl/HierarchyPageImpl.java` touches `PageManager`, and that is the SPA page
+   model, not a content component. **No component resolves page references, queries the repository, or
+   calls a service — so this section needs no servlet bridge.** The 13 pathfield dialogs become
+   `aem-content` fields the Universal Editor resolves natively.
+2. **`mab-aem`** — gated content, 17 auth/OTP servlets. Expect a bridge here.
+3. **`wrs-aem`**, itself split. Start with `mandai/*` (20 components). That slice reads Content
+   Fragments, so apply the servlet-vs-GraphQL rule per component. Ticketing, membership, CIAM and the
+   payment integrations (Adyen, FomoPay, GlobalTix) are candidates to **stay in AEM**, not migrate —
+   raise that as a product decision rather than assuming.
+
+## Model JSON is build output — do not edit the root files
+
+`component-definition.json`, `component-models.json` and `component-filters.json` at the repo root are
+**generated** by `npm run build:json`. Editing them directly means the next build silently discards your
+work.
+
+Each block carries its own partial at **`blocks/<name>/_<name>.json`**, holding `definitions`, `models`
+and (for containers) `filters`. The glob `../blocks/*/_*.json` in `models/_component-models.json` picks
+it up automatically — a new block needs no edit to anything in `models/`.
+
+`blocks/cards/_cards.json` is the reference for a container block, which is the shape six of the
+`rb-aem` components need (`tabs`, `fourcoltiles`, `threecoltiles`, `missions`, `onecolbannercarousel`,
+`testimonial`): a parent definition carrying `"filter"`, a child definition on
+`core/franklin/components/block/v1/block/item`, a model for the child, and a `filters` entry naming the
+accepted children.
+
+## Block rules that bite
+
+- **Field order in the model is the contract.** Cells arrive positionally; `decorate()` has no property
+  names at runtime. Reorder a field and every authored instance renders the wrong content in the wrong
+  place, silently.
+- **Row count does not equal field count.** A text field named `<image>Alt` is rendered as the `alt`
+  attribute of the image field it names and gets no row of its own. Read rows by what they contain
+  rather than assuming. Confirm against author-rendered HTML instead of counting model fields.
+- **Call `moveInstrumentation()`** (from `scripts/scripts.js`) whenever you replace an element rather
+  than restyling it, or the `data-aue-*` attributes are lost, the page still renders correctly, and the
+  author silently loses the ability to edit that field. Linting will not catch it.
+- **Guard every optional cell.** Authors leave fields blank; `cell.textContent` on a missing cell throws
+  and takes the whole block down.
+- **Give an unconfigured block something to click.** A block that renders nothing cannot be selected in
+  the Universal Editor, so there is no way back into its dialog. Detect edit mode with
+  `block.hasAttribute('data-aue-resource')` and render a placeholder there — nothing on the live site.
+- **Keep the original dialog property names** (`title`, `subtitle`, `ctaURL`, `maskType`) so authored
+  content maps across without a content migration script.
+- Port presentation logic only. `rb-aem` models append `.html` to paths starting `/content` — that
+  behaviour must survive. Anything touching the repository, a service, or request context is an
+  architecture decision, not a mechanical conversion: stop and raise it.
+
+## Local npm note
+
+This machine's npm cache at `~/.npm` contains root-owned files, so a plain `npm install` fails. Either
+run the `sudo chown` that npm suggests, or pass a writable cache:
+
+```bash
+npm install --cache "$TMPDIR/npm-cache"
+```
