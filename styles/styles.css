@@ -487,6 +487,103 @@ main .section.highlight {
 }
 
 /*
+ * Shared CTA button - the torn-edge shape used by primary-button,
+ * secondary-button and by every block that embeds a CTA of its own
+ * (four-column-tiles, three-column-tiles, one-column-banner, one-column-news).
+ * In the source these all reached for the same PrimaryButton React component,
+ * so they belong together here rather than as five copies.
+ *
+ * One SVG serves every variant and state: all four source files
+ * (Button-{Green,Yellow}-{Default,Hover}.svg) had identical geometry and
+ * differed only in fill, which a mask ignores. Colour comes from
+ * background-color underneath.
+ *
+ * Usage:  <div class="rb-cta rb-cta-wide green"><a href="...">Label</a></div>
+ */
+.rb-cta {
+  display: inline-block;
+  text-align: center;
+  cursor: pointer;
+  mask-image: url('/assets/button-shape.svg');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.rb-cta a,
+.rb-cta span {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  padding: 16px 0;
+  font-family: var(--heading-font-family-alt);
+  font-size: 18px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.rb-cta-wide {
+  width: 220px;
+}
+
+/*
+ * The narrow (secondary) button. mask-size 100% 100% rather than contain is
+ * faithful to the source: it stretches the shape instead of preserving its
+ * aspect ratio, and at 140x56 the squatter result is clearly deliberate.
+ */
+.rb-cta-narrow {
+  width: 140px;
+  mask-size: 100% 100%;
+}
+
+.rb-cta-narrow a,
+.rb-cta-narrow span {
+  padding: 6.5px 0;
+}
+
+.rb-cta.green {
+  background-color: var(--rb-mid-green);
+}
+
+.rb-cta.green a,
+.rb-cta.green span {
+  color: var(--rb-light-beige);
+}
+
+.rb-cta.yellow {
+  background-color: var(--rb-yellow);
+}
+
+.rb-cta.yellow a,
+.rb-cta.yellow span {
+  color: var(--rb-dark-green);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rb-cta.green:hover {
+    background-color: var(--rb-bright-green);
+  }
+
+  .rb-cta.yellow:hover {
+    background-color: var(--rb-light-yellow);
+  }
+
+  .rb-cta:hover a {
+    text-decoration: none;
+  }
+}
+
+/* Authoring-only affordance, so an unconfigured block can still be selected. */
+.rb-placeholder {
+  margin: 0;
+  border: 1px dashed var(--rb-brown);
+  padding: 12px 16px;
+  color: var(--rb-mid-green);
+  font-size: var(--body-font-size-s);
+  text-align: center;
+}
+
+/*
  * Shared section treatment - the torn-edge band that most Ranger Buddies
  * components sit inside. Ported from the SectionLayout React component, which
  * fourcoltiles, imagesection, testimonial and onecolfeature all wrap themselves
@@ -540,6 +637,8 @@ main .section.highlight {
   color: var(--rb-yellow);
 }
 
+.rb-section.bg-brown { background-image: url('/assets/section/bg-brown-mobile.jpg'); }
+
 /* The inner column every section shares. */
 .rb-section-inner {
   max-width: 1200px;
@@ -555,10 +654,12 @@ main .section.highlight {
 
   .rb-section.bg-green { background-image: url('/assets/section/bg-green-desktop.jpg'); }
   .rb-section.bg-beige { background-image: url('/assets/section/bg-beige-desktop.jpg'); }
+  .rb-section.bg-brown { background-image: url('/assets/section/bg-brown-desktop.jpg'); }
   .rb-section.bg-dark-green { background-image: url('/assets/section/bg-dark-green-desktop.jpg'); }
 
   .rb-section.bg-green,
   .rb-section.bg-beige,
+  .rb-section.bg-brown,
   .rb-section.bg-dark-green {
     background-position: bottom;
   }

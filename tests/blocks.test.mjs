@@ -54,7 +54,7 @@ test('primary-button: link, text and title all come off the one collapsed anchor
 });
 
 test('primary-button: variant and position are read, not defaulted', () => {
-  assert.ok(pb.querySelector('.primary-button-shape.green'));
+  assert.ok(pb.querySelector('.rb-cta.green'));
   assert.ok(pb.querySelector('.primary-button-container.center'));
 });
 
@@ -74,7 +74,7 @@ const pbEdit = await decorateBlock(
   '<div class="primary-button" data-aue-resource="urn:x"></div>',
 );
 test('primary-button: unconfigured block stays selectable in the editor', () => {
-  assert.ok(pbEdit.querySelector('.primary-button-placeholder'), 'expected a placeholder to click');
+  assert.ok(pbEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
 /* ------------------------------------------------------------------ *
@@ -114,7 +114,7 @@ test('four-column-tiles: grouped cta_ cell yields href, text, variant and new-ta
   assert.equal(a.getAttribute('href'), '/');
   assert.equal(a.textContent, 'index page');
   assert.equal(a.getAttribute('target'), '_blank');
-  assert.ok(ft.querySelector('.four-column-tiles-cta-shape.green'), 'variant should be green, not the default');
+  assert.ok(ft.querySelector('.rb-cta.green'), 'variant should be green, not the default');
 });
 
 test('four-column-tiles: every tile becomes a list item', () => {

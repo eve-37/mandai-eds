@@ -120,64 +120,7 @@
   text-align: center;
 }
 
-.four-column-tiles .four-column-tiles-cta-shape {
-  display: inline-block;
-  width: 220px;
-  text-align: center;
-  cursor: pointer;
-  mask-image: url('../primary-button/button-shape.svg');
-  mask-size: contain;
-  mask-repeat: no-repeat;
-  mask-position: center;
-}
-
-.four-column-tiles .four-column-tiles-cta-shape a,
-.four-column-tiles .four-column-tiles-cta-shape span {
-  display: inline-block;
-  width: 100%;
-  padding: 16px 0;
-  font-family: var(--heading-font-family-alt);
-  font-size: 18px;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.four-column-tiles .four-column-tiles-cta-shape.green {
-  background-color: var(--rb-mid-green);
-}
-
-.four-column-tiles .four-column-tiles-cta-shape.green a,
-.four-column-tiles .four-column-tiles-cta-shape.green span {
-  color: var(--rb-light-beige);
-}
-
-.four-column-tiles .four-column-tiles-cta-shape.yellow {
-  background-color: var(--rb-yellow);
-}
-
-.four-column-tiles .four-column-tiles-cta-shape.yellow a,
-.four-column-tiles .four-column-tiles-cta-shape.yellow span {
-  color: var(--rb-dark-green);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .four-column-tiles .four-column-tiles-cta-shape.green:hover {
-    background-color: var(--rb-bright-green);
-  }
-
-  .four-column-tiles .four-column-tiles-cta-shape.yellow:hover {
-    background-color: var(--rb-light-yellow);
-  }
-}
-
-/* Authoring-only affordance. */
-.four-column-tiles .four-column-tiles-placeholder {
-  margin: 0;
-  border: 1px dashed var(--rb-brown);
-  padding: 12px 16px;
-  color: var(--rb-mid-green);
-  text-align: center;
-}
+/* CTA shape and colours are shared - see .rb-cta in styles/styles.css. */
 
 /* 2 tiles from the source's 767px breakpoint */
 @media (width >= 768px) {

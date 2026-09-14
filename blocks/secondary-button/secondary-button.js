@@ -85,7 +85,7 @@ export default function decorate(block) {
   if (!fields.text && !href) {
     if (isEditMode) {
       const placeholder = document.createElement('p');
-      placeholder.className = 'secondary-button-placeholder';
+      placeholder.className = 'rb-placeholder';
       placeholder.textContent = 'Secondary Button — add a CTA name and link';
       block.replaceChildren(placeholder);
     } else {
@@ -98,7 +98,7 @@ export default function decorate(block) {
   wrapper.className = `secondary-button-container ${position}`;
 
   const shape = document.createElement('div');
-  shape.className = `secondary-button-shape ${variant}`;
+  shape.className = `rb-cta rb-cta-narrow ${variant}`;
 
   // A link with no href is not a link. Fall back to a span so assistive tech is
   // not told this is actionable when it goes nowhere.

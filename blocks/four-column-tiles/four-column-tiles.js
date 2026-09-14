@@ -215,7 +215,7 @@ export default function decorate(block) {
     ctaWrap.className = 'four-column-tiles-cta';
 
     const shape = document.createElement('div');
-    shape.className = `four-column-tiles-cta-shape ${parent.ctaVariant || 'green'}`;
+    shape.className = `rb-cta rb-cta-wide ${parent.ctaVariant || 'green'}`;
 
     const cta = document.createElement(parent.ctaHref ? 'a' : 'span');
     if (parent.ctaHref) {
@@ -237,7 +237,7 @@ export default function decorate(block) {
   if (!inner.children.length) {
     if (isEditMode) {
       const placeholder = document.createElement('p');
-      placeholder.className = 'four-column-tiles-placeholder';
+      placeholder.className = 'rb-placeholder';
       placeholder.textContent = 'Four Column Tiles — add a title and some tiles';
       inner.append(placeholder);
     } else {
