@@ -1,0 +1,36 @@
+/*
+ * One Column News
+ *
+ * Ported from rb-aem-react-app/src/components/OneColNews/.
+ * Section band, CTA button and placeholder are shared - styles/styles.css.
+ */
+
+.one-column-news .one-column-news-heading {
+  margin: 0 auto;
+  text-align: center;
+}
+
+.one-column-news .one-column-news-media {
+  max-width: 800px;
+  margin: 32px auto 0;
+}
+
+.one-column-news .one-column-news-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.one-column-news .one-column-news-content {
+  max-width: 600px;
+  margin: 24px auto 0;
+  text-align: center;
+}
+
+.one-column-news .one-column-news-content h3 {
+  margin: 0;
+}
+
+.one-column-news .one-column-news-content p {
+  margin: 16px 0 24px;
+}

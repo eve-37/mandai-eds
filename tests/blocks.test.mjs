@@ -144,12 +144,12 @@ test('four-column-tiles: image and caption both survive', () => {
 });
 
 test('four-column-tiles: one dot per tile', () => {
-  assert.equal(ft.querySelectorAll('.four-column-tiles-dot').length, 3);
+  assert.equal(ft.querySelectorAll('.rb-dot').length, 3);
 });
 
 const ftOne = await decorateBlock('../blocks/four-column-tiles/four-column-tiles.js', FOUR_COL([1]));
 test('four-column-tiles: a single tile gets no dots', () => {
-  assert.equal(ftOne.querySelectorAll('.four-column-tiles-dot').length, 0);
+  assert.equal(ftOne.querySelectorAll('.rb-dot').length, 0);
   assert.equal(ftOne.querySelectorAll('li.four-column-tiles-item').length, 1);
 });
 

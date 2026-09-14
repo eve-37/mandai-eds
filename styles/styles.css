@@ -584,6 +584,66 @@ main .section.highlight {
 }
 
 /*
+ * Shared carousel track. Native scroll-snap rather than Slick - see
+ * scripts/rb-helpers.js for why. Blocks set grid-auto-columns per breakpoint to
+ * choose how many slides show; the mobile default peeks the next one, which is
+ * what the source's 1.1 slidesToShow did.
+ */
+.rb-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc(100% / 1.1);
+  gap: 16px;
+  margin: 40px -24px 0;
+  padding: 0 24px;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 24px;
+  align-items: stretch;
+
+  /* Hide the scrollbar; the dots are the affordance. */
+  scrollbar-width: none;
+}
+
+.rb-track::-webkit-scrollbar {
+  display: none;
+}
+
+.rb-track-item {
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+}
+
+.rb-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.rb-dot {
+  width: 10px;
+  height: 10px;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  background-color: var(--rb-dark-beige);
+  cursor: pointer;
+}
+
+.rb-dot.active {
+  background-color: var(--rb-dark-green);
+}
+
+.rb-dot:focus-visible {
+  outline: 2px solid var(--rb-dark-green);
+  outline-offset: 2px;
+}
+
+/*
  * Shared section treatment - the torn-edge band that most Ranger Buddies
  * components sit inside. Ported from the SectionLayout React component, which
  * fourcoltiles, imagesection, testimonial and onecolfeature all wrap themselves

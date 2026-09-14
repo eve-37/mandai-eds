@@ -327,6 +327,89 @@
     ]
   },
   {
+    "id": "onecolbanner",
+    "fields": [
+      {
+        "component": "text",
+        "name": "content_title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "content_desc",
+        "label": "Description",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "bg_desktop",
+        "label": "Background (desktop)",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "bg_mobile",
+        "label": "Background (mobile)",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "mask",
+        "label": "Border Pattern Type",
+        "valueType": "string",
+        "value": "mask-1",
+        "options": [
+          {
+            "name": "Pattern 1",
+            "value": "mask-1"
+          },
+          {
+            "name": "Pattern 2",
+            "value": "mask-2"
+          }
+        ]
+      },
+      {
+        "component": "aem-content",
+        "name": "cta_link",
+        "label": "CTA URL",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "cta_linkText",
+        "label": "CTA Name",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "cta_variant",
+        "label": "CTA Color Type",
+        "valueType": "string",
+        "value": "green",
+        "options": [
+          {
+            "name": "Green",
+            "value": "green"
+          },
+          {
+            "name": "Yellow",
+            "value": "yellow"
+          }
+        ]
+      },
+      {
+        "component": "boolean",
+        "name": "cta_newTab",
+        "label": "Open CTA in new tab",
+        "valueType": "boolean"
+      }
+    ]
+  },
+  {
     "id": "onecolfeature",
     "fields": [
       {
@@ -370,6 +453,94 @@
             "value": "mask-2"
           }
         ]
+      }
+    ]
+  },
+  {
+    "id": "onecolnews",
+    "fields": [
+      {
+        "component": "text",
+        "name": "content_title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "content_subtitle",
+        "label": "Subtitle",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "content_desc",
+        "label": "Description",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "image",
+        "label": "Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "imageAlt",
+        "label": "Image Alt",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "mask",
+        "label": "Border Pattern Type",
+        "valueType": "string",
+        "value": "mask-1",
+        "options": [
+          {
+            "name": "Pattern 1",
+            "value": "mask-1"
+          },
+          {
+            "name": "Pattern 2",
+            "value": "mask-2"
+          }
+        ]
+      },
+      {
+        "component": "aem-content",
+        "name": "cta_link",
+        "label": "CTA URL",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "cta_linkText",
+        "label": "CTA Name",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "cta_variant",
+        "label": "CTA Color Type",
+        "valueType": "string",
+        "value": "green",
+        "options": [
+          {
+            "name": "Green",
+            "value": "green"
+          },
+          {
+            "name": "Yellow",
+            "value": "yellow"
+          }
+        ]
+      },
+      {
+        "component": "boolean",
+        "name": "cta_newTab",
+        "label": "Open CTA in new tab",
+        "valueType": "boolean"
       }
     ]
   },
@@ -567,6 +738,134 @@
         "name": "name",
         "label": "Name",
         "valueType": "string"
+      }
+    ]
+  },
+  {
+    "id": "threecoltiles",
+    "fields": [
+      {
+        "component": "text",
+        "name": "title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "subtitle",
+        "label": "Subtitle",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "mask",
+        "label": "Border Pattern Type",
+        "valueType": "string",
+        "value": "mask-1",
+        "options": [
+          {
+            "name": "Pattern 1",
+            "value": "mask-1"
+          },
+          {
+            "name": "Pattern 2",
+            "value": "mask-2"
+          }
+        ]
+      },
+      {
+        "component": "aem-content",
+        "name": "cta_link",
+        "label": "CTA URL",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "cta_linkText",
+        "label": "CTA Name",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "cta_variant",
+        "label": "CTA Color Type",
+        "valueType": "string",
+        "value": "green",
+        "options": [
+          {
+            "name": "Green",
+            "value": "green"
+          },
+          {
+            "name": "Yellow",
+            "value": "yellow"
+          }
+        ]
+      },
+      {
+        "component": "boolean",
+        "name": "cta_newTab",
+        "label": "Open CTA in new tab",
+        "valueType": "boolean"
+      }
+    ]
+  },
+  {
+    "id": "threecoltile",
+    "fields": [
+      {
+        "component": "reference",
+        "name": "image",
+        "label": "Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "imageAlt",
+        "label": "Image Alt",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "caption",
+        "label": "Caption",
+        "valueType": "string"
+      },
+      {
+        "component": "aem-content",
+        "name": "cta_link",
+        "label": "CTA URL",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "cta_linkText",
+        "label": "CTA Name",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "cta_variant",
+        "label": "CTA Color Type",
+        "valueType": "string",
+        "value": "green",
+        "options": [
+          {
+            "name": "Green",
+            "value": "green"
+          },
+          {
+            "name": "Yellow",
+            "value": "yellow"
+          }
+        ]
+      },
+      {
+        "component": "boolean",
+        "name": "cta_newTab",
+        "label": "Open CTA in new tab",
+        "valueType": "boolean"
       }
     ]
   }

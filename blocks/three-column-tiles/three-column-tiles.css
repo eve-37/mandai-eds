@@ -1,0 +1,71 @@
+/*
+ * Three Column Tiles
+ *
+ * Ported from rb-aem-react-app/src/components/ThreeColTiles/.
+ *
+ * Structurally four-column-tiles with a brown band and three slides instead of
+ * four - but each tile carries its OWN CTA, which is the real difference and
+ * why it is a separate model rather than a variant.
+ *
+ * Carousel, section band, CTA button and dots are all shared - see .rb-track,
+ * .rb-section and .rb-cta in styles/styles.css.
+ */
+
+.three-column-tiles .three-column-tiles-title,
+.three-column-tiles .three-column-tiles-subtitle {
+  margin: 0 auto;
+  text-align: center;
+}
+
+.three-column-tiles .three-column-tiles-subtitle {
+  max-width: 640px;
+  margin-top: 16px;
+}
+
+.three-column-tiles .three-column-tiles-item-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.three-column-tiles .three-column-tiles-item-name {
+  flex: 1;
+  padding-top: 16px;
+  text-align: center;
+}
+
+.three-column-tiles .three-column-tiles-item-name h4 {
+  margin: 0;
+}
+
+.three-column-tiles .three-column-tiles-item-cta {
+  padding-top: 16px;
+  text-align: center;
+}
+
+.three-column-tiles .three-column-tiles-cta {
+  margin-top: 40px;
+  text-align: center;
+}
+
+@media (width >= 768px) {
+  .three-column-tiles .three-column-tiles-track {
+    grid-auto-columns: calc((100% - 16px) / 2);
+  }
+}
+
+@media (width >= 992px) {
+  .three-column-tiles .three-column-tiles-track {
+    grid-auto-columns: calc((100% - 32px) / 3);
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-left: 0;
+  }
+
+  /* Three or fewer tiles all fit, so there is nothing to scroll to. */
+  .three-column-tiles .three-column-tiles-track:not(:has(> :nth-child(4))) {
+    overflow-x: visible;
+  }
+}

@@ -36,38 +36,7 @@
   margin-top: 16px;
 }
 
-/*
- * The track. scroll-padding keeps a snapped tile clear of the container edge,
- * and the negative margin lets tiles bleed to the viewport edge on mobile so the
- * peek of the next tile reads as intentional.
- */
-.four-column-tiles .four-column-tiles-track {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: calc(100% / 1.1);
-  gap: 16px;
-  margin: 40px -24px 0;
-  padding: 0 24px;
-  list-style: none;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-padding-left: 24px;
-  align-items: stretch;
-
-  /* Hide the scrollbar; the dots are the affordance. */
-  scrollbar-width: none;
-}
-
-.four-column-tiles .four-column-tiles-track::-webkit-scrollbar {
-  display: none;
-}
-
-.four-column-tiles .four-column-tiles-item {
-  display: flex;
-  flex-direction: column;
-  scroll-snap-align: start;
-}
+/* Track, item and dot styling are shared - see .rb-track / .rb-dots in styles/styles.css. */
 
 .four-column-tiles .four-column-tiles-item-photo img {
   display: block;
@@ -87,32 +56,13 @@
   margin: 0;
 }
 
-/* dots */
-.four-column-tiles .four-column-tiles-dots {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin-top: 24px;
-}
 
-.four-column-tiles .four-column-tiles-dot {
-  width: 10px;
-  height: 10px;
-  border: 0;
-  border-radius: 50%;
-  padding: 0;
-  background-color: var(--rb-dark-beige);
-  cursor: pointer;
-}
 
-.four-column-tiles .four-column-tiles-dot.active {
-  background-color: var(--rb-dark-green);
-}
 
-.four-column-tiles .four-column-tiles-dot:focus-visible {
-  outline: 2px solid var(--rb-dark-green);
-  outline-offset: 2px;
-}
+
+
+
+
 
 /* CTA - same treatment as the primary-button block */
 .four-column-tiles .four-column-tiles-cta {

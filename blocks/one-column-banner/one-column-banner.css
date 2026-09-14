@@ -1,0 +1,34 @@
+/*
+ * One Column Banner
+ *
+ * Ported from rb-aem-react-app/src/components/OneColBanner/.
+ *
+ * Unlike the other banded components this one takes an AUTHORED background
+ * rather than one of the fixed bg-* classes, so the image comes through as
+ * custom properties set by the block and a media query picks between desktop
+ * and mobile. The source swapped them in JavaScript off a resize flag.
+ *
+ * Section band, CTA button and placeholder are shared - styles/styles.css.
+ */
+
+.one-column-banner .rb-section {
+  background-image: var(--banner-bg-mobile);
+}
+
+.one-column-banner .one-column-banner-content {
+  max-width: 480px;
+}
+
+.one-column-banner .one-column-banner-content h2 {
+  margin: 0;
+}
+
+.one-column-banner .one-column-banner-content p {
+  margin: 16px 0 24px;
+}
+
+@media (width >= 992px) {
+  .one-column-banner .rb-section {
+    background-image: var(--banner-bg-desktop);
+  }
+}

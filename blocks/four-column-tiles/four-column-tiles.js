@@ -95,14 +95,14 @@ function buildDots(track, tiles) {
   if (tiles.length < 2) return null;
 
   const dots = document.createElement('div');
-  dots.className = 'four-column-tiles-dots';
+  dots.className = 'four-column-tiles-dots rb-dots';
   dots.setAttribute('role', 'tablist');
   dots.setAttribute('aria-label', 'Choose a tile');
 
   tiles.forEach((tile, index) => {
     const dot = document.createElement('button');
     dot.type = 'button';
-    dot.className = 'four-column-tiles-dot';
+    dot.className = 'rb-dot';
     dot.setAttribute('role', 'tab');
     dot.setAttribute('aria-label', `Go to tile ${index + 1}`);
     dot.addEventListener('click', () => {
@@ -168,11 +168,11 @@ export default function decorate(block) {
 
   // Tiles.
   const track = document.createElement('ul');
-  track.className = 'four-column-tiles-track';
+  track.className = 'four-column-tiles-track rb-track';
 
   const tiles = tileRows.map((row) => {
     const li = document.createElement('li');
-    li.className = 'four-column-tiles-item';
+    li.className = 'four-column-tiles-item rb-track-item';
     // Carry the authoring instrumentation across, or the Universal Editor
     // cannot select, reorder or delete the tile.
     moveInstrumentation(row, li);
