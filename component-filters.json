@@ -29,7 +29,8 @@
       "masthead",
       "onecolbannercarousel",
       "rbtabs",
-      "missions"
+      "missions",
+      "wrsaccordiontabs"
     ]
   },
   {
@@ -88,6 +89,12 @@
     "id": "threecoltiles",
     "components": [
       "threecoltile"
+    ]
+  },
+  {
+    "id": "wrsaccordiontabs",
+    "components": [
+      "wrsaccordiontab"
     ]
   }
 ]

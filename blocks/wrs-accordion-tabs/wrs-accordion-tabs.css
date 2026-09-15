@@ -1,0 +1,412 @@
+/*
+ * WRS Accordion Tabs
+ *
+ * Port of the DEPLOYED bundle, not the LESS checkout. wrs-aem etc/designs
+ * (component-accordion.less, md-accordion-component.less) contains no rule
+ * for any class this component's HTL renders - verified by grep, zero hits.
+ * The site's actual compiled `style.css` is ahead of that checkout and does
+ * style this markup; the relevant slice was extracted by class name to
+ * ../../../wrs-components-export/accordiontabs/styles/deployed-bundle-extract.css
+ * and this file ports it. Selectors/declarations below are traced back to
+ * specific lines in that extract; values are copied, not invented.
+ *
+ * Two things in the extract are NOT ported, both intentionally, not silently:
+ *
+ * 1. `.tab_info-container { top: var(--buttonHeight, 50px); left:0; width:100% }`
+ *    plus `.tabs-initialized .tab_info-container { position:absolute; display:none }`.
+ *    This is the source's technique for stacking every panel on top of each
+ *    other and revealing one by measuring button heights in JS
+ *    (accordion-tabs.js's setMaxHeight(), a MutationObserver + resize
+ *    listener). decorate() instead keeps panels in normal flow and toggles
+ *    the native `hidden` attribute - simpler, no measured layout, no JS
+ *    dependency for the CSS to make sense. The visible result (one panel
+ *    showing, the rest not) is the same; the mechanism is not.
+ * 2. Font Awesome glyphs (`content:"\f078"` chevron-down, `content:"\f054"`
+ *    chevron-right via `.fa-chevron-right:before`). This repo does not ship
+ *    Font Awesome. Both are replaced with plain Unicode chevrons carrying
+ *    the same size/colour/position/rotate-on-active treatment as the source
+ *    rule they replace - noted at each occurrence below.
+ *
+ * The source's `.md-link-arrow` is a separate `<div><i></i></div>` inside the
+ * CTA anchor. Rather than add that markup (out of scope for this CSS-only
+ * change), its visual treatment - circular swatch, colour, size, the
+ * breakpoint-specific shrink - is reproduced as a `::after` on the CTA anchor
+ * itself, so no DOM change is required for it to render.
+ *
+ * `var(--primary-font-bold)` / literal `Poppins-Regular` are the source's own
+ * fonts; neither is defined/loaded in this repo (its tokens - --heading-*,
+ * --body-* - belong to the separately-migrated Ranger Buddies brand). Ported
+ * as literal/var-with-fallback rather than remapped to an --rb-* token, since
+ * no --rb-* value in styles/styles.css matches these values. Needs a real
+ * font decision before production; the fallback here is generic sans-serif.
+ *
+ * Breakpoint: the source is desktop-first, with a single mobile cutoff at
+ * max-width:991px (i.e. "below the project's 992px breakpoint"). Rewritten
+ * mobile-first here to match this repo's own convention of `(width >= 992px)`
+ * range queries - every rule below carries its source line reference.
+ */
+
+/* extract L344-353: root padding */
+.wrs-accordion-tabs {
+  padding: 40px 0;
+}
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs {
+    padding: 128px 0;
+  }
+}
+
+/* Source classes, ported as-is (not in the extract - no matching selector
+   was extracted for them, since they were not part of the class list this
+   slice was pulled by - but they are on the block root in the source HTL). */
+.wrs-accordion-tabs.no-top-padding {
+  padding-top: 0;
+}
+
+.wrs-accordion-tabs.no-bottom-padding {
+  padding-bottom: 0;
+}
+
+/*
+ * extract L355-420: h1-h6 sizing is scoped to the component root by TAG, not
+ * by class, so it governs both the parent title (whatever tag opt_style
+ * picks) and each tab's h3 panel heading alike - ported the same way. h5/h6
+ * have no mobile override in the source, so they stay constant.
+ */
+.wrs-accordion-tabs h1,
+.wrs-accordion-tabs h2,
+.wrs-accordion-tabs h3,
+.wrs-accordion-tabs h4,
+.wrs-accordion-tabs h5,
+.wrs-accordion-tabs h6 {
+  line-height: normal;
+}
+
+.wrs-accordion-tabs h1 { font-size: 2.25rem; }
+.wrs-accordion-tabs h2 { font-size: 2rem; }
+.wrs-accordion-tabs h3 { font-size: 1.625rem; }
+.wrs-accordion-tabs h4 { font-size: 1.25rem; }
+.wrs-accordion-tabs h5 { font-size: 1.25rem; }
+.wrs-accordion-tabs h6 { font-size: 1rem; }
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs h1 { font-size: 4.375rem; }
+  .wrs-accordion-tabs h2 { font-size: 3.125rem; }
+  .wrs-accordion-tabs h3 { font-size: 2.5rem; }
+  .wrs-accordion-tabs h4 { font-size: 1.625rem; }
+}
+
+/* extract L422-431: `.section-title` inside the component - the title wrapper.
+   Ported onto the title element itself; the source's wrapping div carries no
+   other styling this markup needs. */
+.wrs-accordion-tabs-title {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs-title {
+    margin-bottom: 60px;
+  }
+}
+
+/*
+ * extract L433-460 (base rules, not breakpoint-gated) + L701-711
+ * (`.tabs-initialized .tab_list`).
+ *
+ * The source ships an un-initialized state (block, horizontally scrollable)
+ * that accordion-tabs.js upgrades to a flex row once its setup script runs,
+ * to avoid a layout flash before jQuery loads. decorate() runs synchronously
+ * as part of module evaluation, so there is no such flash to avoid here -
+ * the flex-row treatment is applied directly rather than gated behind an
+ * `.tabs-initialized`-equivalent class.
+ */
+.wrs-accordion-tabs-list {
+  display: block;
+  position: relative;
+  max-width: 980px;
+  margin: auto;
+  overflow: auto hidden;
+  padding: 0 16px;
+}
+
+.wrs-accordion-tabs-list::-webkit-scrollbar {
+  height: 5px;
+}
+
+.wrs-accordion-tabs-list::-webkit-scrollbar-track {
+  background-color: #ccc;
+}
+
+.wrs-accordion-tabs-list::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: #003400;
+}
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs-list {
+    display: flex;
+    gap: 1rem;
+    padding: 0;
+  }
+}
+
+/* extract L462-471 (base) + L713-715 (`.tabs-initialized .tab_item`, applied
+   directly for the same reason as the list above) + mobile margin-bottom. */
+.wrs-accordion-tabs-item {
+  display: block;
+  flex: 1 0 0;
+  margin-bottom: 20px;
+}
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs-item {
+    margin-bottom: 0;
+  }
+}
+
+/* extract L486-488 (`.tab_item.active .tab_info-container { display:block }`)
+   is not ported: the native `hidden` attribute already governs panel
+   visibility (see decorate()), so this rule would be redundant. */
+
+/* extract L490-527: the tab button itself. */
+.wrs-accordion-tabs-btn {
+  position: relative;
+  display: block;
+  padding: 12px 20px;
+  width: 100%;
+  border-radius: 60px;
+  border: 1px solid #707070;
+  background: #fff;
+  color: #003400;
+  font-family: var(--primary-font-bold, Arial, sans-serif);
+  font-size: 1rem;
+}
+
+/* extract L473-477: active tab button colours (no breakpoint). */
+.wrs-accordion-tabs-item.active .wrs-accordion-tabs-btn {
+  border: 1px solid transparent;
+  background-color: #01722f;
+  color: #fbebce;
+}
+
+/*
+ * extract L515-524: mobile-only chevron via ::after, content:"\f078" (Font
+ * Awesome chevron-down) rotated -180deg when the tab is active (L479-484).
+ * No Font Awesome in this repo, so a plain Unicode chevron stands in, kept
+ * at the source's position/transition/rotate treatment.
+ */
+.wrs-accordion-tabs-btn::after {
+  display: block;
+  content: '\2039';
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transition: transform 0.3s ease;
+  font-size: 1.25rem;
+}
+
+.wrs-accordion-tabs-item.active .wrs-accordion-tabs-btn::after {
+  transform: translateY(-50%) rotate(90deg);
+}
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* No chevron on desktop - the source only generates this ::after inside
+     its own mobile media query. */
+  .wrs-accordion-tabs-btn::after {
+    display: none;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wrs-accordion-tabs-btn:focus-visible {
+    outline: 2px solid #009b4d;
+  }
+}
+
+/* extract L534-549: the panel's content row (source: `.tab_info`, the flex
+   row inside the show/hide wrapper - mapped directly onto the panel itself
+   here, since decorate() does not render a separate show/hide wrapper). */
+.wrs-accordion-tabs-panel {
+  margin-top: 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs-panel {
+    margin-top: 40px;
+    padding: 24px 0;
+    flex-direction: row;
+  }
+}
+
+/* extract L555-568: the copy column. */
+.wrs-accordion-tabs-panel-head {
+  text-align: left;
+  color: #003400;
+  width: 100%;
+  max-width: initial;
+}
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs-panel-head {
+    width: 50%;
+    max-width: 380px;
+  }
+}
+
+/* extract L646-653 (mobile-only top margin on the heading, part of the
+   grouped `tab_info-content_header` mobile rule). */
+@media (width < 992px) {
+  .wrs-accordion-tabs-panel-heading {
+    margin-top: 20px;
+  }
+}
+
+/*
+ * extract L570-592, L616-620, L628-644: description copy, links and lists.
+ * (L551-553, `.tab_info .tab_info-content .tab_info-content_link a:hover`,
+ * is not ported - it styles an <a> nested inside the CTA link, but the CTA
+ * link IS the anchor in this markup, not a wrapper around one; the selector
+ * cannot match anything decorate() renders.)
+ */
+.wrs-accordion-tabs-panel-desc {
+  font-family: Poppins-Regular, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: normal;
+  margin-bottom: 20px;
+  margin-top: 20px;
+}
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs-panel-desc {
+    margin-top: 0;
+  }
+}
+
+.wrs-accordion-tabs-panel-desc a {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wrs-accordion-tabs-panel-desc a:hover {
+    color: #009b4d;
+  }
+}
+
+.wrs-accordion-tabs-panel-desc a:focus-visible {
+  color: #009b4d;
+}
+
+.wrs-accordion-tabs-panel-desc p {
+  line-height: normal;
+  font-family: Poppins-Regular, Arial, sans-serif;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.wrs-accordion-tabs-panel-desc ul {
+  list-style: disc;
+  margin-top: 1rem;
+  padding-left: 1.25rem;
+}
+
+.wrs-accordion-tabs-panel-desc ol {
+  list-style: decimal;
+  margin-top: 1rem;
+  padding-left: 1.25rem;
+}
+
+/*
+ * extract L594-626: the CTA link. `.md-link-arrow` (L676-699) is reproduced
+ * as a `::after` on the anchor rather than a separate element - see the
+ * docblock. Its glyph (`.far.fa-chevron-right`, extract L18-20,
+ * content:"\f054") is a Unicode right-chevron here, not Font Awesome.
+ */
+.wrs-accordion-tabs-panel-cta {
+  display: flex;
+  align-items: center;
+  font-family: var(--primary-font-bold, Arial, sans-serif);
+  font-size: 1rem;
+  line-height: normal;
+  margin-top: 20px;
+}
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs-panel-cta {
+    margin-top: 0;
+    margin-bottom: 20px;
+  }
+}
+
+.wrs-accordion-tabs-panel-cta::after {
+  content: '\203A';
+  margin-left: 8px;
+  width: 24px;
+  height: 24px;
+  background-color: #003400;
+  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  color: #fbebce;
+  font-size: 14px;
+  line-height: 1;
+}
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs-panel-cta::after {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wrs-accordion-tabs-panel-cta:hover {
+    color: #01722f;
+  }
+
+  .wrs-accordion-tabs-panel-cta:hover::after {
+    background-color: #009b4d;
+  }
+}
+
+.wrs-accordion-tabs-panel-cta:focus-visible {
+  color: #01722f;
+}
+
+.wrs-accordion-tabs-panel-cta:focus-visible::after {
+  background-color: #009b4d;
+}
+
+/* extract L661-674: the tab image. */
+.wrs-accordion-tabs-panel-media img {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  border-radius: 20px;
+  border: 1px solid #707070;
+}
+
+@media (width >= 992px) {
+  .wrs-accordion-tabs-panel-media img {
+    max-width: 480px;
+    width: 50%;
+  }
+}

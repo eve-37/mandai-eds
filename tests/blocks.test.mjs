@@ -680,6 +680,101 @@ test('one-column-news: image and CTA both survive', () => {
   assert.equal(ocn.querySelector('.rb-cta a').textContent, 'View More');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Accordion Tabs - no published markup exists yet (this component has
+ * not been authored on a real page), so this fixture is constructed from
+ * this codebase's own confirmed grouped-cell shapes (see the four-column-tiles
+ * and tabs fixtures above: a plain-text group renders one <p> per field, a
+ * reference+Alt pair collapses to a bare <picture>, and an aem-content+Text
+ * pair collapses onto the anchor's own textContent) rather than copied from
+ * a live page. It should be re-verified against real output once authored.
+ * ------------------------------------------------------------------ */
+const wrsTabRow = (n, { withCta = true, richDesc = false } = {}) => {
+  const desc = richDesc
+    ? `<p>Description ${n}</p><p><strong>bold</strong> copy</p>`
+    : `<p>Description ${n}</p>`;
+  const cta = withCta
+    ? `<div><p><a href="/">Learn more ${n}</a></p><p>true</p></div>`
+    : '<div></div>';
+  return `<div data-aue-resource="urn:tab${n}" data-aue-model="wrsaccordiontab">
+    <div><p>Tab ${n}</p><p>Title ${n}</p>${desc}</div>
+    <div><picture><img src="/tab${n}.png" alt="Alt ${n}"></picture></div>
+    ${cta}
+  </div>`;
+};
+
+const WRS_ACCORDION_TABS = `<div class="wrs-accordion-tabs">
+  <div><div>Accordion Tabs Heading</div></div>
+  <div><div>h3</div></div>
+  <div><div>false</div></div>
+  <div><div>false</div></div>
+  ${wrsTabRow(1)}
+  ${wrsTabRow(2, { withCta: false, richDesc: true })}
+</div>`;
+const at = await decorateBlock('../blocks/wrs-accordion-tabs/wrs-accordion-tabs.js', WRS_ACCORDION_TABS);
+
+test('wrs-accordion-tabs: the parent heading uses the selected style tag', () => {
+  const heading = at.querySelector('.wrs-accordion-tabs-title');
+  assert.equal(heading.tagName, 'H3');
+  assert.equal(heading.textContent, 'Accordion Tabs Heading');
+});
+
+test('wrs-accordion-tabs: one button and one panel per tab, first active', () => {
+  assert.equal(at.querySelectorAll('.wrs-accordion-tabs-btn').length, 2);
+  assert.equal(at.querySelectorAll('.wrs-accordion-tabs-panel').length, 2);
+  assert.equal(at.querySelector('.wrs-accordion-tabs-item').classList.contains('active'), true);
+  assert.equal(at.querySelector('.wrs-accordion-tabs-panel').hidden, false);
+  assert.equal(at.querySelectorAll('.wrs-accordion-tabs-panel')[1].hidden, true);
+});
+
+test('wrs-accordion-tabs: tab_name labels the button, tab_title heads the panel', () => {
+  assert.equal(at.querySelector('.wrs-accordion-tabs-btn').textContent, 'Tab 1');
+  assert.equal(at.querySelector('.wrs-accordion-tabs-panel-heading').textContent, 'Title 1');
+});
+
+test('wrs-accordion-tabs: the image and CTA both survive on a tab with a CTA', () => {
+  const panel = at.querySelector('.wrs-accordion-tabs-panel');
+  assert.equal(panel.querySelector('img').getAttribute('src'), '/tab1.png');
+  const cta = panel.querySelector('.wrs-accordion-tabs-panel-cta');
+  assert.equal(cta.textContent, 'Learn more 1');
+  assert.equal(cta.target, '_blank');
+});
+
+test('wrs-accordion-tabs: a tab with no CTA renders no CTA link', () => {
+  const panel = at.querySelectorAll('.wrs-accordion-tabs-panel')[1];
+  assert.equal(panel.querySelector('.wrs-accordion-tabs-panel-cta'), null);
+});
+
+test('wrs-accordion-tabs: rich description markup (bold text) survives', () => {
+  const panel = at.querySelectorAll('.wrs-accordion-tabs-panel')[1];
+  assert.ok(panel.querySelector('.wrs-accordion-tabs-panel-desc strong'));
+});
+
+test('wrs-accordion-tabs: instrumentation moves onto the panel head, not the panel', () => {
+  assert.equal(at.querySelectorAll('.wrs-accordion-tabs-panel-head[data-aue-resource]').length, 2);
+  assert.equal(at.querySelectorAll('.wrs-accordion-tabs-panel[data-aue-resource]').length, 0);
+});
+
+test('wrs-accordion-tabs: clicking a tab switches the active panel', () => {
+  const buttons = [...at.querySelectorAll('.wrs-accordion-tabs-btn')];
+  buttons[1].click();
+  const panels = [...at.querySelectorAll('.wrs-accordion-tabs-panel')];
+  assert.equal(panels[0].hidden, true);
+  assert.equal(panels[1].hidden, false);
+  assert.equal(buttons[1].getAttribute('aria-selected'), 'true');
+  assert.equal(buttons[0].getAttribute('aria-selected'), 'false');
+  // Restore state for any later assertions against `at`.
+  buttons[0].click();
+});
+
+/* A block authored with no tabs yet must still be selectable in the editor. */
+const WRS_ACCORDION_TABS_EMPTY = '<div class="wrs-accordion-tabs" data-aue-resource="urn:block1"><div><div>Heading only</div></div><div><div></div></div><div><div></div></div><div><div></div></div></div>';
+const atEmpty = await decorateBlock('../blocks/wrs-accordion-tabs/wrs-accordion-tabs.js', WRS_ACCORDION_TABS_EMPTY);
+test('wrs-accordion-tabs: an unconfigured block with a heading stays selectable', () => {
+  assert.equal(atEmpty.querySelector('.wrs-accordion-tabs-title').textContent, 'Heading only');
+  assert.ok(atEmpty.querySelector('.rb-placeholder'));
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {
