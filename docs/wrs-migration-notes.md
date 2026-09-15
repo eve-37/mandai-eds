@@ -2069,3 +2069,230 @@ deliberately is not.
 - `models/_section.json` — appended `wrssectiontitle`
 - `tests/blocks.test.mjs` — cases for the heading level, align, both padding modifiers, the
   linked and unlinked forms, instrumentation, and the unconfigured/editor placeholder
+
+## topparkadvisory
+
+**Source:** `wrs-components-export/topparkadvisory/` — `wrs/components/commons/topparkadvisory`
+(`sling:resourceSuperType="wcm/foundation/components/parsys"`). 4 top-level dialog fields
+(`icon` pathbrowser, `pageToOpen` pathbrowser, `parkTag` Granite tagfield, `hideTopParkAdvisory`
+checkbox). This is component 19 of 19, and the one the run's survey flagged as most blocked.
+
+**Decision: built nothing.** No block folder, no model partial, no `models/_section.json` entry.
+Read `featuredlistingv2` and `mandaicffourcollisting` first, per the task — this component reuses
+their servlet-vs-GraphQL rule but lands on a different branch, and the reasons below explain why
+even a shell (which both of those got) is not the right call here.
+
+### Confirming the survey against the source
+
+`TopParkAdvisoryModel.init()` (`@PostConstruct`) does, in order: `getSlingScriptHelper()
+.getService(ServiceUtils.class)` to obtain a `ResourceResolver` (an **OSGi service call**,
+distinct from the resolver Sling would normally inject — this class deliberately gets its own),
+`resourceResolver.adaptTo(Session.class)` then `session.logout()` in `finally` (a **raw JCR
+session**, opened and closed by hand), `HierarchyNodeInheritanceValueMap` for `icon`,
+`pageToOpen`, and `parkTag` (the same ancestor-cascade mechanism `footer` and `header` found —
+none of the three dialog values this component reads are necessarily authored on the instance the
+author is editing), and then, if not hidden, `retrieveAnnouncements()`:
+`NodeUtils.getListNode(session, getAnnouncementsPath())` returns a raw `NodeIterator`, walked node
+by node, filtered to `dam:Asset`, then to nodes whose `jcr:content/data` resource passes
+`WRSUtils.isTargetContentFragment(..., CONTENT_FRAGMENT_MODEL_TOP_PARK_ADVISORY)`, then adapted to
+`ContentFragment`, then filtered again to `category == "topParkAdvisory"`, then filtered a third
+time to `tags.contains(parkTag)` **and** a publish/unpublish date window checked against
+`Calendar.getInstance()` — "today" — before a `NotificationBean` is added to the render list.
+`getAnnouncementsPath()` itself branches on `currentPage.getLanguage()` (en/zh/ja/ko), each a
+different hardcoded CF folder path constant. `getOfLabel()` calls `I18nUtils.getLabel(…,
+getCurrentPage(), null)`, server-side resource-bundle i18n. All of this matches the survey; nothing
+in it changed on inspection. The HTL renders `notification`, `important`, `interval`,
+`notificationCount`, `ofLabel` — every one of those five values is repository/service-derived, and
+none of the HTL's rendered content maps to any of the four dialog fields directly (the dialog
+fields are inputs to the lookup, not the output).
+
+### Servlet vs GraphQL — working the rule, and why it differs from the other two CF components
+
+1. **Does the block need anything that lives on the page rather than the fragment?** Yes — and in
+   two independent ways, which is new relative to `featuredlistingv2`/`mandaicffourcollisting`
+   (both landed "no" here). First, `icon`/`pageToOpen`/`parkTag` are read via
+   `HierarchyNodeInheritanceValueMap`, so the *effective* values for a given page depend on where
+   in the tree that page sits, not on what (if anything) is authored on the instance itself —
+   exactly the mechanism `header`'s entry generalised beyond `footer`. Second,
+   `getAnnouncementsPath()` branches on `currentPage.getLanguage()`, so the folder being listed is
+   itself a page property, not a fragment property. Branch 1 matches, decisively.
+2. **Does it need filtering, sorting or pagination over many fragments?** Yes, and this is the
+   point the task asked to work through explicitly. Unlike `featuredlistingv2`'s
+   `listItems`(author-curated array of specific fragment paths) and `mandaicffourcollisting`'s
+   `cfPath`-per-row (confirmed, by reading the model, to be individual CF picks despite the
+   dialog's misleading "folder" label), `topparkadvisory` performs a genuine **listing** operation:
+   `NodeUtils.getListNode(session, path)` returns every child of an announcements folder, and the
+   model applies three successive filters (CF-model check, category, tag) plus a date-window test
+   over the *entire* result set. There is no authored list of specific fragment paths anywhere in
+   this dialog — `parkTag` is the only per-instance input, and it selects a subset of an
+   author-independent folder's contents. **This is squarely branch 2** — the branch the other two
+   sibling components explicitly did not land on. Under the rule as applied consistently across
+   all three components, branch 2 is where a GraphQL persisted query is the natural fit: "list
+   Content Fragments of model X, filtered by tag, ordered/limited" is exactly the shape a
+   persisted `...List` query is designed for, and AEM as a Cloud Service's GraphQL endpoint
+   supports `_tags` filtering and date-range filtering with no bespoke server code — arguably a
+   *better* fit here than the servlet route the other two components leaned toward, since there is
+   no bespoke derived-string logic like `getCompressedResizedImageURL` in this model (the fields
+   rendered — `notification`, `important`, `interval` — are used as-is, no resize/compress/format
+   step). That said, the recommendation below is not simply "use GraphQL" — see the cache-key
+   finding, which cuts across both options.
+
+### The cache-key finding — stated plainly, since the task asked for it directly
+
+Whichever of servlet or GraphQL is chosen, the endpoint would in EDS practice be reached through a
+**path- or query-string-cached** fetch (a CDN-fronted persisted query, or a path-cached servlet
+response) — that is the whole point of moving data access out of per-request AEM rendering. That
+model assumes the correct response is a pure function of the request URL. It is not, here, on two
+independent axes:
+
+- **`parkTag` varies by page**, because it is inherited from wherever in the tree it was last set,
+  not authored per-instance in the ordinary EDS sense. Two pages that both embed this component
+  can legitimately need different filtered announcement sets. If the cache key is the endpoint
+  path alone (or a persisted-query id with no variables), the *first* visitor's page determines
+  what every subsequent visitor to *every* page sees, regardless of which page they are actually
+  on — a correctness bug, not a staleness nuance. This is fixable in principle by making the
+  resolved `parkTag` (and locale, which drives the folder path) explicit query parameters /
+  persisted-query variables, so the cache key becomes `(tag, locale)` rather than just the
+  endpoint — that part of the problem has a real fix.
+- **The date window does not.** `today.compareTo(publishDate) > 0 && today.compareTo(unpublishDate)
+  < 0` means the correct answer for a *fixed* `(tag, locale)` pair changes at the moment an
+  announcement's publish or unpublish timestamp is crossed, with no page-path or query-string
+  signal that changes alongside it. A long-lived CDN cache entry keyed by `(tag, locale)` will keep
+  serving an announcement past its unpublish time, or withhold one past its publish time, for as
+  long as the cache entry lives — the classic case a path/query-keyed cache cannot represent at
+  all, because "now" is not part of the key. The only real fixes are a short TTL / no-cache on this
+  specific endpoint (defeating much of the reason to front it with a CDN in the first place for a
+  component whose entire job is a time-sensitive banner) or resolving it client-side per page load
+  (the browser's own request, evaluated at request time, not cached at the edge).
+
+So: **the cache key can be made correct for `parkTag`/locale, but not for the date window** — and
+because this component's whole purpose is "should this be showing right now," the date-window
+half is not a side issue, it is close to the entire point of the component. That is a materially
+worse fit for a cached endpoint than either sibling CF component, neither of which had a
+time-window filter at all. This is also why the "lean servlet" recommendation from the two prior
+components does not simply transfer here even though branch 2 might otherwise suggest GraphQL: the
+caching problem is orthogonal to servlet-vs-GraphQL and defeats the caching benefit of *either*
+choice for this specific field. A human deciding this needs to weigh short-TTL/no-cache serving
+(server- or edge-side) against a client-side fetch made by the visitor's own browser at page-load
+time — not decide servlet-vs-GraphQL as if that were the whole question.
+
+### The tagfield — what would replace it, and whether it depends on the servlet decision
+
+Granite's `cq/gui/components/coral/common/form/tagfield` has no Universal Editor equivalent — it
+picks against AEM's `/content/cq:tags` taxonomy, a repository-resident, hierarchical, open-ended
+vocabulary, and UE has no comparable picker. But look at how the model actually consumes it before
+reaching for a replacement: `private String parkTag` is declared and read as a **single `String`**,
+not an array, and the comparison is `parkTags.contains(parkTag)` — a plain string-membership test
+against the CF's own `tags` array. Whatever multi-select capability the tagfield widget offers in
+the Granite dialog, this component's own logic only ever uses **one** tag value. That is a finding
+worth keeping: the dialog is more capable than the code that reads it, same shape of "widget offers
+more than the model uses" gap `parkTag`'s neighbours don't have, but real.
+
+Given that, the replacement is a single string field, and the choice is between a `select` (a fixed,
+enumerated list of known park-tag values — `zoo`, `river-safari`, `night-safari`, `bird-park`,
+`rainforest-wild`, `wrs`, going by the CSS class vocabulary the deployed stylesheet actually
+carries: `.zoo-style`, `.mrr-style`, `.bird-park-style`, `.night-safari-style`,
+`.river-safari-style`, `.wrs-style`) or free `text` (if the tag vocabulary is open-ended or
+maintained outside this bundle — the CF tag taxonomy itself is not in the export). **This does not
+depend on the servlet-vs-GraphQL choice** — either endpoint shape receives the same single tag
+string as a parameter either way; the field type in the block's own model is orthogonal to how the
+value is transported. It does depend on confirming the actual `/content/cq:tags` vocabulary against
+`Mandai-AEM`, which this bundle does not contain (COMPONENT.md's "Not copied" list stops at direct
+dependencies) — the CSS class names above are suggestive evidence, not confirmation.
+
+### The header dependency — ordering consequence, stated for the human deciding this run
+
+`header`'s own entry (component 8) already found the embed and flagged it without re-solving it:
+`header.html` line 14 unconditionally embeds this component
+(`data-sly-resource="${'topparkadvisory' @ resourceType='wrs/components/commons/topparkadvisory'}"`)
+— the only wrs→wrs cross-component reference in the export. That embed is unconditional (no
+`data-sly-test` gating it out), so in the source, every page rendering `header` also renders this
+component's markup shell (visibility then governed by `hideTopParkAdvisory`, the inheritance
+cascade, and `show-notice.js`/`display:none` at runtime).
+
+The ordering consequence: `header`'s own migration was explicitly scoped to one panel
+(`wrs-visit-our-parks`) and left navigation, login/cart, and this embed flagged rather than built.
+Nothing in this component's analysis removes that block — if anything it adds detail confirming
+why: this component depends on an OSGi service, a raw JCR session, `NodeIterator` traversal, and a
+date-sensitive, non-cacheable-by-path listing query — a strictly harder set of blockers than
+anything `header` itself carries directly. **`header` cannot be considered fully resolved — its
+architecture decision closed — until a human decides what replaces this embed**: drop the advisory
+bar from the EDS header entirely (a scope decision), build the client-side/no-cache fetch this
+entry's cache-key finding argues for and wire it into wherever `header`'s eventual markup lives, or
+leave both `header`'s remaining panels and this component served from AEM behind a reverse-proxy
+boundary. Any of those is legitimate; none of them is this migration pass's call to make
+unilaterally, and none of them can be decided by working on `topparkadvisory` in isolation from
+`header`'s own open decisions (login/cart, nav) — they are the same class of question (per-visitor
+or per-page-tree state that EDS's per-page, cache-fronted model does not represent) and are worth
+resolving together, exactly as `header`'s own entry already said for the inheritance cascade.
+
+### Why building a shell here would be worse than building nothing
+
+`featuredlistingv2` and `mandaicffourcollisting` both got shells because their dialogs are
+genuinely content-shaped: an author picks specific fragment paths, and a "Content Fragment not
+resolved" placeholder per authored row is an honest, useful stand-in for real content once the
+architecture decision is made. None of that carries over here:
+
+- **None of the four dialog fields are the rendered content.** `icon`, `pageToOpen`, `parkTag`,
+  `hideTopParkAdvisory` are all *inputs to a lookup* — configuration, not copy. A shell block's
+  `decorate()` would have nothing authored to echo back as an "unresolved" placeholder per field
+  the way `wrs-featured-listing` echoes back each picked path; it would render one static "not yet
+  implemented" message regardless of what the author fills in, which is exactly what building
+  nothing already communicates, with no added value from having a block folder to maintain.
+- **The dialog's own field semantics don't survive the move to EDS's per-instance model.** In the
+  source, `icon`/`pageToOpen`/`parkTag` are read through ancestor inheritance — an author two pages
+  down the tree from where these were last set sees them without setting anything. EDS block models
+  are per-instance; there is no equivalent mechanism. Building the four fields as ordinary UE
+  fields would silently misrepresent how this component actually worked — it would look like a
+  normal per-instance config panel and behave like nothing of the sort, which is a worse trap than
+  an honest "not built."
+- **The CSS itself confirms this is park-context chrome, not standalone content.** Every rule past
+  the base `.top-park-advisory` selector in `deployed-bundle-extract.css` is scoped under a park
+  identity class on an ancestor (`.zoo-style .md.top-park-advisory …`, `.bird-park-style …`, six of
+  them, repeated for `.icon-info`, `.icon-close`, `.slider-wrapper`) — this component's appearance
+  is itself inherited from page context, the same pattern its data access has.
+- **Two of the three JS behaviours this component depends on are missing from the bundle, not one.**
+  `show-notice.js` (open/close, the `data-show-notice`/`data-close-notice` wiring) and `landing.js`
+  (the `data-slider-thumbnails` carousel config on `.slider-wrapper`) are both referenced in the
+  HTL and both absent — only `simple-carousel.js` is present, and nothing in the HTL's own
+  `data-load-plugins` lists references it directly for this component, so its relevance here is
+  unconfirmed. A shell cannot demonstrate even the interaction chrome (open/close, sliding between
+  notices) without inventing behaviour this bundle does not evidence, on top of having no data.
+
+Given all of that, a `wrs-park-advisory` block in the palette would be selectable, would build,
+lint, and pass tests — and would do zero of the real job while implying, by existing at all, that
+part of the work is done. That is a worse outcome than the honest gap left by building nothing:
+this write-up plus the "not built" line in the closing table is the more accurate signal for the
+next person to act on.
+
+### What a human needs to decide
+
+- **Whether this banner is in scope for the EDS migration at all**, given that its entire purpose —
+  a time-sensitive, per-visitor-irrelevant but per-page-tree-variable notice — has no clean fit in
+  EDS's cache-fronted, per-page-instance model. This is the most upstream question; the rest are
+  moot if the answer is "leave it in AEM behind a proxy" or "drop it."
+- **If it proceeds: servlet or GraphQL**, informed by the branch-2 finding above (GraphQL's native
+  tag/date filtering is a closer fit than either sibling CF component had), but decided together
+  with the cache-key finding, not independently of it — the date window defeats path/query caching
+  regardless of which is chosen, so this is really a caching-strategy decision first and a
+  servlet-vs-GraphQL decision second.
+- **How to serve the date-window filter**: short-TTL/no-cache at the edge, or a client-side fetch
+  made at page-load time bypassing EDS's page cache entirely (the same shape `header`'s entry
+  proposed for per-visitor CIAM/cart state, though this is a per-page-tree, not per-visitor,
+  variability — a different reason, same architectural shape of fix).
+- **The `parkTag` vocabulary** — confirm against `/content/cq:tags` in `Mandai-AEM` before building
+  a `select`; the CSS class names above (`zoo`, `mrr`, `bird-park`, `night-safari`,
+  `river-safari`, `wrs`) are suggestive, not confirmed.
+- **The `header` embed** — resolve together with `header`'s own remaining open decisions (login/
+  cart, navigation), not in isolation; `header` cannot be marked fully resolved until this is
+  decided.
+- **`show-notice.js`/`landing.js`** — both missing from the export; source them from
+  `Mandai-EMP-Frontend` and read them before attempting any interaction-layer build, even after the
+  data question is resolved.
+
+### Files touched
+
+None. No block folder, no `models/_section.json` change, no test cases — building any of those
+would have required inventing content this bundle does not evidence (see above). `npm run
+build:json`, `npm run lint` and `npm test` were run to confirm the repo's existing state (all other
+18 components) is undisturbed by this component's non-build; results below.
