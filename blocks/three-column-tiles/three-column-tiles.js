@@ -5,19 +5,21 @@ import {
 
 const PREFIX = 'three-column-tiles';
 
-/** title, subtitle, mask, cta_ - see _three-column-tiles.json. */
-const PARENT_CELLS = 4;
+/**
+ * title, subtitle, mask - see _three-column-tiles.json.
+ *
+ * No parent CTA. The source dialog gives one to fourcoltiles but NOT to
+ * threecoltiles, whose only buttons are the per-tile secondary ones.
+ */
+const PARENT_CELLS = 3;
 
 export default function decorate(block) {
   const { parentRows, childRows } = splitRows(block, PARENT_CELLS);
 
   let mask = '';
-  let cta = null;
   const plain = [];
 
   parentRows.forEach((row) => {
-    const rowCta = readCta(row);
-    if (rowCta) { cta = rowCta; return; }
     const text = cellText(row);
     if (MASKS.includes(text.toLowerCase())) mask = text.toLowerCase();
     else if (text) plain.push({ row, text });
@@ -25,7 +27,7 @@ export default function decorate(block) {
 
   const [title, subtitle] = plain;
 
-  if (!title && !childRows.length && !cta) {
+  if (!title && !childRows.length) {
     renderEmpty(block, 'Three Column Tiles — add a title and some tiles');
     return;
   }
@@ -103,14 +105,6 @@ export default function decorate(block) {
     inner.append(track);
     const dots = buildDots(track, items, PREFIX);
     if (dots) inner.append(dots);
-  }
-
-  const parentButton = buildCta(cta);
-  if (parentButton) {
-    const wrap = document.createElement('div');
-    wrap.className = `${PREFIX}-cta`;
-    wrap.append(parentButton);
-    inner.append(wrap);
   }
 
   section.append(inner);

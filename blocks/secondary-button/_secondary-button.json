@@ -33,13 +33,6 @@
           "valueType": "string"
         },
         {
-          "component": "text",
-          "name": "linkTitle",
-          "label": "CTA Title",
-          "description": "Optional. Tooltip and accessible name where the CTA text alone is not descriptive.",
-          "valueType": "string"
-        },
-        {
           "component": "select",
           "name": "variant",
           "label": "CTA Color Type",

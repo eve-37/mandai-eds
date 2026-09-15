@@ -583,7 +583,52 @@
   },
   {
     "id": "onecolbannercarousel",
-    "fields": []
+    "fields": [
+      {
+        "component": "select",
+        "name": "mask",
+        "label": "Border Pattern Type",
+        "valueType": "string",
+        "value": "mask-1",
+        "options": [
+          {
+            "name": "Pattern 1",
+            "value": "mask-1"
+          },
+          {
+            "name": "Pattern 2",
+            "value": "mask-2"
+          }
+        ]
+      },
+      {
+        "component": "select",
+        "name": "align",
+        "label": "Content Alignment",
+        "valueType": "string",
+        "value": "left",
+        "options": [
+          {
+            "name": "Left",
+            "value": "left"
+          },
+          {
+            "name": "Center",
+            "value": "center"
+          },
+          {
+            "name": "Right",
+            "value": "right"
+          }
+        ]
+      },
+      {
+        "component": "boolean",
+        "name": "gradient",
+        "label": "Gradient overlay",
+        "valueType": "boolean"
+      }
+    ]
   },
   {
     "id": "banner",
@@ -647,50 +692,6 @@
         "component": "boolean",
         "name": "cta_newTab",
         "label": "Open CTA in new tab",
-        "valueType": "boolean"
-      },
-      {
-        "component": "select",
-        "name": "style_mask",
-        "label": "Border Pattern Type",
-        "valueType": "string",
-        "value": "mask-1",
-        "options": [
-          {
-            "name": "Pattern 1",
-            "value": "mask-1"
-          },
-          {
-            "name": "Pattern 2",
-            "value": "mask-2"
-          }
-        ]
-      },
-      {
-        "component": "select",
-        "name": "style_align",
-        "label": "Text Align",
-        "valueType": "string",
-        "value": "left",
-        "options": [
-          {
-            "name": "Left",
-            "value": "left"
-          },
-          {
-            "name": "Center",
-            "value": "center"
-          },
-          {
-            "name": "Right",
-            "value": "right"
-          }
-        ]
-      },
-      {
-        "component": "boolean",
-        "name": "style_gradient",
-        "label": "Gradient overlay",
         "valueType": "boolean"
       }
     ]
@@ -929,13 +930,6 @@
         "valueType": "string"
       },
       {
-        "component": "text",
-        "name": "linkTitle",
-        "label": "CTA Title",
-        "description": "Optional. Tooltip and accessible name where the CTA text alone is not descriptive.",
-        "valueType": "string"
-      },
-      {
         "component": "select",
         "name": "variant",
         "label": "CTA Color Type",
@@ -995,13 +989,6 @@
         "component": "text",
         "name": "linkText",
         "label": "CTA Name",
-        "valueType": "string"
-      },
-      {
-        "component": "text",
-        "name": "linkTitle",
-        "label": "CTA Title",
-        "description": "Optional. Tooltip and accessible name where the CTA text alone is not descriptive.",
         "valueType": "string"
       },
       {
@@ -1248,41 +1235,6 @@
             "value": "mask-2"
           }
         ]
-      },
-      {
-        "component": "aem-content",
-        "name": "cta_link",
-        "label": "CTA URL",
-        "valueType": "string"
-      },
-      {
-        "component": "text",
-        "name": "cta_linkText",
-        "label": "CTA Name",
-        "valueType": "string"
-      },
-      {
-        "component": "select",
-        "name": "cta_variant",
-        "label": "CTA Color Type",
-        "valueType": "string",
-        "value": "green",
-        "options": [
-          {
-            "name": "Green",
-            "value": "green"
-          },
-          {
-            "name": "Yellow",
-            "value": "yellow"
-          }
-        ]
-      },
-      {
-        "component": "boolean",
-        "name": "cta_newTab",
-        "label": "Open CTA in new tab",
-        "valueType": "boolean"
       }
     ]
   },

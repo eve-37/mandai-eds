@@ -62,11 +62,6 @@
   padding: 15px;
 }
 
-.three-column-tiles .three-column-tiles-cta {
-  margin-top: 40px;
-  text-align: center;
-}
-
 @media (width >= 768px) {
   .three-column-tiles .three-column-tiles-track {
     grid-auto-columns: calc((100% - 16px) / 2);

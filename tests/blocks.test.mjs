@@ -38,7 +38,7 @@ async function decorateBlock(path, html) {
  * Primary Button - markup verbatim from the published page.
  * ------------------------------------------------------------------ */
 const PRIMARY_BUTTON = `<div class="primary-button">
-  <div><div><a href="/" title="Come click on the CTA">index page</a></div></div>
+  <div><div><a href="/">index page</a></div></div>
   <div><div>green</div></div>
   <div><div>center</div></div>
   <div><div>true</div></div>
@@ -46,11 +46,10 @@ const PRIMARY_BUTTON = `<div class="primary-button">
 
 const pb = await decorateBlock('../blocks/primary-button/primary-button.js', PRIMARY_BUTTON);
 
-test('primary-button: link, text and title all come off the one collapsed anchor', () => {
+test('primary-button: link and text come off the one collapsed anchor', () => {
   const a = pb.querySelector('a');
   assert.equal(a.getAttribute('href'), '/');
   assert.equal(a.textContent, 'index page');
-  assert.equal(a.getAttribute('title'), 'Come click on the CTA');
 });
 
 test('primary-button: variant and position are read, not defaulted', () => {
@@ -237,17 +236,21 @@ const THREE_COL = `<div class="three-column-tiles">
   <div><div>Three Column Tiles</div></div>
   <div><div>more description here</div></div>
   <div><div>mask-2</div></div>
-  <div><div><p><a href="/">View More</a></p><p>yellow</p><p>true</p></div></div>
   <div data-aue-resource="urn:c1"><div><picture><img src="/1.png" alt="iceberg"></picture></div><div>image 1</div><div><p><a href="/">View More Details</a></p><p>green</p></div></div>
   <div data-aue-resource="urn:c2"><div><picture><img src="/2.png" alt="headless"></picture></div><div>image 2</div><div><p><a href="/">View More Details</a></p><p>yellow</p></div></div>
 </div>`;
 const tc = await decorateBlock('../blocks/three-column-tiles/three-column-tiles.js', THREE_COL);
 
-test('three-column-tiles: parent copy, mask and CTA are all read', () => {
+test('three-column-tiles: parent copy and mask are read', () => {
   assert.equal(tc.querySelector('.three-column-tiles-title').textContent, 'Three Column Tiles');
   assert.equal(tc.querySelector('.three-column-tiles-subtitle').textContent, 'more description here');
   assert.ok(tc.querySelector('.rb-section.mask-2'));
-  assert.ok(tc.querySelector('.three-column-tiles-cta .rb-cta.yellow'));
+});
+
+test('three-column-tiles: there is no parent CTA - the source dialog has none', () => {
+  assert.equal(tc.querySelector('.three-column-tiles-cta'), null);
+  // Every button on the block belongs to a tile.
+  assert.equal(tc.querySelectorAll('.rb-cta').length, tc.querySelectorAll('li .rb-cta').length);
 });
 
 test('three-column-tiles: each tile keeps its own caption and CTA variant', () => {
@@ -432,11 +435,17 @@ const BANNER = (n) => `<div data-aue-resource="urn:b${n}">
   <div><p>Carousel ${n}</p><p>more description here</p></div>
   <div><p><picture><img src="/desktop${n}.png" alt=""></picture></p><p><picture><img src="/mobile${n}.png" alt=""></picture></p></div>
   <div><p><a href="/">View More</a></p><p>green</p><p>true</p></div>
-  <div><p>mask-1</p><p>left</p><p>false</p></div>
 </div>`;
+/* mask, align and gradient are the CAROUSEL's own three property rows - the
+ * source dialog puts them outside the banners multifield, so every slide
+ * shares them. */
+const CAROUSEL_STYLE = `
+  <div><div>mask-2</div></div>
+  <div><div>center</div></div>
+  <div><div>false</div></div>`;
 const carousel = await decorateBlock(
   '../blocks/one-column-banner-carousel/one-column-banner-carousel.js',
-  `<div class="one-column-banner-carousel">${BANNER(1)}${BANNER(2)}</div>`,
+  `<div class="one-column-banner-carousel">${CAROUSEL_STYLE}${BANNER(1)}${BANNER(2)}</div>`,
 );
 
 test('one-column-banner-carousel: every banner becomes a slide', () => {
@@ -456,11 +465,16 @@ test('one-column-banner-carousel: desktop and mobile backgrounds are told apart'
   assert.match(section.style.getPropertyValue('--banner-bg-mobile'), /mobile1\.png/);
 });
 
+test('one-column-banner-carousel: every slide shares the carousel style', () => {
+  const items = [...carousel.querySelectorAll('li.one-column-banner-carousel-item')];
+  assert.ok(items.every((li) => li.querySelector('.one-column-banner-carousel-content.align-center')));
+  assert.ok(items.every((li) => li.querySelector('.rb-section.mask-2')));
+  assert.ok(items.every((li) => !li.querySelector('.rb-section').classList.contains('has-gradient')));
+});
+
 test('one-column-banner-carousel: style keywords are not rendered as copy', () => {
   const first = carousel.querySelector('li.one-column-banner-carousel-item');
-  assert.ok(first.querySelector('.one-column-banner-carousel-content.align-left'));
-  assert.ok(!first.querySelector('.rb-section').classList.contains('has-gradient'));
-  assert.doesNotMatch(first.textContent, /mask-1|false/);
+  assert.doesNotMatch(first.textContent, /mask-2|center|false/);
 });
 
 /* ------------------------------------------------------------------ *
