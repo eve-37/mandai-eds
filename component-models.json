@@ -1416,5 +1416,34 @@
         "valueType": "boolean"
       }
     ]
+  },
+  {
+    "id": "wrsadmissiontype",
+    "fields": [
+      {
+        "component": "text",
+        "name": "title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "aem-content",
+        "name": "path",
+        "label": "Path",
+        "valueType": "string"
+      },
+      {
+        "component": "boolean",
+        "name": "isOpenNewTab",
+        "label": "Open New Tab?",
+        "valueType": "boolean"
+      },
+      {
+        "component": "text",
+        "name": "description",
+        "label": "Description",
+        "valueType": "string"
+      }
+    ]
   }
 ]

@@ -30,7 +30,8 @@
       "onecolbannercarousel",
       "rbtabs",
       "missions",
-      "wrsaccordiontabs"
+      "wrsaccordiontabs",
+      "wrsadmissiontypes"
     ]
   },
   {
@@ -95,6 +96,12 @@
     "id": "wrsaccordiontabs",
     "components": [
       "wrsaccordiontab"
+    ]
+  },
+  {
+    "id": "wrsadmissiontypes",
+    "components": [
+      "wrsadmissiontype"
     ]
   }
 ]

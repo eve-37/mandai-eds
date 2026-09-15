@@ -1,0 +1,180 @@
+/*
+ * WRS Admission Types Widget
+ *
+ * Port of the DEPLOYED bundle, not the LESS checkout. `styles/` in this
+ * component's export bundle is empty - `.md-admission-type` appears 20x in
+ * the compiled `style.css` AEM actually ships and zero times in the local
+ * Mandai-EMP-Frontend checkout, which is behind what is deployed. The
+ * source of truth here is
+ * ../../../wrs-components-export/admissiontypeswidget/styles/deployed-bundle-extract.css,
+ * which pulled this component's slice straight out of the compiled bundle.
+ * Selectors/declarations below are traced to specific rules in that
+ * extract; values are copied, not invented.
+ *
+ * `.md-header--mega-menu .md-member-button .fa-chevron-right { transform:
+ * rotate(90deg); margin-right:4px }` is in the extract because it shares
+ * the `.fa-chevron-right` class, but it is a header component's rule, not
+ * this one's - not ported (see the extract's own header comment/warning).
+ *
+ * Font Awesome (`.far.fa-chevron-right`, extract L21-23,
+ * content:"\f054") is not shipped in this repo. Replaced with a plain
+ * Unicode chevron on `::after`, carrying the same size/colour/circular
+ * background/position treatment as the source's `.md-admission-type__title
+ * i` + `i::before`, rather than adding an `<i>` element to the markup -
+ * same substitution `wrs-accordion-tabs` already makes for the same glyph.
+ *
+ * `var(--primary-font-regular)` / literal `Poppins-Regular` are the
+ * source's own fonts; this repo's `--heading-*`/`--body-*` tokens belong to
+ * the separately-migrated Ranger Buddies brand and do not match these
+ * values, so they are kept as literal/var-with-fallback rather than
+ * remapped - same call `wrs-accordion-tabs.css` makes. Needs a real font
+ * decision before production.
+ *
+ * Breakpoints: the source is desktop-first with cutoffs at max-width:992px
+ * and max-width:1440px. Rewritten mobile-first here to match this repo's
+ * own `(width >= Npx)` range-query convention; each rule below states which
+ * source declaration it came from.
+ */
+
+/* extract L25-27: `.bg-sap-white`, applied on the block root in the HTL. */
+.wrs-admission-types {
+  background-color: #fbebce;
+}
+
+/* extract L34-43: wrapper padding. Mobile value is the max-width:992 override. */
+.wrs-admission-types-wrapper {
+  padding: 2.5rem 0;
+}
+
+@media (width >= 992px) {
+  .wrs-admission-types-wrapper {
+    padding: 5rem 2.5rem;
+  }
+}
+
+/*
+ * extract L45-63: list gap/direction across all three breakpoints.
+ * Mobile (<992): column, 1.25rem gap (max-width:992 override).
+ * 992-1439: row, 2.813rem gap (max-width:1440 override, i.e. the base rule
+ * used below 1440px).
+ * >=1440: row, 6.063rem gap (the extract's un-media-gated base rule).
+ */
+.wrs-admission-types-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (width >= 992px) {
+  .wrs-admission-types-list {
+    flex-direction: row;
+    gap: 2.813rem;
+  }
+}
+
+@media (width >= 1440px) {
+  .wrs-admission-types-list {
+    gap: 6.063rem;
+  }
+}
+
+/* extract L65-67 */
+.wrs-admission-types-item {
+  flex: 1;
+}
+
+/* extract L69-78: title wrapper margin. Mobile is the max-width:992 override. */
+.wrs-admission-types-title {
+  margin-bottom: 0;
+}
+
+@media (width >= 992px) {
+  .wrs-admission-types-title {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/*
+ * extract L80-105: `.md-admission-type__title p`/`strong` font treatment,
+ * applied here directly to the anchor since decorate() renders the title
+ * as `<a><strong>...</strong></a>` with no separate `<p>`. Mobile value
+ * (1.125rem) is the max-width:992 override; desktop is the base 1.625rem.
+ */
+.wrs-admission-types-title a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.125rem;
+  line-height: normal;
+  color: #003400;
+  margin: 0;
+  font-family: var(--primary-font-regular, Arial, sans-serif);
+  text-decoration: none;
+}
+
+@media (width >= 992px) {
+  .wrs-admission-types-title a {
+    font-size: 1.625rem;
+
+    /* extract L107-117: `strong` flex/align only, no `justify-content`
+       outside the mobile media query, so it reverts to flex's default. */
+    justify-content: flex-start;
+  }
+}
+
+/*
+ * extract L119-135: the chevron swatch, `.md-admission-type__title i` +
+ * `i::before` + hover. Reproduced as `::after` on the anchor, no `<i>`
+ * element - see the file docblock.
+ */
+.wrs-admission-types-title a::after {
+  content: '\203A';
+  margin-left: 0.75rem;
+  min-width: 1.875rem;
+  min-height: 1.875rem;
+  background-color: #003400;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fbebce;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wrs-admission-types-title a:hover::after {
+    background-color: #009b4d;
+  }
+}
+
+/*
+ * extract L141-162: description. Hidden below 992px (max-width:992
+ * display:none), font treatment applies once visible at >=992. Both the
+ * `.md-admission-type__desc` and `.md-admission-type__desc p` rules in the
+ * extract carry identical declarations, so one rule covers the block and
+ * its `<p>` alike here.
+ */
+.wrs-admission-types-desc {
+  display: none;
+}
+
+@media (width >= 992px) {
+  .wrs-admission-types-desc {
+    display: block;
+    font-size: 1.25rem;
+    line-height: normal;
+    color: #202721;
+    font-family: Poppins-Regular, Arial, sans-serif;
+    margin-bottom: 1rem;
+  }
+}
+
+.wrs-admission-types-desc p {
+  margin: 0;
+}
+
+/* Editor-only empty-state placeholder, shared shape with other WRS blocks. */
+.wrs-admission-types .rb-placeholder {
+  padding: 1rem;
+}

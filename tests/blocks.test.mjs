@@ -775,6 +775,85 @@ test('wrs-accordion-tabs: an unconfigured block with a heading stays selectable'
   assert.ok(atEmpty.querySelector('.rb-placeholder'));
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Admission Types - no published markup exists yet (this component has
+ * not been authored on a real page), so this fixture is constructed from
+ * this codebase's own confirmed cell shapes rather than copied from a live
+ * page: the parent has no fields of its own (see the `cards` block, the
+ * confirmed shape for a parent with no model), and each of the 4 child
+ * fields is a single, ungrouped field, which - per the four-column-tiles
+ * `tileRow` caption cell and the primary-button per-field cells above -
+ * renders as bare text directly inside its cell div, with no wrapping <p>.
+ * It should be re-verified against real output once this block has been
+ * authored once.
+ * ------------------------------------------------------------------ */
+const watRow = (n, {
+  title = `Type ${n}`,
+  path = `/content/wrs/en/tickets/type-${n}`,
+  newTab = 'false',
+  description = `Description ${n}`,
+} = {}) => `<div data-aue-resource="urn:item${n}" data-aue-model="wrsadmissiontype">
+  <div>${title}</div>
+  <div>${path}</div>
+  <div>${newTab}</div>
+  <div>${description}</div>
+</div>`;
+
+const WRS_ADMISSION_TYPES = `<div class="wrs-admission-types">
+  ${watRow(1, { newTab: 'true' })}
+  ${watRow(2, { path: '', newTab: 'false', description: '' })}
+</div>`;
+const wat = await decorateBlock('../blocks/wrs-admission-types/wrs-admission-types.js', WRS_ADMISSION_TYPES);
+
+test('wrs-admission-types: every item renders with its own title and description', () => {
+  const items = wat.querySelectorAll('.wrs-admission-types-item');
+  assert.equal(items.length, 2);
+  assert.equal(items[0].querySelector('.wrs-admission-types-title a').textContent, 'Type 1');
+  // resolveHref() appends .html to internal /content paths, per every other block's CTA.
+  assert.equal(items[0].querySelector('.wrs-admission-types-title a').getAttribute('href'), '/content/wrs/en/tickets/type-1.html');
+  assert.equal(items[0].querySelector('.wrs-admission-types-desc').textContent, 'Description 1');
+});
+
+test('wrs-admission-types: isOpenNewTab true opens the link in a new tab, with rel set', () => {
+  const items = wat.querySelectorAll('.wrs-admission-types-item');
+  const a = items[0].querySelector('.wrs-admission-types-title a');
+  assert.equal(a.getAttribute('target'), '_blank');
+  assert.equal(a.getAttribute('rel'), 'noreferrer');
+});
+
+test('wrs-admission-types: isOpenNewTab false does not add a target', () => {
+  const items = wat.querySelectorAll('.wrs-admission-types-item');
+  const a = items[1].querySelector('.wrs-admission-types-title a');
+  assert.equal(a.getAttribute('target'), null);
+});
+
+test('wrs-admission-types: a blank description renders no description block', () => {
+  const items = wat.querySelectorAll('.wrs-admission-types-item');
+  assert.equal(items[1].querySelector('.wrs-admission-types-desc'), null);
+  // Title still renders even with a blank path/description alongside it.
+  assert.equal(items[1].querySelector('.wrs-admission-types-title a').textContent, 'Type 2');
+});
+
+test('wrs-admission-types: instrumentation moves onto each item, not the row it replaces', () => {
+  const items = [...wat.querySelectorAll('.wrs-admission-types-item')];
+  assert.deepEqual(items.map((el) => el.getAttribute('data-aue-resource')), ['urn:item1', 'urn:item2']);
+  // A duplicate data-aue-resource makes the editor select the wrong element.
+  assert.equal(wat.querySelectorAll('[data-aue-resource="urn:item1"]').length, 1);
+});
+
+const watEmpty = await decorateBlock('../blocks/wrs-admission-types/wrs-admission-types.js', '<div class="wrs-admission-types"></div>');
+test('wrs-admission-types: renders nothing when unconfigured outside the editor', () => {
+  assert.equal(watEmpty.children.length, 0);
+});
+
+const watEdit = await decorateBlock(
+  '../blocks/wrs-admission-types/wrs-admission-types.js',
+  '<div class="wrs-admission-types" data-aue-resource="urn:block1"></div>',
+);
+test('wrs-admission-types: unconfigured block stays selectable in the editor', () => {
+  assert.ok(watEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {
