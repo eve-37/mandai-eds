@@ -1178,3 +1178,106 @@ reasons specific to what each component actually is, not just surface naming:
 - `npm run build:json`, `npm run lint` and `npm test` all pass (120/120 tests).
 - `blocks/four-column-tiles/` was **not** touched or extended, per the constraint and the
   not-recommended finding above.
+
+## mandaiexperiencecarouselfeature
+
+**Source:** `wrs-components-export/mandaiexperiencecarouselfeature/` —
+`wrs/components/mandai/mandaiexperiencecarouselfeature`. 16 top-level dialog fields (including 8
+Granite colorfields), one composite multifield (`colItems` → `./imageCarousel`, 7 fields per row).
+Built as `blocks/wrs-experience-carousel/`, a container block: parent `wrsexperiencecarousel` (4
+cells: `card_*`, `cta_*`, `layout_padding`, `color_*`), child `wrsexperiencecarouselitem` (3
+cells: `image`, `content_*`, `cta_*`).
+
+### The per-instance `<style>` block → CSS custom properties
+
+The HTL injects an inline `<style>` block per instance, keyed on
+`#mecf-${resource.path.hashCode}`, generating up to 8 rules from 8 Granite colorfields. Checked
+for a reason this would not translate (the brief specifically asked to check hover-state usage):
+all 8 are plain `background-color`/`color` declarations, the 4 hover variants gated on a
+Modernizr `.no-touch` class this repo already replaces with
+`@media (hover: hover) and (pointer: fine)` elsewhere. No blocker — built as documented, CSS
+custom properties set on the block root in `decorate()`, consumed with fallbacks matching the
+deployed bundle's own defaults so an unconfigured instance still looks like the live site.
+
+### The naming trap — avoided
+
+`contentBodyTitle` = `contentBody` + `Title`, and `contentBodyText` = `contentBody` + `Text`,
+both exactly matching this project's collapsing-suffix convention, with `contentBody` genuinely
+present as a sibling field. Kept as source names, the model build would have silently merged
+`contentBody`/`contentBodyTitle`/`contentBodyText` into one cell, discarding two of three colours
+— caught before building, not after. All 8 are modelled with an explicit `color_` prefix
+(`color_body`, `color_bodyHover`, `color_bodyTitle`, …), so underscore grouping (which runs before
+the suffix rule) puts all 8 in one cell together, deliberately, instead of any pair being silently
+absorbed into another.
+
+### A residual limitation, accepted and flagged, not solved — needs a decision if it bites
+
+All 8 colours are freeform text with no shared vocabulary (unlike this codebase's other grouped
+cells — a heading tag, `true`/`false`, a mask keyword — which are told apart by matching a known
+small value set). They are read **positionally**, in field-declaration order, the same mechanism
+every other grouped cell in this codebase uses (`cellValues()`). This repo's own `masthead`
+fixture demonstrates AEM omits a blank field from a grouped cell entirely rather than emitting an
+empty placeholder for it, so if an author leaves an *earlier* colour blank (e.g. `color_bodyTitle`)
+while setting a *later* one (e.g. `color_bodyArrow`), positional reading will misattribute the
+later value into the earlier slot. The same limitation applies to the card's `title`/`description`
+pair in the same cell (also freeform, also no vocabulary), following the exact technique
+`wrs-accordion-tabs`' `readTab()` already uses for its own title/description pair rather than
+inventing a new one.
+
+This is a genuine architectural limitation of the "≤4 grouped cells, no vocabulary" model for
+fields with more than two freeform optional siblings, not an oversight in this one block — see the
+xwalk `key-value: true` escape hatch in `component-definition.json`'s `template`, which would
+solve it completely by rendering every field as an explicit label/value row, but restructures the
+**entire** block's markup (all-or-nothing per model), not just one cell, so it was not applied here
+on the strength of a single component. If the 8-colour cell (or the title/description pair) turns
+out to be authored out of order in practice once this block is live, `key-value: true` on this
+specific model — accepting the markup-shape change — is the real fix; re-verify against real
+published markup first, per every WRS block's standing caveat.
+
+### The Java model — clean, confirmed
+
+`MandaiExperienceCarouselFeatureModel.getImageCarousel()`/`getCtaLink()` do only presentational
+work: `CommonUtils.getProperURL()` for link resolution (the same idiom already ported elsewhere
+as `resolveHref()`), and `resourceResolver.getResource(image + "/jcr:content/metadata")` reads to
+read an asset's own `tiff:ImageWidth`/`tiff:ImageLength` for the `<img>` width/height attributes —
+a direct resource lookup on the asset itself, not a query, tag read, or service call. Nothing
+flagged; width/height attributes were not carried into the port (EDS's own optimised `<picture>`
+markup does not need them), a deliberate simplification, not a gap.
+
+### Two RTE fields, shared custom config — not re-flagged at length
+
+`card_description` and `content_description` both use `/apps/wrs/widgets/richtext/text`, the same
+shared custom RTE config already flagged for its lack of a Universal Editor restricted-style-list
+equivalent (see component 1's entry). Cross-referenced, not repeated here.
+
+### `md-carousel.js` — reimplemented, not ported
+
+Shared with two other components in this run. It is a thin Slick wrapper
+(`slides-to-show-desktop/tablet/mobile="1"` here — always one slide at a time). Reimplemented
+using this repo's shared `.rb-track`/`.rb-dots` native scroll-snap primitives (`buildDots()` from
+`scripts/rb-helpers.js`), the same substitution `one-column-banner-carousel` already made, rather
+than porting jQuery/Slick. Slick's own arrow/dot chrome was not ported; native touch/keyboard
+scrolling plus dots replace it. The dot colours are overridden away from `.rb-dot`'s shared Ranger
+Buddies palette, since WRS is a separately-migrated brand with its own colours.
+
+### Files touched
+
+- `blocks/wrs-experience-carousel/_wrs-experience-carousel.json` — new; parent
+  `wrsexperiencecarousel` (16 dialog fields in 4 cells) with a `filter` naming the child; child
+  `wrsexperiencecarouselitem` (7 dialog fields in 3 cells).
+- `blocks/wrs-experience-carousel/wrs-experience-carousel.js` — new; full `decorate()`, no seams —
+  every field in this dialog is presentational, unlike the two Content-Fragment-backed components
+  above.
+- `blocks/wrs-experience-carousel/wrs-experience-carousel.css` — new; ports
+  `styles/deployed-bundle-extract.css`'s `md-feature-carousel-experience`/`md-feature-carousel__*`
+  rules, with the 8 colour rules rewritten as `var(--wrs-ecf-*, <deployed default>)`.
+- `models/_section.json` — appended `"wrsexperiencecarousel"` to the `section` filter's
+  `components` array (child id intentionally not added).
+- `tests/blocks.test.mjs` — added 15 cases: card title/heading/CTA, description markup, placement
+  modifier class, the 8 colours landing as 8 distinct custom properties (guards the naming trap
+  directly), item count, `image_disableGradient` toggling `text-gradient`, item CTA presence, item
+  title/description, dots for a multi-item carousel, instrumentation on the title block and each
+  item, all four `layout_padding` states, no-CTA rendering, no-colours rendering (fallback path),
+  a blank optional description, and the unconfigured-outside-editor /
+  unconfigured-in-editor-placeholder pair.
+- `npm run build:json`, `npm run lint` and `npm test` all pass (140/140 tests).

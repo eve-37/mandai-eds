@@ -1518,6 +1518,212 @@
     ]
   },
   {
+    "id": "wrsexperiencecarousel",
+    "fields": [
+      {
+        "component": "text",
+        "name": "card_title",
+        "label": "Card Title",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "card_style",
+        "label": "Card Title Heading Size",
+        "valueType": "string",
+        "value": "",
+        "options": [
+          {
+            "name": "Default (H4)",
+            "value": ""
+          },
+          {
+            "name": "H1",
+            "value": "h1"
+          },
+          {
+            "name": "H2",
+            "value": "h2"
+          },
+          {
+            "name": "H3",
+            "value": "h3"
+          },
+          {
+            "name": "H5",
+            "value": "h5"
+          },
+          {
+            "name": "H6",
+            "value": "h6"
+          }
+        ]
+      },
+      {
+        "component": "richtext",
+        "name": "card_description",
+        "label": "Card Description",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "card_placement",
+        "label": "Card Position Layout",
+        "description": "Please select the card position (default on left aligned).",
+        "valueType": "string",
+        "value": "left",
+        "options": [
+          {
+            "name": "Left Aligned",
+            "value": "left"
+          },
+          {
+            "name": "Right Aligned",
+            "value": "right"
+          }
+        ]
+      },
+      {
+        "component": "aem-content",
+        "name": "cta_link",
+        "label": "Card CTA Link",
+        "rootPath": "/content",
+        "valueType": "string"
+      },
+      {
+        "component": "boolean",
+        "name": "cta_newTab",
+        "label": "Open Link In New Tab",
+        "valueType": "boolean"
+      },
+      {
+        "component": "select",
+        "name": "layout_padding",
+        "label": "Section Padding",
+        "description": "Combines the source's noTopPadding/noBottomPadding checkboxes into one field, the same technique wrs-four-column-listing uses (see docs/wrs-migration-notes.md), so the two booleans never land in the same grouped cell with no way to tell which is which.",
+        "valueType": "string",
+        "value": "none",
+        "options": [
+          {
+            "name": "Normal padding",
+            "value": "none"
+          },
+          {
+            "name": "No top padding",
+            "value": "no-top"
+          },
+          {
+            "name": "No bottom padding",
+            "value": "no-bottom"
+          },
+          {
+            "name": "No top or bottom padding",
+            "value": "no-top-bottom"
+          }
+        ]
+      },
+      {
+        "component": "text",
+        "name": "color_body",
+        "label": "Content Body Default Color",
+        "description": "Hex or CSS colour value. This field, and the seven below, are all freeform colour text - there is no colorfield component in this project's Universal Editor field set, matching the same 'text' idiom used everywhere else in this repo for a free colour value (see docs/wrs-migration-notes.md ## backgroundsection). All eight are explicitly prefixed color_ so none of them accidentally collapse into a sibling via the model-build suffix rule - contentBody + Title/Text are exactly the Title/Text suffixes the xwalk max-cells linter collapses onto a base field named contentBody, which would silently have merged three distinct colours into one had the original field names been kept as-is.",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "color_bodyHover",
+        "label": "Content Body Hover Effect Color",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "color_bodyTitle",
+        "label": "Content Body Title Color",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "color_bodyTitleHover",
+        "label": "Content Body Title Hover Effect Color",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "color_bodyText",
+        "label": "Content Body Text Color",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "color_bodyTextHover",
+        "label": "Content Body Text Hover Effect Color",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "color_bodyArrow",
+        "label": "Content Body Arrow Link Color",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "color_bodyArrowHover",
+        "label": "Content Body Arrow Link Hover Effect Color",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
+    "id": "wrsexperiencecarouselitem",
+    "fields": [
+      {
+        "component": "reference",
+        "name": "image",
+        "label": "Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "imageAlt",
+        "label": "Image Alt Text",
+        "valueType": "string"
+      },
+      {
+        "component": "boolean",
+        "name": "image_disableGradient",
+        "label": "Disable Text Gradient On Image",
+        "description": "Options to remove text gradient on image",
+        "valueType": "boolean"
+      },
+      {
+        "component": "text",
+        "name": "content_title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "richtext",
+        "name": "content_description",
+        "label": "Sub Text",
+        "valueType": "string"
+      },
+      {
+        "component": "aem-content",
+        "name": "cta_link",
+        "label": "Image CTA Link",
+        "rootPath": "/content/wrs",
+        "valueType": "string"
+      },
+      {
+        "component": "boolean",
+        "name": "cta_newTab",
+        "label": "Open Link In New Tab",
+        "valueType": "boolean"
+      }
+    ]
+  },
+  {
     "id": "wrsfeaturedlisting",
     "fields": []
   },

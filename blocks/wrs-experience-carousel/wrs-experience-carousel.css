@@ -1,0 +1,318 @@
+/*
+ * WRS Experience Carousel
+ *
+ * Ported from the DEPLOYED bundle, not the LESS checkout - see
+ * ../../../wrs-components-export/mandaiexperiencecarouselfeature/styles/deployed-bundle-extract.css
+ * (`md-feature-carousel-experience`, `md-feature-carousel__*`, `title-content`,
+ * `md-link-with-arrow`/`md-link-arrow`, `text-sap-white` are all named in its
+ * own "extracted by" header comment). `experience-planner.less` /
+ * `list-experience.less` in this bundle were NOT used as a source - per
+ * COMPONENT.md they come from a checkout behind what is deployed.
+ *
+ * SLICK -> NATIVE SCROLL-SNAP
+ * ----------------------------
+ * The source drives its one-at-a-time carousel with Slick
+ * (`data-md-carousel`, `md-carousel.js`, `slides-to-show-*="1"`). This port
+ * reuses this repo's shared `.rb-track`/`.rb-track-item`/`.rb-dots` scroll-
+ * snap primitives (styles/styles.css) instead of porting Slick, the same
+ * substitution `one-column-banner-carousel` already made for the same
+ * reason (see scripts/rb-helpers.js's buildDots() docblock) - no jQuery
+ * dependency, and native momentum/keyboard/screen-reader scrolling for free.
+ * None of the extract's `.slick-*` rules are ported for that reason. The
+ * dot/active colours ARE overridden below rather than left as `.rb-dot`'s
+ * shared Ranger Buddies palette - WRS is a separately-migrated brand with a
+ * different palette (the same reasoning `backgroundsection`'s entry in
+ * docs/wrs-migration-notes.md already applied to `.rb-section.bg-*`).
+ *
+ * PER-INSTANCE COLOUR THEMING -> CSS CUSTOM PROPERTIES
+ * -------------------------------------------------------
+ * The source injects an inline <style> block per instance from 8 Granite
+ * colorfields. This port reads those 8 values in
+ * wrs-experience-carousel.js and sets them as custom properties on the
+ * block root; every rule below that the source keyed on one of those 8
+ * fields uses `var(--wrs-ecf-*, <the deployed bundle's own default>)`, so an
+ * unconfigured instance renders identically to the live site's default
+ * styling today. See the block JS's docblock for the full mapping and the
+ * one real limitation (positional reading of same-shaped freeform values).
+ *
+ * HOVER-REVEAL CAPTION - ported as-is, not "improved"
+ * -------------------------------------------------------
+ * `.feature-content-inner`/`.title` are transform-hidden by default and
+ * only reveal on hover (`.no-touch ... :hover`, replaced here with
+ * `@media (hover: hover) and (pointer: fine)` per the migration brief's
+ * house pattern). On a touch device this content never reveals in the
+ * SOURCE either - ported faithfully, not fixed, per the ground rule
+ * ("when the source looks wrong, port it anyway and say so").
+ */
+
+.wrs-experience-carousel {
+  padding: 120px 0;
+}
+
+@media (width <= 1024px) {
+  .wrs-experience-carousel {
+    padding: 40px 0;
+  }
+}
+
+.wrs-experience-carousel.no-top-padding {
+  padding-top: 0;
+}
+
+.wrs-experience-carousel.no-bottom-padding {
+  padding-bottom: 0;
+}
+
+.wrs-experience-carousel-wrapper {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.wrs-experience-carousel-placement-right .wrs-experience-carousel-wrapper {
+  flex-direction: row-reverse;
+}
+
+@media (width <= 991px) {
+  .wrs-experience-carousel-wrapper,
+  .wrs-experience-carousel-placement-right .wrs-experience-carousel-wrapper {
+    gap: 16px;
+    flex-direction: column;
+  }
+}
+
+/* ---- Title card ---------------------------------------------------- */
+
+.wrs-experience-carousel-title-block {
+  width: 380px;
+  z-index: 2;
+  flex: 0 0 380px;
+}
+
+@media (width <= 991px) {
+  .wrs-experience-carousel-title-block {
+    width: 100%;
+    max-width: initial;
+    flex: initial;
+  }
+}
+
+a.wrs-experience-carousel-title-content {
+  cursor: pointer;
+}
+
+.wrs-experience-carousel-title-content {
+  display: block;
+  color: var(--wrs-ecf-body-text, #fbebce);
+  background-color: var(--wrs-ecf-body, #003400);
+  border-radius: 20px;
+  padding: 20px;
+  font-size: 1rem;
+  border: 2px solid transparent;
+  text-decoration: none;
+}
+
+.wrs-experience-carousel-title-content:focus {
+  border: 2px solid #fc0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.wrs-experience-carousel-title-content:hover {
+    background-color: var(--wrs-ecf-body-hover, #009b4d);
+    color: var(--wrs-ecf-body-text-hover, #fbebce);
+  }
+}
+
+.wrs-experience-carousel-description {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.wrs-experience-carousel-description p {
+  margin-bottom: 1rem;
+}
+
+.wrs-experience-carousel-header {
+  font-size: 1.625rem;
+  line-height: normal;
+  color: var(--wrs-ecf-body-title, #fbebce);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.wrs-experience-carousel-title-content:hover .wrs-experience-carousel-header {
+    color: var(--wrs-ecf-body-title-hover, #fbebce);
+  }
+}
+
+.wrs-experience-carousel-link-with-arrow {
+  display: flex;
+  font-family: var(--primary-font-bold, inherit);
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.wrs-experience-carousel-link-arrow {
+  color: #003400;
+  background-color: var(--wrs-ecf-body-arrow, #fc0);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  min-width: 30px;
+  min-height: 30px;
+  flex-shrink: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.wrs-experience-carousel-title-content:hover .wrs-experience-carousel-link-arrow {
+    background-color: var(--wrs-ecf-body-arrow-hover, #ffe88e);
+  }
+}
+
+@media (width <= 992px) {
+  .wrs-experience-carousel-link-arrow {
+    width: 1.5rem;
+    height: 1.5rem;
+    min-width: 24px;
+    min-height: 24px;
+  }
+}
+
+.wrs-experience-carousel-title-content ol {
+  list-style: decimal;
+  padding-left: 20px;
+}
+
+.wrs-experience-carousel-title-content ul {
+  list-style: initial;
+  padding-left: 20px;
+}
+
+.wrs-experience-carousel-title-content ol li,
+.wrs-experience-carousel-title-content ul li {
+  font-size: 1rem;
+}
+
+/* ---- Carousel track --------------------------------------------------- */
+
+.wrs-experience-carousel-track {
+  max-width: 580px;
+
+  /* Overrides the shared .rb-track's Ranger Buddies spacing defaults with
+     the source's own one-at-a-time sizing; the scroll-snap MECHANICS are
+     reused, the layout numbers are this component's own. */
+  grid-auto-columns: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+@media (width <= 991px) {
+  .wrs-experience-carousel-track {
+    max-width: 100%;
+  }
+}
+
+.wrs-experience-carousel-dots .rb-dot {
+  background-color: #d8d8d8;
+}
+
+.wrs-experience-carousel-dots .rb-dot.active {
+  background-color: var(--wrs-ecf-body, #003400);
+}
+
+.wrs-experience-carousel-item {
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+
+.wrs-experience-carousel-item:focus-within {
+  border: 2px solid #01722f;
+}
+
+.wrs-experience-carousel-container {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.wrs-experience-carousel-img img {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  border-radius: 20px;
+  display: block;
+}
+
+.wrs-experience-carousel-item.text-gradient::after {
+  content: '';
+  background-image: linear-gradient(180deg, rgb(0 0 0 / 0%) 0%, rgb(0 0 0 / 80%) 100%);
+  width: 100%;
+  height: 50%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.wrs-experience-carousel-content {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 25px;
+  overflow: hidden;
+  z-index: 2;
+  direction: ltr;
+}
+
+.wrs-experience-carousel-content .feature-content-inner {
+  transition: transform 0.4s;
+  transform: translateY(100%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wrs-experience-carousel-item:hover .feature-content-inner {
+    transform: translateY(0);
+  }
+}
+
+.wrs-experience-carousel-item-title {
+  font-family: var(--primary-font-bold, inherit);
+  font-weight: 700;
+  margin-bottom: 10px;
+  font-size: 1.625rem;
+  line-height: 1.625rem;
+  min-height: 25px;
+}
+
+.wrs-experience-carousel-content .body-text1 {
+  font-size: 1.25rem;
+  line-height: 1.5rem;
+}
+
+@media (width <= 991px) {
+  .wrs-experience-carousel-content {
+    padding: 10px 15px;
+  }
+
+  .wrs-experience-carousel-item-title {
+    font-size: 1.25rem;
+    line-height: 26px;
+    margin-bottom: 10px;
+    margin-top: 0;
+  }
+
+  .wrs-experience-carousel-content .body-text1 {
+    font-size: 0.875rem;
+    line-height: 1.063rem;
+  }
+}
+
+.text-sap-white {
+  color: #fbebce !important;
+}

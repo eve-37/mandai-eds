@@ -1207,6 +1207,192 @@ test('wrs-four-column-listing: unconfigured block stays selectable in the editor
   assert.ok(wfcEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Experience Carousel - fixtures are CONSTRUCTED from this repo's own
+ * confirmed cell shapes (readCta-style grouped cta_ cells - four-column-tiles;
+ * positional title/description pairs - wrs-accordion-tabs' readTab()), not
+ * copied from a published AEM page (none of these WRS components has been
+ * authored yet). Must be re-verified once wrs-experience-carousel has real
+ * published markup to check against - see wrs-experience-carousel.js's own
+ * docblock for the specific, accepted risk in the colour cell and the
+ * card title/description pair: both are read POSITIONALLY because neither
+ * has a vocabulary to content-match on, so an EARLIER blank field in either
+ * group can misattribute a LATER one's value.
+ * ------------------------------------------------------------------ */
+const wecCardRow = ({
+  title = 'Elephant Trail',
+  style = 'h2',
+  description = 'Discover our elephants up close.',
+  placement = 'right',
+} = {}) => {
+  const parts = [title, style, description, placement].filter((v) => v !== '');
+  return `<div>${parts.map((v) => `<p>${v}</p>`).join('')}</div>`;
+};
+
+const wecCtaRow = ({ href = '/content/wrs/en/elephants', newTab = true } = {}) => (
+  href ? `<div><p><a href="${href}">Learn more</a></p><p>${newTab}</p></div>` : '<div></div>'
+);
+
+const wecColors = ['#111111', '#222222', '#333333', '#444444', '#555555', '#666666', '#777777', '#888888'];
+const wecColorRow = (colors = wecColors) => `<div>${colors.map((c) => `<p>${c}</p>`).join('')}</div>`;
+
+const wecItemRow = (n, {
+  image = true,
+  disableGradient = false,
+  title = `Elephant Encounter ${n}`,
+  description = `Get up close with our herd ${n}.`,
+  ctaHref = `/content/wrs/en/elephants/book-${n}`,
+  newTab = false,
+} = {}) => {
+  const imageCell = image
+    ? `<div><p><picture><img src="/elephant-${n}.jpg" alt="Elephant ${n}"></picture></p><p>${disableGradient}</p></div>`
+    : `<div><p>${disableGradient}</p></div>`;
+  const contentParts = [title, description].filter(Boolean);
+  const contentCell = `<div>${contentParts.map((v) => `<p>${v}</p>`).join('')}</div>`;
+  const ctaCell = ctaHref ? `<div><p><a href="${ctaHref}">Book now</a></p><p>${newTab}</p></div>` : '<div></div>';
+  return `<div data-aue-resource="urn:item${n}" data-aue-model="wrsexperiencecarouselitem">
+    ${imageCell}
+    ${contentCell}
+    ${ctaCell}
+  </div>`;
+};
+
+const WEC = `<div class="wrs-experience-carousel" data-aue-resource="urn:block1">
+  ${wecCardRow()}
+  ${wecCtaRow()}
+  <div>no-top</div>
+  ${wecColorRow()}
+  ${wecItemRow(1)}
+  ${wecItemRow(2, { disableGradient: true, ctaHref: '' })}
+</div>`;
+
+const wec = await decorateBlock('../blocks/wrs-experience-carousel/wrs-experience-carousel.js', WEC);
+
+test('wrs-experience-carousel: the card title, heading level and CTA link render together', () => {
+  const titleContent = wec.querySelector('.wrs-experience-carousel-title-content');
+  assert.equal(titleContent.tagName, 'A');
+  assert.equal(titleContent.getAttribute('href'), '/content/wrs/en/elephants');
+  assert.equal(titleContent.getAttribute('target'), '_blank');
+  const heading = titleContent.querySelector('.wrs-experience-carousel-header');
+  assert.equal(heading.tagName, 'H2');
+  assert.equal(heading.textContent, 'Elephant Trail');
+});
+
+test('wrs-experience-carousel: the card description keeps its markup', () => {
+  const desc = wec.querySelector('.wrs-experience-carousel-description');
+  assert.match(desc.innerHTML, /Discover our elephants up close\./);
+});
+
+test('wrs-experience-carousel: card_placement drives the block-level modifier class', () => {
+  assert.ok(wec.classList.contains('wrs-experience-carousel-placement-right'));
+  assert.equal(wec.classList.contains('wrs-experience-carousel-placement-left'), false);
+});
+
+test('wrs-experience-carousel: the arrow icon only renders when there is a link to follow', () => {
+  assert.ok(wec.querySelector('.wrs-experience-carousel-link-arrow'));
+});
+
+test('wrs-experience-carousel: the 8 colour fields land as 8 DISTINCT custom properties, not merged', () => {
+  const props = [
+    '--wrs-ecf-body', '--wrs-ecf-body-hover', '--wrs-ecf-body-title', '--wrs-ecf-body-title-hover',
+    '--wrs-ecf-body-text', '--wrs-ecf-body-text-hover', '--wrs-ecf-body-arrow', '--wrs-ecf-body-arrow-hover',
+  ];
+  const values = props.map((p) => wec.style.getPropertyValue(p));
+  assert.deepEqual(values, wecColors);
+  // Guards specifically against the collapsing-suffix trap: contentBody +
+  // Title/Text would have silently merged three distinct colours into one
+  // had the fields been named without the color_ prefix - confirm the
+  // first three are genuinely different values, not the same one repeated.
+  assert.equal(new Set(values).size, 8);
+});
+
+test('wrs-experience-carousel: two items render, one per authored image row', () => {
+  assert.equal(wec.querySelectorAll('.wrs-experience-carousel-item').length, 2);
+});
+
+test('wrs-experience-carousel: image_disableGradient toggles the text-gradient modifier class', () => {
+  const items = [...wec.querySelectorAll('.wrs-experience-carousel-item')];
+  assert.ok(items[0].classList.contains('text-gradient'), 'item 1 (disableGradient=false) should keep the gradient');
+  assert.equal(items[1].classList.contains('text-gradient'), false, 'item 2 (disableGradient=true) should not');
+});
+
+test('wrs-experience-carousel: an item CTA makes the item container a link; a missing one keeps it a div', () => {
+  const items = [...wec.querySelectorAll('.wrs-experience-carousel-container')];
+  assert.equal(items[0].tagName, 'A');
+  assert.equal(items[0].getAttribute('href'), '/content/wrs/en/elephants/book-1');
+  assert.equal(items[1].tagName, 'DIV');
+});
+
+test('wrs-experience-carousel: item title and description render inside feature-content-inner', () => {
+  const first = wec.querySelector('.wrs-experience-carousel-item');
+  assert.equal(first.querySelector('.wrs-experience-carousel-item-title').textContent, 'Elephant Encounter 1');
+  assert.match(first.querySelector('.body-text1').textContent, /Get up close with our herd 1\./);
+});
+
+test('wrs-experience-carousel: dots render for a multi-item carousel', () => {
+  assert.ok(wec.querySelector('.wrs-experience-carousel-dots'));
+  assert.equal(wec.querySelectorAll('.wrs-experience-carousel-dots .rb-dot').length, 2);
+});
+
+test('wrs-experience-carousel: instrumentation moves onto the title block and each item, not a shared sibling', () => {
+  assert.equal(wec.querySelectorAll('[data-aue-resource="urn:item1"]').length, 1);
+  assert.equal(wec.querySelector('[data-aue-resource="urn:item1"]').className.split(' ')[0], 'wrs-experience-carousel-item');
+  assert.equal(wec.querySelectorAll('[data-aue-resource="urn:item2"]').length, 1);
+});
+
+// eslint-disable-next-line no-restricted-syntax
+for (const padding of ['none', 'no-top', 'no-bottom', 'no-top-bottom']) {
+  const html = `<div class="wrs-experience-carousel">${wecCardRow()}${wecCtaRow()}<div>${padding}</div>${wecColorRow()}${wecItemRow(1)}</div>`;
+  // eslint-disable-next-line no-await-in-loop
+  const el = await decorateBlock('../blocks/wrs-experience-carousel/wrs-experience-carousel.js', html);
+  test(`wrs-experience-carousel: layout_padding="${padding}" sets the expected top/bottom classes unambiguously`, () => {
+    assert.equal(el.classList.contains('no-top-padding'), padding === 'no-top' || padding === 'no-top-bottom');
+    assert.equal(el.classList.contains('no-bottom-padding'), padding === 'no-bottom' || padding === 'no-top-bottom');
+  });
+}
+
+const wecNoCta = await decorateBlock(
+  '../blocks/wrs-experience-carousel/wrs-experience-carousel.js',
+  `<div class="wrs-experience-carousel">${wecCardRow()}${wecCtaRow({ href: '' })}<div>none</div>${wecColorRow()}${wecItemRow(1)}</div>`,
+);
+test('wrs-experience-carousel: with no CTA link, the title card renders as a div, not a dead link, and has no arrow', () => {
+  const titleContent = wecNoCta.querySelector('.wrs-experience-carousel-title-content');
+  assert.equal(titleContent.tagName, 'DIV');
+  assert.equal(wecNoCta.querySelector('.wrs-experience-carousel-link-arrow'), null);
+});
+
+const wecNoColors = await decorateBlock(
+  '../blocks/wrs-experience-carousel/wrs-experience-carousel.js',
+  `<div class="wrs-experience-carousel">${wecCardRow()}${wecCtaRow()}<div>none</div><div></div>${wecItemRow(1)}</div>`,
+);
+test('wrs-experience-carousel: with no colours authored, no custom properties are set (CSS fallbacks apply)', () => {
+  assert.equal(wecNoColors.style.getPropertyValue('--wrs-ecf-body'), '');
+  assert.equal(wecNoColors.style.getPropertyValue('--wrs-ecf-body-arrow-hover'), '');
+});
+
+const wecNoDesc = await decorateBlock(
+  '../blocks/wrs-experience-carousel/wrs-experience-carousel.js',
+  `<div class="wrs-experience-carousel">${wecCardRow({ description: '' })}${wecCtaRow({ href: '' })}<div>none</div>${wecColorRow()}</div>`,
+);
+test('wrs-experience-carousel: a blank optional description does not crash decorate(), title still renders', () => {
+  assert.equal(wecNoDesc.querySelector('.wrs-experience-carousel-header').textContent, 'Elephant Trail');
+  assert.equal(wecNoDesc.querySelector('.wrs-experience-carousel-description'), null);
+  assert.equal(wecNoDesc.querySelector('.wrs-experience-carousel-track'), null);
+});
+
+const wecEmpty = await decorateBlock('../blocks/wrs-experience-carousel/wrs-experience-carousel.js', '<div class="wrs-experience-carousel"></div>');
+test('wrs-experience-carousel: renders nothing when unconfigured outside the editor', () => {
+  assert.equal(wecEmpty.children.length, 0);
+});
+
+const wecEdit = await decorateBlock(
+  '../blocks/wrs-experience-carousel/wrs-experience-carousel.js',
+  '<div class="wrs-experience-carousel" data-aue-resource="urn:block1"></div>',
+);
+test('wrs-experience-carousel: unconfigured block stays selectable in the editor', () => {
+  assert.ok(wecEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {
