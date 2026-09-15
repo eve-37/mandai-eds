@@ -227,3 +227,113 @@ explicitly permitted for this component, a new `aem.js` handler was not).
 - `component-models.json` — regenerated via `npm run build:json` (generated file, not
   hand-edited).
 - No block folder was created.
+
+## columncontrol
+
+**Source:** `wrs-components-export/columncontrol/` — `wrs/components/commons/columncontrol`
+(`sling:resourceSuperType="wcm/foundation/components/parsys"`).
+
+**Decision: reuse the existing `columns` block. No new block was built, and the shared block was
+not modified.**
+
+### Why this is not a new block
+
+The HTL renders no content of its own:
+
+```html
+<sly data-sly-list="${model.colSize}">
+  <div class="${model.colDesktopCss} ${model.colMobileCss} col-block" data-eq-height=".col-block">
+    <sly data-sly-resource="${ 'par_content_{0}' @ format=itemList.index, resourceType='wcm/foundation/components/parsys'}" />
+  </div>
+</sly>
+```
+
+`ColumnControlModel.java` does exactly one thing: turns a `colDesktop` value of `1|2|3|4` into a
+Bootstrap grid class `col-md-12|6|4|3`, and `colMobile` (`1|2`) into `col-xs-12|6`. It builds a
+`List` of that length purely to drive the `data-sly-list` loop count — `colSize` has no content of
+its own, it is a counter. No repository or service access, nothing beyond string mapping.
+`PlaceholderManager` (the other Java class in the bundle) only emits the `wcmmode.edit` "no title"
+placeholder on the parent component, unrelated to the column grid — EDS/UE has its own
+unconfigured-block placeholder, so nothing there needs porting either.
+
+That is precisely the "renders no content of its own, only a grid" shape the task's prior survey
+predicted, and precisely what EDS's native `columns` block (`core/franklin/components/columns/v1/columns`,
+already in `blocks/columns/`) is for: column count comes from the number of cells an author
+creates, not from a dropdown converted to a CSS class. `blocks/columns/columns.js` adds
+`columns-${n}-cols` from the actual child count and does not read `model.columns`/`model.rows` at
+runtime — those two model fields are Universal Editor insert-time scaffold hints (how many
+placeholder cells to create), never re-read by `decorate()`. `columncontrol`'s `colDesktop` maps
+onto exactly that same "how many cells" question, one level earlier in authoring.
+
+### Desktop grid: full equivalence, checked against the deployed CSS
+
+`styles/deployed-bundle-extract.css` (the ground-truth extract) carries **no grid/width rules at
+all** for `col-md-*`/`col-xs-*` — those come from the site's global Bootstrap, not from this
+component's own stylesheet. Everything in the extract is either typography inherited by nested
+rich text (`.column-control-blocks [class*=col-] { padding, font-size, line-height }`, `.rich-text
+.grid`) or **other AEM brand skins'** link/heading colours (`.zoo-style`, `.mrr-style`,
+`.bird-park-style`, `.night-safari-style`, `.river-safari-style` — Mandai's other properties, not
+this repo). Only `.wrs-style .column-control-blocks a { color:#999a28; }` and `.wrs-style
+.column-control-blocks h1–h5 { color:#333; }` are WRS's own rules, and they target elements
+*inside* the nested parsys content (rich text links/headings), not the grid or the `columns` block
+shell itself — they belong with whatever rich-text/heading block renders that content, not with
+the column layout. So there is no component-specific grid CSS to port: Bootstrap's equal-width
+`col-md-N` split and `blocks/columns/columns.css`'s `flex: 1` equal-width columns (`@media (width
+>= 900px)`) produce the same visual result — N equal columns above the breakpoint.
+
+### The one real gap: `colMobile`, checked and confirmed
+
+`colMobile` is a genuine, always-present dialog field (`1` or `2`, defaulting to **`2`** —
+`<two selected="{Boolean}true" .../>`) letting an author choose a 2-up mobile layout independent
+of the desktop count. `blocks/columns/columns.css` has no equivalent: below `900px` every
+`.columns > div` is forced to `flex-direction: column`, i.e. every instance collapses to a single
+stacked column on mobile regardless of how many cells were authored. Confirmed by reading the CSS
+directly, not inferred — there is no narrow-viewport media query that ever produces two columns.
+
+This is a real capability the source has and the reused block does not. I chose **not** to extend
+`blocks/columns/**` to close it, for two reasons specific to this block rather than general
+caution:
+
+1. **`columns` is the native EDS component**, `core/franklin/components/columns/v1/columns`, not
+   a generic custom `block/v1/block`. Its `columns`/`rows` model fields are Universal-Editor
+   insert-time scaffold parameters, confirmed unread by `decorate()` at runtime — the field
+   pattern an ordinary custom block model uses (an authored field that becomes a rendered cell)
+   does not apply cleanly here. Adding an authored `mobileColumns` field would be departing from
+   how this specific native component's model is actually used elsewhere in the repo, with no
+   existing precedent in this codebase to check the result against.
+2. **It is shared, load-bearing infrastructure.** `columns` is already used outside this WRS
+   migration (the `rb-*` side of this repo). A behavioural change to its mobile breakpoint affects
+   every existing and future use of the block, not just `columncontrol` instances — exactly the
+   kind of change the run's constraints ask to justify narrowly or avoid, and I could not point to
+   WRS-side evidence (no authored WRS pages exist in this checkout) showing how often `colMobile=2`
+   is actually used versus the default simply never being changed.
+
+So, weighed honestly: this is a real, confirmed gap, not a maybe — but fixing it means changing
+shared native-component behaviour on inference alone, with no authored content to check it
+against. That is a human call, not a mechanical one.
+
+### What a human needs to decide
+
+- **Whether 2-up mobile columns are used enough in live WRS content to be worth building.** If
+  yes, the fix is a small, additive change to `blocks/columns/columns.css` — e.g. an author-set
+  `mobileColumns` scaffold-style hint or a manually-added CSS class per section — reviewed on its
+  own as a change to shared infrastructure, not folded into this component's migration.
+- **Content migration consequence:** every existing `columncontrol` instance with `colMobile="2"`
+  (the dialog default, so likely the common case) will render as a single stacked column on mobile
+  after conversion to `columns`, instead of the two side-by-side columns the AEM site currently
+  shows below the tablet breakpoint. This is a visible, if usually minor, layout regression on
+  small screens for every page using the default configuration, not just edge cases — worth
+  flagging to content owners before/during migration, not just to developers.
+- **Authoring freedom inside columns.** `columncontrol`'s parsys accepts any AEM component; the
+  migrated `columns` block's filter (`blocks/columns/_columns.json`) restricts children to `text`,
+  `image`, `button`, `title`. Pages that nested richer content (e.g. another container component)
+  inside a `columncontrol` column will need that content re-authored using only the block types
+  `columns` accepts — also a content-migration task, not a code gap in this component specifically
+  (every EDS container block works this way, not something particular to this migration).
+
+### Files touched
+
+None. `blocks/columns/**` and `models/_section.json` were both read but not modified — `columns`
+is already registered in the `section` filter's `components` array, so no second edit was needed
+either. `npm run build:json`, `npm run lint` and `npm test` were re-run to confirm the repo is
+unchanged and still green (83/83 tests passing).
