@@ -22,6 +22,27 @@
   margin-top: 16px;
 }
 
+/*
+ * Portrait torn edge over the WHOLE card, photo, caption and CTA together, as
+ * the source does - not over the photo alone.
+ *
+ * The card is deliberately NOT pinned to the mask's 688x814 ratio. The square
+ * photo would then leave under a fifth of the card's height for the caption and
+ * CTA, and they would overflow. The source let content set the height and used
+ * mask-size: cover, which stretches the torn edge to fit; that is what is
+ * reproduced here.
+ *
+ * An opaque background is what the torn edge reads against; without one the
+ * mask cuts into the section band behind and is invisible.
+ */
+.three-column-tiles .three-column-tiles-item {
+  background-color: var(--rb-white);
+  mask-image: url('../../assets/tile-mask-688-814.svg');
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
 .three-column-tiles .three-column-tiles-item-photo img {
   display: block;
   width: 100%;

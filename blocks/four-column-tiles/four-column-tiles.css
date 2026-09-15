@@ -38,6 +38,20 @@
 
 /* Track, item and dot styling are shared - see .rb-track / .rb-dots in styles/styles.css. */
 
+/*
+ * The torn edge is masked over the WHOLE card, photo and caption together, as
+ * the source does - not over the photo alone. The card needs an opaque
+ * background for the torn edge to read against; without one the mask cuts into
+ * the section band behind and is invisible.
+ */
+.four-column-tiles .four-column-tiles-item {
+  background-color: var(--rb-white);
+  mask-image: url('../../assets/tile-mask-1-1.svg');
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
 .four-column-tiles .four-column-tiles-item-photo img {
   display: block;
   width: 100%;
@@ -48,7 +62,11 @@
 
 .four-column-tiles .four-column-tiles-item-name {
   flex: 1;
-  padding-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  background-color: var(--rb-light-beige);
   text-align: center;
 }
 
