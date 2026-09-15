@@ -28,9 +28,14 @@
  *
  * The card is deliberately NOT pinned to the mask's 688x814 ratio. The square
  * photo would then leave under a fifth of the card's height for the caption and
- * CTA, and they would overflow. The source let content set the height and used
- * mask-size: cover, which stretches the torn edge to fit; that is what is
- * reproduced here.
+ * CTA, and they would overflow.
+ *
+ * Which is why the size is `100% 100%` and not the source's `cover`. Cover does
+ * not stretch a mask to fit - it scales it to COVER, and a card taller than the
+ * mask's ratio pushes the left and right torn edges off the canvas entirely,
+ * leaving straight sides and a plain rectangle. `100% 100%` maps the whole mask
+ * onto the card, so every torn edge survives; the tear is stretched slightly,
+ * which is a far smaller departure than losing two sides of it.
  *
  * The card itself is transparent. Only the info area below the photo is white -
  * that is where the source puts it, and between them the photo and the info
@@ -40,9 +45,8 @@
  */
 .three-column-tiles .three-column-tiles-item {
   mask-image: url('../../assets/tile-mask-688-814.svg');
-  mask-size: cover;
+  mask-size: 100% 100%;
   mask-repeat: no-repeat;
-  mask-position: center;
 }
 
 .three-column-tiles .three-column-tiles-item-photo img {

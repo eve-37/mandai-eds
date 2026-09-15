@@ -47,9 +47,12 @@
 .four-column-tiles .four-column-tiles-item {
   background-color: var(--rb-white);
   mask-image: url('../../assets/tile-mask-1-1.svg');
-  mask-size: cover;
+
+  /* Not `cover`: the card is a square photo PLUS a caption strip, so it is
+   * taller than the 1:1 mask, and cover would scale the mask until its left and
+   * right torn edges fell off the canvas. `100% 100%` keeps all four. */
+  mask-size: 100% 100%;
   mask-repeat: no-repeat;
-  mask-position: center;
 }
 
 .four-column-tiles .four-column-tiles-item-photo img {
