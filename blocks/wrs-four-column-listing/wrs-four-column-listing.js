@@ -5,48 +5,54 @@
  * (`md-4-col-content-fragment`). This is a Content-Fragment-driven grid, the
  * second such component in this run after `wrs-featured-listing` - see
  * docs/wrs-migration-notes.md "## mandaicffourcollisting" for the full
- * servlet-vs-GraphQL analysis, and why it lands on the same branch as
- * `featuredlistingv2` despite the dialog LABELLING `cfPath` a "Content
- * Fragment Folder Path". Read `MandaiCFFourColListingModel.java`'s
- * `getAllCFDetails()`/`isValidCF()` before assuming otherwise: it calls
- * `resourceResolver.getResource(path)` and validates THAT resource's own
- * `jcr:content/data/cq:model` directly - there is no NodeIterator, no
- * QueryBuilder, no folder-children walk anywhere in this class. `cfPath` is a
- * single Content Fragment path per row (1-4 rows, `eaem-min-items="1"
- * eaem-max-items="4"`), author-curated exactly like `featuredlistingv2`'s
- * `fragmentPath` - the "Folder Path" label is misleading, not a listing
- * operation.
+ * servlet-vs-GraphQL analysis and outcome. `cfPath` is a single Content
+ * Fragment path per row (1-4 rows), author-curated exactly like
+ * `featuredlistingv2`'s `fragmentPath` despite the dialog LABELLING it a
+ * "Content Fragment Folder Path" - confirmed misleading, not a listing
+ * operation (see the notes entry).
  *
- * THIS IS A SHELL, NOT A FULL PORT, for the same reason as
- * `wrs-featured-listing`: everything the HTL renders per item - `title`,
- * `locationLabels`, `dateLabels`, `timeLabels`, `tags`, `shortDescription`,
- * `image`, `imageAltText`, `imageIsDecorative`, `ctaText`, `ctaLink` - comes
- * off `masterResource.adaptTo(MandaiColumnListingCFDetails.class)`, a bean
- * class NOT included in this bundle (COMPONENT.md's "Not copied" list: Java
- * transitive deps under `.models.beans.*` were not followed). That is a
- * materially different situation from `featuredlistingv2`, where the model
- * itself called `CommonUtils.getCompressedResizedImageURL()` and
- * `I18nUtils.getLabel()` directly and in view - here, whatever formatting the
- * bean does to produce `locationLabels`/`dateLabels`/`timeLabels`/`tags` (all
- * plural - suggesting the raw CF field is parsed/split into a list) is
- * invisible from this bundle. `MandaiColumnListingCFDetails.java` must be
- * sourced and read before the servlet-vs-GraphQL call can be made with the
- * same confidence as `featuredlistingv2`'s. No fetch, no servlet, no GraphQL
- * client is implemented here either way.
+ * Everything the HTL renders per item - `title`, `locationLabels`,
+ * `dateLabels`, `timeLabels`, `tags`, `shortDescription`, `image`,
+ * `imageAltText`, `imageIsDecorative`, `ctaText`, `ctaLink` - comes off the
+ * Content Fragment identified by `cfPath`. That resolution is now wired: the
+ * decision landed on SERVLET (same `ContentFragmentServlet`
+ * wrs-featured-listing uses, serving the `mandai-things-to-do` /
+ * `mandai-things-to-do-w-operating-hours` models), fetched here through
+ * `scripts/wrs-cf.js`.
  *
- * What IS safe to build without that decision: the container shell, plus the
- * section-level presentation fields (title, heading style/align, background,
- * align-items, anchor id, padding toggles, section CTA) which ARE plain
- * `@Inject` string properties on `MandaiCFFourColListingModel` with no
- * repository access - safe to port in full. Each child row carries the
- * authored `cfPath` and `hideCTAButton`, and renders a clearly-marked
- * unresolved state in place of the Content Fragment data.
+ * RENDERING MODEL - identical contract to wrs-featured-listing, see that
+ * file's docblock for the full rationale, summarised here:
+ * - decorate() builds every card synchronously in its unresolved state, so
+ *   the block paints without waiting on the network.
+ * - Outside the editor, fragments are fetched in parallel afterwards and
+ *   each card independently swaps to resolved markup as its own fetch
+ *   settles - a 404/failure on one card leaves only that card unresolved.
+ * - In the editor (`data-aue-resource` present) no fetch happens at all;
+ *   the existing unresolved-but-selectable row state is kept deliberately,
+ *   since the Universal Editor runs cross-origin and authors are editing
+ *   the `cfPath` field, not viewing resolved data.
+ * - Images render as plain `<img>` against the servlet's raw DAM path, not
+ *   `createOptimizedPicture()` - see wrs-featured-listing.js for why
+ *   (AEM 6.5 `.transform/compress/resizeNNN` convention vs EDS media-bus
+ *   params being two different, incompatible query-string dialects).
+ *   Unresolved follow-up, not invented here either.
+ *
+ * `hideCTAButton`, authored per row on the dialog's own child multifield
+ * (not a Content Fragment field), suppresses the per-item CTA regardless of
+ * whether the fragment has `ctaText`/`ctaLink` - porting
+ * `MandaiCFFourColListingModel.getCFDetails()`'s server-side clearing of
+ * `ctaText` when this checkbox is set.
+ *
+ * `match-height.js` is not ported - not in the export bundle, and CSS Grid's
+ * default row-stretch already equalizes card heights (see git history / the
+ * notes entry for the full reasoning).
  */
 
 import { moveInstrumentation } from '../../scripts/scripts.js';
 import {
-  cellText, cellValues, renderEmpty, splitRows,
+  cellText, cellValues, renderEmpty, splitRows, resolveHref,
 } from '../../scripts/rb-helpers.js';
+import { fetchFragments } from '../../scripts/wrs-cf.js';
 
 const PREFIX = 'wrs-four-column-listing';
 
@@ -149,6 +155,103 @@ function readItem(row) {
   return { cfPath, hideCTAButton };
 }
 
+/** Renders the unresolved placeholder shown before/instead of real CF data. */
+function renderUnresolved(card, cfPath, hideCTAButton) {
+  card.classList.add(`${PREFIX}-unresolved`);
+  const label = document.createElement('p');
+  label.className = `${PREFIX}-unresolved-label`;
+  label.textContent = cfPath
+    ? `Content Fragment not resolved: ${cfPath}${hideCTAButton ? ' (CTA hidden)' : ''}`
+    : 'No Content Fragment selected';
+  card.replaceChildren(label);
+}
+
+/**
+ * Renders a card's real content from the servlet's `elements` object. Every
+ * key is read defensively - the endpoint omits keys the fragment/model has
+ * no value for, never sends them as null, and this one endpoint serves two
+ * different fragment models with disjoint element sets.
+ */
+function renderResolved(card, elements, hideCTAButton) {
+  card.classList.remove(`${PREFIX}-unresolved`);
+  card.replaceChildren();
+
+  // Plain <img> against the raw DAM path - see file docblock for why
+  // createOptimizedPicture() is deliberately not used here.
+  if (elements.image) {
+    const img = document.createElement('img');
+    img.src = elements.image;
+    img.loading = 'lazy';
+    if (elements.imageIsDecorative === 'true') {
+      img.alt = '';
+    } else {
+      img.alt = elements.imageAltText || '';
+    }
+    card.append(img);
+  }
+
+  const content = document.createElement('div');
+  content.className = 'all-content';
+
+  if (elements.title) {
+    const h4 = document.createElement('h4');
+    h4.textContent = elements.title;
+    content.append(h4);
+  }
+
+  if (Array.isArray(elements.tags) && elements.tags.length) {
+    const tagList = document.createElement('div');
+    tagList.className = 'md-tag-label';
+    elements.tags.forEach((tag) => {
+      const tagEl = document.createElement('span');
+      tagEl.className = 'md-tag';
+      tagEl.textContent = tag;
+      tagList.append(tagEl);
+    });
+    content.append(tagList);
+  }
+
+  [
+    ['locationLabels', 'location'],
+    ['dateLabels', 'date'],
+    ['timeLabels', 'time'],
+  ].forEach(([key, modifier]) => {
+    const values = elements[key];
+    if (!Array.isArray(values) || !values.length) return;
+    const row = document.createElement('div');
+    row.className = `md-icon-text ${modifier}`;
+    const p = document.createElement('p');
+    p.className = 'body-text3';
+    p.textContent = values.join(', ');
+    row.append(p);
+    content.append(row);
+  });
+
+  if (elements.shortDescription) {
+    const p = document.createElement('p');
+    p.className = 'body-text3';
+    p.textContent = elements.shortDescription;
+    content.append(p);
+  }
+
+  // hideCTAButton is authored on the dialog's own row, not the fragment -
+  // it suppresses the CTA regardless of what the fragment carries.
+  if (!hideCTAButton && elements.ctaText && elements.ctaLink) {
+    const link = document.createElement('a');
+    link.className = 'md-link-with-arrow';
+    link.href = resolveHref(elements.ctaLink);
+    link.textContent = elements.ctaText;
+    const arrow = document.createElement('span');
+    arrow.className = 'md-link-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '→';
+    link.append(arrow);
+    content.append(link);
+  }
+
+  card.append(content);
+}
+
 export default function decorate(block) {
   const { parentRows, childRows } = splitRows(block, PARENT_CELLS);
   const [titleRow, ctaRow, layoutRow] = parentRows;
@@ -185,6 +288,10 @@ export default function decorate(block) {
     root.append(heading);
   }
 
+  // Tracked so the async fetch below can update each card independently
+  // once its own fragment resolves (or doesn't).
+  const pending = [];
+
   if (childRows.length) {
     const list = document.createElement('div');
     list.className = `${PREFIX}-list${layout.alignItems ? ` ${layout.alignItems}` : ''}`;
@@ -201,27 +308,12 @@ export default function decorate(block) {
 
       const card = document.createElement('div');
       card.className = `${PREFIX}-card`;
-
-      // ---- SEAM: Content Fragment data would be injected here -------------
-      // Once the servlet-vs-GraphQL decision (docs/wrs-migration-notes.md) is
-      // made, resolve `cfPath` to its CF fields (title, locationLabels,
-      // dateLabels, timeLabels, tags, shortDescription, image, imageAltText,
-      // imageIsDecorative, ctaText, ctaLink) and replace the unresolved block
-      // below with the real card markup. `hideCTAButton`, authored per row
-      // right here, is already available for that build - the source clears
-      // ctaText server-side when this checkbox is set
-      // (MandaiCFFourColListingModel.getCFDetails()).
-      // -----------------------------------------------------------------------
-      card.classList.add(`${PREFIX}-unresolved`);
-      const label = document.createElement('p');
-      label.className = `${PREFIX}-unresolved-label`;
-      label.textContent = cfPath
-        ? `Content Fragment not resolved: ${cfPath}${hideCTAButton ? ' (CTA hidden)' : ''}`
-        : 'No Content Fragment selected';
-      card.append(label);
+      renderUnresolved(card, cfPath, hideCTAButton);
 
       item.append(card);
       list.append(item);
+
+      if (cfPath) pending.push({ card, cfPath, hideCTAButton });
     });
 
     root.append(list);
@@ -249,4 +341,15 @@ export default function decorate(block) {
   }
 
   block.replaceChildren(root);
+
+  // Fragments resolve asynchronously so the block's first paint never waits
+  // on the network - and never at all in the editor (see file docblock).
+  if (!isEditMode && pending.length) {
+    fetchFragments(pending.map((p) => p.cfPath)).then((results) => {
+      results.forEach((elements, i) => {
+        if (!elements) return; // leaves this card's unresolved state as-is
+        renderResolved(pending[i].card, elements, pending[i].hideCTAButton);
+      });
+    });
+  }
 }

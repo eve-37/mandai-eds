@@ -922,6 +922,110 @@ test('wrs-featured-listing: unconfigured block stays selectable in the editor', 
 });
 
 /* ------------------------------------------------------------------ *
+ * WRS Featured Listing - Content Fragment resolution (scripts/wrs-cf.js).
+ *
+ * The jsdom harness this file uses has no `fetch` of its own, so it is
+ * stubbed per-test here. These stub responses are shaped exactly like the
+ * ContentFragmentServlet contract (docs/wrs-migration-notes.md /
+ * scripts/wrs-cf.js docblock): `{ elements: {...} }` on success, a non-2xx
+ * `Response`-like object on failure - not copied from a real HTTP capture,
+ * since the servlet has no live content to capture from yet.
+ * ------------------------------------------------------------------ */
+function stubWflFetch(responsesByPath) {
+  const calls = [];
+  global.fetch = async (url) => {
+    calls.push(url);
+    const path = url.split('.cfdetails.json')[1];
+    const entry = responsesByPath[path];
+    if (!entry || entry.ok === false) {
+      return { ok: false, status: entry?.status ?? 404, json: async () => ({ error: 'not found' }) };
+    }
+    return { ok: true, status: 200, json: async () => ({ path, model: 'wrs-emp-zone', elements: entry.elements }) };
+  };
+  return calls;
+}
+
+/** Lets the fetch stub's promise chain (fetch -> json -> .then) settle. */
+function flush() {
+  return new Promise((resolve) => { setTimeout(resolve, 0); });
+}
+
+const wflResolveHtml = `<div class="wrs-featured-listing">
+  ${wflItemRow(1, '/content/dam/fragments/zones/lions')}
+  ${wflItemRow(2, '/content/dam/fragments/zones/tigers')}
+</div>`;
+
+test('wrs-featured-listing: a resolved fragment replaces the placeholder; a 404 sibling stays unresolved', async () => {
+  stubWflFetch({
+    '/content/dam/fragments/zones/lions': {
+      elements: {
+        name: 'Lions',
+        summary: 'Big cats.',
+        imageDesktop: '/content/dam/lions-720.png',
+        imageDesktop1x1: '/content/dam/lions-512.png',
+        detailLink: '/content/wrs/en/zones/lions',
+      },
+    },
+    '/content/dam/fragments/zones/tigers': { ok: false, status: 404 },
+  });
+
+  const el = await decorateBlock('../blocks/wrs-featured-listing/wrs-featured-listing.js', wflResolveHtml);
+  await flush();
+
+  const [lionsCard, tigersCard] = [...el.querySelectorAll('.wrs-featured-listing-card')];
+
+  assert.equal(lionsCard.classList.contains('wrs-featured-listing-unresolved'), false);
+  assert.equal(lionsCard.querySelector('h4').textContent, 'Lions');
+  assert.equal(lionsCard.querySelector('p').textContent, 'Big cats.');
+  assert.equal(lionsCard.querySelector('a').getAttribute('href'), '/content/wrs/en/zones/lions.html');
+  assert.equal(lionsCard.querySelector('img').getAttribute('src'), '/content/dam/lions-512.png');
+
+  assert.ok(tigersCard.classList.contains('wrs-featured-listing-unresolved'), '404 sibling must stay unresolved, not blank the block');
+  assert.equal(
+    tigersCard.querySelector('.wrs-featured-listing-unresolved-label').textContent,
+    'Content Fragment not resolved: /content/dam/fragments/zones/tigers',
+  );
+});
+
+test('wrs-featured-listing: a payload with keys omitted renders defensively, not crash', async () => {
+  stubWflFetch({
+    '/content/dam/fragments/zones/lions': { elements: { name: 'Lions', imageDesktop: '/content/dam/lions-720.png' } },
+    '/content/dam/fragments/zones/tigers': { elements: {} },
+  });
+
+  const el = await decorateBlock('../blocks/wrs-featured-listing/wrs-featured-listing.js', wflResolveHtml);
+  await flush();
+
+  const [lionsLink, tigersLink] = [...el.querySelectorAll('.wrs-featured-listing-link')];
+
+  // No detailLink -> a <div> wrapper, not a dead <a href="">.
+  assert.equal(lionsLink.tagName, 'DIV');
+  assert.equal(lionsLink.querySelector('h4').textContent, 'Lions');
+  assert.equal(lionsLink.querySelector('p'), null, 'no summary key -> no <p>');
+  // No imageDesktop1x1 -> falls back to imageDesktop.
+  assert.equal(lionsLink.querySelector('img').getAttribute('src'), '/content/dam/lions-720.png');
+
+  // Empty elements object (model has none of these fields) -> still renders, no crash.
+  assert.equal(tigersLink.querySelector('h4'), null);
+  assert.equal(tigersLink.querySelector('img').getAttribute('src'), '');
+});
+
+test('wrs-featured-listing: edit mode performs no fetch at all', async () => {
+  const calls = stubWflFetch({
+    '/content/dam/fragments/zones/lions': { elements: { name: 'Lions' } },
+  });
+  const html = `<div class="wrs-featured-listing" data-aue-resource="urn:block1">${wflItemRow(1, '/content/dam/fragments/zones/lions')}</div>`;
+
+  const el = await decorateBlock('../blocks/wrs-featured-listing/wrs-featured-listing.js', html);
+  await flush();
+
+  assert.equal(calls.length, 0, 'the editor must not fetch - authors edit the path, not the resolved data');
+  assert.ok(el.querySelector('.wrs-featured-listing-unresolved'), 'row stays unresolved but selectable in the editor');
+});
+
+delete global.fetch;
+
+/* ------------------------------------------------------------------ *
  * WRS Conservation Banner - no published markup exists yet (this component
  * has not been authored on a real page), so this fixture is constructed from
  * this codebase's own confirmed cell shapes rather than copied from a live
@@ -1206,6 +1310,128 @@ const wfcEdit = await decorateBlock(
 test('wrs-four-column-listing: unconfigured block stays selectable in the editor', () => {
   assert.ok(wfcEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
+
+/* ------------------------------------------------------------------ *
+ * WRS Four Column Listing - Content Fragment resolution (scripts/wrs-cf.js).
+ * Same stubbing rationale as wrs-featured-listing's equivalent block above -
+ * jsdom has no fetch, and the servlet has no live content to capture yet.
+ * ------------------------------------------------------------------ */
+function stubWfcFetch(responsesByPath) {
+  const calls = [];
+  global.fetch = async (url) => {
+    calls.push(url);
+    const path = url.split('.cfdetails.json')[1];
+    const entry = responsesByPath[path];
+    if (!entry || entry.ok === false) {
+      return { ok: false, status: entry?.status ?? 404, json: async () => ({ error: 'not found' }) };
+    }
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ path, model: 'mandai-things-to-do', elements: entry.elements }),
+    };
+  };
+  return calls;
+}
+
+function flushWfc() {
+  return new Promise((resolve) => { setTimeout(resolve, 0); });
+}
+
+const wfcResolveHtml = `<div class="wrs-four-column-listing">
+  ${wfcRow()}
+  ${wfcItemRow(1, { cfPath: '/content/dam/fragments/things-to-do/lion-encounter' })}
+  ${wfcItemRow(2, { cfPath: '/content/dam/fragments/things-to-do/river-cruise', hide: true })}
+</div>`;
+
+test('wrs-four-column-listing: a resolved fragment replaces the placeholder; a 404 sibling stays unresolved', async () => {
+  stubWfcFetch({
+    '/content/dam/fragments/things-to-do/lion-encounter': {
+      elements: {
+        title: 'Lion Encounter',
+        shortDescription: 'Meet the pride.',
+        tags: ['Family', 'Outdoor'],
+        image: '/content/dam/lion-encounter.png',
+        imageAltText: 'A lion',
+        imageIsDecorative: 'false',
+        ctaText: 'Book now',
+        ctaLink: '/content/wrs/en/book',
+        dateLabels: ['Daily'],
+        locationLabels: ['Wild Africa'],
+        timeLabels: ['10am', '2pm'],
+      },
+    },
+    '/content/dam/fragments/things-to-do/river-cruise': { ok: false, status: 404 },
+  });
+
+  const el = await decorateBlock('../blocks/wrs-four-column-listing/wrs-four-column-listing.js', wfcResolveHtml);
+  await flushWfc();
+
+  const [lionCard, cruiseCard] = [...el.querySelectorAll('.wrs-four-column-listing-card')];
+
+  assert.equal(lionCard.classList.contains('wrs-four-column-listing-unresolved'), false);
+  assert.equal(lionCard.querySelector('h4').textContent, 'Lion Encounter');
+  assert.equal(lionCard.querySelector('img').getAttribute('src'), '/content/dam/lion-encounter.png');
+  assert.equal(lionCard.querySelector('img').getAttribute('alt'), 'A lion');
+  assert.deepEqual(
+    [...lionCard.querySelectorAll('.md-tag-label .md-tag')].map((el2) => el2.textContent),
+    ['Family', 'Outdoor'],
+  );
+  // Item 1's hideCTAButton is false (default) -> the resolved CTA renders.
+  const cta = lionCard.querySelector('.md-link-with-arrow');
+  assert.equal(cta.getAttribute('href'), '/content/wrs/en/book.html');
+  assert.equal(cta.textContent.trim().startsWith('Book now'), true);
+
+  assert.ok(cruiseCard.classList.contains('wrs-four-column-listing-unresolved'), '404 sibling must stay unresolved, not blank the block');
+});
+
+test('wrs-four-column-listing: hideCTAButton suppresses the CTA even when the fragment has one', async () => {
+  stubWfcFetch({
+    '/content/dam/fragments/things-to-do/lion-encounter': { elements: { title: 'Lion Encounter' } },
+    '/content/dam/fragments/things-to-do/river-cruise': {
+      elements: { title: 'River Cruise', ctaText: 'Book now', ctaLink: '/content/wrs/en/book' },
+    },
+  });
+
+  const el = await decorateBlock('../blocks/wrs-four-column-listing/wrs-four-column-listing.js', wfcResolveHtml);
+  await flushWfc();
+
+  const [, cruiseCard] = [...el.querySelectorAll('.wrs-four-column-listing-card')];
+  assert.equal(cruiseCard.querySelector('.md-link-with-arrow'), null, 'item 2 has hideCTAButton=true');
+});
+
+test('wrs-four-column-listing: a payload with keys omitted (the common case across two models) renders defensively', async () => {
+  stubWfcFetch({
+    '/content/dam/fragments/things-to-do/lion-encounter': { elements: { title: 'Lion Encounter' } },
+    '/content/dam/fragments/things-to-do/river-cruise': { elements: {} },
+  });
+
+  const el = await decorateBlock('../blocks/wrs-four-column-listing/wrs-four-column-listing.js', wfcResolveHtml);
+  await flushWfc();
+
+  const [lionCard, cruiseCard] = [...el.querySelectorAll('.wrs-four-column-listing-card')];
+  assert.equal(lionCard.querySelector('h4').textContent, 'Lion Encounter');
+  assert.equal(lionCard.querySelector('img'), null, 'no image key -> no <img>');
+  assert.equal(lionCard.querySelector('.md-tag-label'), null, 'no tags key -> no tag list');
+
+  assert.equal(cruiseCard.querySelector('h4'), null, 'empty elements object -> still renders, no crash');
+  assert.equal(cruiseCard.classList.contains('wrs-four-column-listing-unresolved'), false);
+});
+
+test('wrs-four-column-listing: edit mode performs no fetch at all', async () => {
+  const calls = stubWfcFetch({
+    '/content/dam/fragments/things-to-do/lion-encounter': { elements: { title: 'Lion Encounter' } },
+  });
+  const html = `<div class="wrs-four-column-listing" data-aue-resource="urn:block1">${wfcRow()}${wfcItemRow(1, { cfPath: '/content/dam/fragments/things-to-do/lion-encounter' })}</div>`;
+
+  const el = await decorateBlock('../blocks/wrs-four-column-listing/wrs-four-column-listing.js', html);
+  await flushWfc();
+
+  assert.equal(calls.length, 0, 'the editor must not fetch - authors edit the path, not the resolved data');
+  assert.ok(el.querySelector('.wrs-four-column-listing-unresolved'), 'item stays unresolved but selectable in the editor');
+});
+
+delete global.fetch;
 
 /* ------------------------------------------------------------------ *
  * WRS Experience Carousel - fixtures are CONSTRUCTED from this repo's own

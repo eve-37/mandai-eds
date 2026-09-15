@@ -3,42 +3,66 @@
  *
  * Ported from wrs-aem/.../components/commons/featuredlistingv2.
  *
- * THIS IS A SHELL, NOT A FULL PORT. The dialog has no parent-level fields at
- * all - just one multifield (`largeImages` -> fieldset `./listItems`) holding
- * a single `fragmentPath` pathbrowser per row, stored oddly as
- * `@ValueMapValue String[] listItems`, an array of JSON strings rather than
- * child nodes (confirmed in FeatureListingV2Model.java - each string is
- * parsed with GSON and only its `fragmentPath` key is read).
+ * The dialog has no parent-level fields at all - just one multifield
+ * (`largeImages` -> fieldset `./listItems`) holding a single `fragmentPath`
+ * pathbrowser per row, stored oddly as `@ValueMapValue String[] listItems`,
+ * an array of JSON strings rather than child nodes (confirmed in
+ * FeatureListingV2Model.java - each string is parsed with GSON and only its
+ * `fragmentPath` key is read).
  *
  * Everything actually rendered by the source HTL - header, descriptionDetail,
  * image360x540, image1x1, pathHTML - comes from resolving that path as a
- * Content Fragment (`resolver.getResource(cfPath)`, a `cq:model` check
- * against CONTENT_FRAGMENT_MODEL_ZONE, `adaptTo(ContentFragment.class)`, then
- * `name`/`summary`/`imageDesktop`/`imageDesktop1x1`/`detailLink`), plus
- * `CommonUtils.getCompressedResizedImageURL` for the two image variants and
- * `I18nUtils` for the show/hide button labels. NONE of that is dialog content
- * - it cannot be read positionally off authored cells the way every other
- * block in this repo works, and building a client-side fetch or a GraphQL
- * client here would be inventing an architecture decision, not converting
- * one. See docs/wrs-migration-notes.md "## featuredlistingv2" for the
- * servlet-vs-GraphQL analysis and recommendation.
+ * Content Fragment. That resolution is now wired: the servlet-vs-GraphQL
+ * decision (docs/wrs-migration-notes.md "## featuredlistingv2") landed on
+ * SERVLET, and `ContentFragmentServlet` (mandai-aem-cloud) is built. This
+ * block calls it through `scripts/wrs-cf.js`, whose docblock has the full
+ * endpoint contract.
+ *
+ * The endpoint's element names differ from the old Java field names quoted
+ * above - `name` (was `header`), `summary` (was `descriptionDetail`),
+ * `imageDesktop` (was `image360x540`), `imageDesktop1x1` (was `image1x1`),
+ * `detailLink` (was `pathHTML`). Same five fields, renamed at the servlet
+ * boundary per the servlet's own "Exposed elements" contract.
  *
  * `show-all.js`, wired via `data-load-plugins` on the wrapper in the HTL for
  * the ">6 items" view-all/view-less behaviour, is referenced but not present
  * in the export bundle - its "view all" button is therefore not ported here
  * either; flagged, not invented.
  *
- * What IS safe to build without that decision: the container shell. Each
- * child row carries only the authored `fragmentPath` (a genuine
- * `/content/dam/fragments` path is expected here - the opposite of every
- * other block in this repo, where a DAM path signals a broken row read). The
- * shell renders one card per authored item and a clearly-marked unresolved
- * state in place of the Content Fragment data, so every row stays visible and
- * selectable in the Universal Editor while the resolution question is open.
+ * RENDERING MODEL
+ * ----------------
+ * decorate() stays synchronous in its DOM-shape work: every authored row
+ * becomes a card immediately, in the unresolved state, so the block paints
+ * without waiting on the network. Only then, outside the editor, are the
+ * fragments fetched in parallel and each card is independently swapped to
+ * its resolved markup as its own fetch settles - a fragment that 404s (or
+ * any other failure) leaves only that one card unresolved; it does not
+ * blank the block or its siblings.
+ *
+ * EDIT MODE: no fetch at all. `block.hasAttribute('data-aue-resource')`
+ * means this is the Universal Editor, which runs on a different origin from
+ * the published/preview site and whose authors are editing the authored
+ * fragment PATH, not viewing the resolved data. Fetching there would only
+ * add a cross-origin request the editor doesn't need, so the existing
+ * unresolved-but-selectable row state is kept deliberately - every row stays
+ * visible and clickable for the author to edit its `fragmentPath` field.
+ *
+ * IMAGES: rendered as plain `<img>`/`<picture>` against the fragment's raw
+ * DAM path on the AEM publish origin, NOT `createOptimizedPicture()`. The
+ * source ran both image variants through
+ * `CommonUtils.getCompressedResizedImageURL(url, resize720|resize512)`, an
+ * AEM 6.5 transform-servlet convention (`.transform/compress/resizeNNN`)
+ * that may not exist on AEMaaCS - the servlet deliberately returns the raw
+ * DAM path rather than guessing at an equivalent. `createOptimizedPicture()`
+ * would append EDS's own media-bus query params, which AEM's asset delivery
+ * does not understand, yielding an unoptimised original image with a
+ * misleading srcset. Image optimisation for these two variants is UNRESOLVED
+ * and is a follow-up, not something this block invents an answer for.
  */
 
 import { moveInstrumentation } from '../../scripts/scripts.js';
-import { renderEmpty, splitRows } from '../../scripts/rb-helpers.js';
+import { renderEmpty, splitRows, resolveHref } from '../../scripts/rb-helpers.js';
+import { fetchFragments } from '../../scripts/wrs-cf.js';
 
 const PREFIX = 'wrs-featured-listing';
 
@@ -68,8 +92,66 @@ function readItem(row) {
   return { fragmentPath };
 }
 
+/** Renders the unresolved placeholder shown before/instead of real CF data. */
+function renderUnresolved(card, fragmentPath) {
+  card.classList.add(`${PREFIX}-unresolved`);
+  const label = document.createElement('p');
+  label.className = `${PREFIX}-unresolved-label`;
+  label.textContent = fragmentPath
+    ? `Content Fragment not resolved: ${fragmentPath}`
+    : 'No Content Fragment selected';
+  card.replaceChildren(label);
+}
+
+/**
+ * Renders a card's real content from the servlet's `elements` object.
+ * Every key is read defensively - the endpoint omits keys the fragment has
+ * no value for, it never sends them as null.
+ */
+function renderResolved(card, elements) {
+  card.classList.remove(`${PREFIX}-unresolved`);
+  card.replaceChildren();
+
+  const wrapper = document.createElement(elements.detailLink ? 'a' : 'div');
+  wrapper.className = `${PREFIX}-link`;
+  if (elements.detailLink) wrapper.href = resolveHref(elements.detailLink);
+
+  // Plain <picture>/<img> against the raw DAM path - see file docblock for
+  // why createOptimizedPicture() is deliberately not used here.
+  const picture = document.createElement('picture');
+  if (elements.imageDesktop) {
+    const source = document.createElement('source');
+    source.media = '(min-width: 992px)';
+    source.srcset = elements.imageDesktop;
+    picture.append(source);
+  }
+  const img = document.createElement('img');
+  img.src = elements.imageDesktop1x1 || elements.imageDesktop || '';
+  img.alt = elements.name || '';
+  img.loading = 'lazy';
+  picture.append(img);
+  wrapper.append(picture);
+
+  const desc = document.createElement('div');
+  desc.className = `${PREFIX}-desc desc`;
+  if (elements.name) {
+    const h4 = document.createElement('h4');
+    h4.textContent = elements.name;
+    desc.append(h4);
+  }
+  if (elements.summary) {
+    const p = document.createElement('p');
+    p.textContent = elements.summary;
+    desc.append(p);
+  }
+  wrapper.append(desc);
+
+  card.append(wrapper);
+}
+
 export default function decorate(block) {
   const { childRows } = splitRows(block, PARENT_CELLS);
+  const isEditMode = block.hasAttribute('data-aue-resource');
 
   if (!childRows.length) {
     renderEmpty(block, 'WRS Featured Listing — add a Content Fragment');
@@ -78,6 +160,10 @@ export default function decorate(block) {
 
   const list = document.createElement('div');
   list.className = `${PREFIX}-list`;
+
+  // Tracked so the async fetch below can update each card independently
+  // once its own fragment resolves (or doesn't).
+  const pending = [];
 
   childRows.forEach((row) => {
     const { fragmentPath } = readItem(row);
@@ -91,28 +177,24 @@ export default function decorate(block) {
 
     const card = document.createElement('div');
     card.className = `${PREFIX}-card wrapp-img`;
-
-    // ---- SEAM: Content Fragment data would be injected here -------------
-    // Once the servlet-vs-GraphQL decision (docs/wrs-migration-notes.md) is
-    // made, resolve `fragmentPath` to its CF fields (header, descriptionDetail,
-    // image360x540, image1x1, pathHTML) and replace the unresolved block
-    // below with the real card markup: an <a> (or unlinked wrapper when
-    // pathHTML is blank, matching the source's own data-sly-test/else split),
-    // a lazyloaded <picture>, and a ".desc" panel with an <h4> + <p>.
-    // No fetch is implemented here - see the seam comment, not this file,
-    // for why.
-    // -----------------------------------------------------------------------
-    card.classList.add(`${PREFIX}-unresolved`);
-    const label = document.createElement('p');
-    label.className = `${PREFIX}-unresolved-label`;
-    label.textContent = fragmentPath
-      ? `Content Fragment not resolved: ${fragmentPath}`
-      : 'No Content Fragment selected';
-    card.append(label);
+    renderUnresolved(card, fragmentPath);
 
     item.append(card);
     list.append(item);
+
+    if (fragmentPath) pending.push({ card, fragmentPath });
   });
 
   block.replaceChildren(list);
+
+  // Fragments resolve asynchronously so the block's first paint never waits
+  // on the network - and never at all in the editor (see file docblock).
+  if (!isEditMode && pending.length) {
+    fetchFragments(pending.map((p) => p.fragmentPath)).then((results) => {
+      results.forEach((elements, i) => {
+        if (!elements) return; // leaves this card's unresolved state as-is
+        renderResolved(pending[i].card, elements);
+      });
+    });
+  }
 }

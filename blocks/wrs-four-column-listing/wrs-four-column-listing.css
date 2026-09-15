@@ -15,14 +15,11 @@
  * rule repeats the same #fc0/#003400 values the unscoped base rule already
  * has, so only the base rule is ported.
  *
- * THIS IS A SHELL, NOT A FULL PORT (see wrs-four-column-listing.js): the
- * per-item Content-Fragment-derived content (title, location/date/time
- * labels, tags, description, image, CTA) is not resolved yet, so the
+ * The block's decorate() now resolves the per-item Content Fragment via the
+ * ContentFragmentServlet (see wrs-four-column-listing.js), so the
  * `.all-content`/`.md-icon-text`/`.md-tag-label`/`.md-link-with-arrow`/
- * `.md-button-big.item-with-button` rules below are ported now so they are
- * ready the moment the CF seam is filled in, but they are NOT exercised by
- * the current unresolved-card placeholder. Re-check this file against the
- * extract once that happens.
+ * `.md-button-big.item-with-button` rules below style the resolved card, not
+ * just the unresolved placeholder.
  *
  * Grid gap: the source's desktop 4-up layout comes from Bootstrap's
  * `.row > .col-md-3`, which is NOT in this repo (no Bootstrap) and is not in

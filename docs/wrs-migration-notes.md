@@ -608,6 +608,47 @@ fields plus the two button labels is the safer target.
   unconfigured-in-editor placeholder.
 - `npm run build:json`, `npm run lint` and `npm test` all pass (89/89 tests).
 
+### Outcome — wired to the servlet
+
+The decision above is now made: **servlet**, and `ContentFragmentServlet` (mandai-aem-cloud,
+`com.facultydigital.mandai.core.servlets`) is built. This block is wired to it.
+
+- **`scripts/wrs-cf.js`** (new, shared with `wrs-four-column-listing` below) is a thin, fixed
+  client for the endpoint contract: `getBasePathBasedOnEnv()` resolves the AEM publish origin
+  (`https://publish-p144127-e1488012.adobeaemcloud.com`, derived from the author host in
+  `fstab.yaml`) on `aem.page`/`aem.live`/`localhost`, and `''` (relative) elsewhere, on the
+  assumption that the AEM CDN fronts production — flagged in the function's own docblock as an
+  assumption to revisit if EDS's CDN fronts production instead. `fetchFragment(path)` builds
+  `{origin}/content/mandai-api.cfdetails.json{path}` — the path is the URL suffix, never a query
+  string, and is **not** URI-encoded (browsers don't encode slashes in a path, and the suffix is
+  read literally server-side) — sends no custom headers (keeps the request CORS-simple, no
+  preflight), and returns the `elements` object or `null` on any failure, never throwing.
+  `fetchFragments(paths)` resolves many in parallel, preserving order.
+- **`decorate()` stays synchronous in its DOM-shape work.** Every authored row renders immediately
+  in the unresolved placeholder state (unchanged from the shell), so first paint never waits on
+  the network. Only afterwards are fragments fetched in parallel; each card independently swaps to
+  resolved markup as its own fetch settles. A fragment that 404s (or fails for any other reason)
+  leaves only that one card unresolved — it does not blank the block or its siblings.
+- **The editor does not fetch at all.** `block.hasAttribute('data-aue-resource')` gates the fetch
+  entirely — the Universal Editor runs cross-origin and authors are editing the `fragmentPath`
+  field, not viewing resolved data, so rows stay in their existing unresolved-but-selectable state
+  there, deliberately.
+- **Images are plain `<img>`/`<picture>` against the servlet's raw DAM path, not
+  `createOptimizedPicture()`.** The source's `getCompressedResizedImageURL(url, resize720|512)` is
+  an AEM 6.5 transform-servlet convention (`.transform/compress/resizeNNN`) that may not exist on
+  AEMaaCS; the servlet deliberately returns the raw path rather than guessing at an equivalent, and
+  `createOptimizedPicture()` would append EDS media-bus query params AEM does not understand,
+  yielding an unoptimised original with a misleading srcset. **Image optimisation for these two
+  variants remains unresolved and is a follow-up**, not solved here.
+- `show-all.js` (missing from the export bundle) is still not built — unchanged from the shell.
+- **Files touched, in addition to the above:** `scripts/wrs-cf.js` (new); `wrs-featured-listing.js`
+  (SEAM replaced with the real fetch/render wiring); `wrs-featured-listing.css` (styles added for
+  the resolved `.wrs-featured-listing-link`/`-desc` markup, on top of the existing
+  grid/card/unresolved rules); `tests/blocks.test.mjs` (3 new cases: a resolved card next to a 404
+  sibling that stays unresolved, a payload with keys omitted rendering defensively, and edit mode
+  performing no fetch — `global.fetch` stubbed per test, since the jsdom harness has none of its
+  own). `npm run build:json`, `npm run lint` and `npm test` all pass (210/210 tests).
+
 ## footer
 
 **Source:** `wrs-components-export/footer/` — `wrs/components/structure/footer`
@@ -1178,6 +1219,45 @@ reasons specific to what each component actually is, not just surface naming:
 - `npm run build:json`, `npm run lint` and `npm test` all pass (120/120 tests).
 - `blocks/four-column-tiles/` was **not** touched or extended, per the constraint and the
   not-recommended finding above.
+
+### Outcome — wired to the servlet
+
+The decision above (lean servlet) is now confirmed and built: `ContentFragmentServlet`
+(mandai-aem-cloud) serves both `mandai-things-to-do` and `mandai-things-to-do-w-operating-hours`
+from the same endpoint used by `wrs-featured-listing`, and this block is wired to it — the missing
+`MandaiColumnListingCFDetails.java` bean's formatting logic (the multi-value `locationLabels`/
+`dateLabels`/`timeLabels`/`tags` arrays) is reproduced server-side by the servlet's own
+multi-value-cap handling (`setMaxThree()`, ported as `maxMultiValue`), not reinvented client-side.
+
+- Uses the same **`scripts/wrs-cf.js`** client as `wrs-featured-listing` (see that section's
+  outcome note for the full contract: suffix-path URL, no encoding, no custom headers, `elements`
+  or `null`, never throws).
+- **`decorate()` stays synchronous in its DOM-shape work.** Section-level fields (title, layout,
+  section CTA) and every child row's unresolved placeholder render immediately; fragments are then
+  fetched in parallel and each card independently swaps to resolved markup as its own fetch
+  settles. A 404/failure on one card leaves only that card unresolved.
+- **The editor does not fetch at all**, same gate and same rationale as `wrs-featured-listing`.
+- **`hideCTAButton`** (authored on the dialog's own child row, not the fragment) is read and
+  applied at render time — the resolved card's CTA is suppressed whenever it is checked, even if
+  the fragment itself carries `ctaText`/`ctaLink`, porting
+  `MandaiCFFourColListingModel.getCFDetails()`'s server-side clearing of `ctaText`.
+- **Images are plain `<img>`, not `createOptimizedPicture()`** — same reasoning as
+  `wrs-featured-listing`'s outcome note; flagged as an open follow-up here too.
+- Every resolved-element read is defensive (`elements.field ?? `/`Array.isArray(...) &&`), since
+  this one endpoint serves two fragment models with disjoint element sets and the servlet omits
+  absent keys rather than sending null.
+- `match-height.js` remains not built — CSS Grid's row-stretch still covers it, unchanged from the
+  shell; re-verify once real content shows whether any resolved card breaks out of the grid cell
+  (e.g. an absolutely-positioned element), per the shell's own original caveat.
+- **Files touched, in addition to the above:** `scripts/wrs-cf.js` (new, shared with
+  `wrs-featured-listing`); `wrs-four-column-listing.js` (SEAM replaced with the real fetch/render
+  wiring); `wrs-four-column-listing.css` (no rule changes needed — the `.all-content`/
+  `.md-icon-text`/`.md-tag-label`/`.md-link-with-arrow`/`.md-button-big.item-with-button` rules
+  ported ahead of time in the shell now style real, resolved markup); `tests/blocks.test.mjs` (4
+  new cases: a resolved card next to a 404 sibling that stays unresolved, `hideCTAButton`
+  suppressing a CTA the fragment does have, a payload with keys omitted across both models, and
+  edit mode performing no fetch — `global.fetch` stubbed per test). `npm run build:json`,
+  `npm run lint` and `npm test` all pass (210/210 tests).
 
 ## mandaiexperiencecarouselfeature
 
