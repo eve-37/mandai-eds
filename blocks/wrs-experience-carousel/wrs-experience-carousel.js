@@ -41,29 +41,25 @@
  * all 8 into ONE cell together, which is what we want, and takes priority
  * over the suffix rule, so none of the 8 gets silently absorbed into another.
  *
- * READING THE 8 VALUES BACK OUT - a real, accepted limitation
+ * READING THE 8 VALUES BACK OUT
  * --------------------------------------------------------------
  * All 8 are freeform colour text with no shared vocabulary (unlike this
  * codebase's other grouped cells - a heading tag, a `true`/`false`, a mask
  * keyword - which are told apart by matching their known small value set).
- * They are read POSITIONALLY, in field-declaration order, via `cellValues()`
- * - the same mechanism every other grouped cell in this codebase uses. This
- * codebase's own `masthead` fixture demonstrates that AEM omits a blank
- * field from a grouped cell entirely rather than emitting an empty
- * placeholder for it, so positional reading is reliable when colours are
- * authored in field order but can misattribute a later colour to an earlier
- * slot if an EARLIER field in the group is left blank while a LATER one is
- * set (e.g. `color_bodyArrow` authored, `color_bodyTitle` left blank - the
- * arrow colour would land in the title slot). This is a real, accepted
- * limitation, not an oversight - flagged in docs/wrs-migration-notes.md and
- * in the migration report, and MUST be re-verified against real
- * authored/published markup once this block exists on a page, the same
- * caveat every WRS block's constructed test fixture already carries.
+ * They are read POSITIONALLY, in field-declaration order, via `cellSlots()`
+ * (not `cellValues()`) precisely because every field here is seeded with a
+ * default (see "the 8-colour cell" in docs/wrs-migration-notes.md "## 6.
+ * Pre-authoring audit"), so AEM should always emit all 8 - but reading by
+ * slot rather than by cellValues()'s filtered, dropped-blank list makes this
+ * robust rather than dependent on those defaults surviving future edits.
+ * Still re-verify against real authored/published markup once this block
+ * exists on a page - see cellSlots()'s own docblock for what is known vs
+ * assumed about whether a blank field's `<p>` slot survives at all.
  */
 
 import { moveInstrumentation } from '../../scripts/scripts.js';
 import {
-  cellText, cellValues, renderEmpty, splitRows, buildDots,
+  cellText, cellValues, cellSlots, renderEmpty, splitRows, buildDots,
 } from '../../scripts/rb-helpers.js';
 
 const PREFIX = 'wrs-experience-carousel';
@@ -114,14 +110,17 @@ function readCard(cell) {
   });
 
   // Whatever remains is title (plain text) then description (richtext),
-  // read POSITIONALLY in field-declaration order - the same technique
-  // wrs-accordion-tabs' readTab() uses for its own title/description pair,
-  // rather than inventing a new one here. Both fields are independently
-  // optional freeform text with no vocabulary to match on, so - exactly
-  // like the colour cell above - if `card_title` is left blank while
-  // `card_description` is set, this misreads the description as the title.
-  // Accepted for the same reason and flagged in the same place; re-verify
-  // once this block has real authored markup to check against.
+  // read POSITIONALLY in field-declaration order off the cell's own DOM
+  // children (not cellValues()/cellSlots() - `rest` already preserves every
+  // non-vocab-matched child in document order, blank or not, so this does
+  // NOT have cellValues()'s dropped-blank bug: a blank card_title still
+  // occupies `rest[0]` as an empty element, rather than being skipped so
+  // card_description's element shifts into the title slot. Left off
+  // cellSlots() deliberately - reading `rest` needs the actual elements
+  // (card_description is richtext and must keep its markup), which
+  // cellSlots() does not return. Still subject to the SAME known-vs-assumed
+  // caveat as cellSlots() itself: this reasoning only holds if AEM emits an
+  // element for a blank field at all - see cellSlots()'s docblock.
   const [titleEl, ...descEls] = rest;
   if (titleEl) card.title = cellText(titleEl);
   if (descEls.length) card.description = descEls.map((el) => el.innerHTML || el.textContent).join('').trim();
@@ -148,13 +147,13 @@ function readPadding(cell) {
 }
 
 /**
- * Reads the color_* cell - see the file docblock for the accepted
- * positional-reading limitation.
+ * Reads the color_* cell - see the file docblock for why `cellSlots()`
+ * rather than `cellValues()` is used here.
  */
 function readColors(cell) {
   const colors = {};
   if (!cell) return colors;
-  cellValues(cell).forEach((value, index) => {
+  cellSlots(cell).forEach((value, index) => {
     const key = COLOR_KEYS[index];
     if (key && value) colors[key] = value;
   });
@@ -164,6 +163,11 @@ function readColors(cell) {
 /**
  * Reads one carousel item's 3 cells: image (+alt +disableGradient),
  * content_title/content_description, cta_link/cta_newTab.
+ *
+ * content_title is read off the cell's own DOM children directly (not
+ * cellValues()), which already preserves position for a blank title the
+ * same way readCard() does above - see that function's comment for the
+ * reasoning and its caveat.
  */
 function readItem(row) {
   const [imageCell, contentCell, ctaCell] = [...(row?.children ?? [])];

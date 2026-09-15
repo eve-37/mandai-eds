@@ -706,8 +706,7 @@ const wrsTabRow = (n, { withCta = true, richDesc = false } = {}) => {
 const WRS_ACCORDION_TABS = `<div class="wrs-accordion-tabs">
   <div><div>Accordion Tabs Heading</div></div>
   <div><div>h3</div></div>
-  <div><div>false</div></div>
-  <div><div>false</div></div>
+  <div><div>no-top-bottom</div></div>
   ${wrsTabRow(1)}
   ${wrsTabRow(2, { withCta: false, richDesc: true })}
 </div>`;
@@ -767,8 +766,58 @@ test('wrs-accordion-tabs: clicking a tab switches the active panel', () => {
   buttons[0].click();
 });
 
+test('wrs-accordion-tabs: layout_padding="no-top-bottom" sets both padding modifier classes', () => {
+  assert.equal(at.classList.contains('no-top-padding'), true);
+  assert.equal(at.classList.contains('no-bottom-padding'), true);
+});
+
+/* The retrofitted layout_padding cell, covering all four reachable states -
+ * the regression test for the single-select replacing the two checkboxes. */
+const wrsAccordionTabsPadding = (paddingRow) => `<div class="wrs-accordion-tabs">
+  <div><div>Heading</div></div>
+  <div><div>h3</div></div>
+  <div><div>${paddingRow}</div></div>
+  ${wrsTabRow(1)}
+</div>`;
+
+test('wrs-accordion-tabs: layout_padding="none" sets neither padding modifier class', async () => {
+  const none = await decorateBlock('../blocks/wrs-accordion-tabs/wrs-accordion-tabs.js', wrsAccordionTabsPadding('none'));
+  assert.equal(none.classList.contains('no-top-padding'), false);
+  assert.equal(none.classList.contains('no-bottom-padding'), false);
+});
+
+test('wrs-accordion-tabs: layout_padding="no-top" sets only the top modifier', async () => {
+  const noTop = await decorateBlock('../blocks/wrs-accordion-tabs/wrs-accordion-tabs.js', wrsAccordionTabsPadding('no-top'));
+  assert.equal(noTop.classList.contains('no-top-padding'), true);
+  assert.equal(noTop.classList.contains('no-bottom-padding'), false);
+});
+
+test('wrs-accordion-tabs: layout_padding="no-bottom" sets only the bottom modifier', async () => {
+  const noBottom = await decorateBlock('../blocks/wrs-accordion-tabs/wrs-accordion-tabs.js', wrsAccordionTabsPadding('no-bottom'));
+  assert.equal(noBottom.classList.contains('no-top-padding'), false);
+  assert.equal(noBottom.classList.contains('no-bottom-padding'), true);
+});
+
+/* Regression test for the cellSlots() fix: an interior blank (tab_name left
+ * empty, tab_title filled) must not shift tab_title into the name slot. */
+const WRS_ACCORDION_TABS_INTERIOR_BLANK = `<div class="wrs-accordion-tabs">
+  <div><div>Heading</div></div>
+  <div><div>h3</div></div>
+  <div><div>none</div></div>
+  <div data-aue-resource="urn:tab1" data-aue-model="wrsaccordiontab">
+    <div><p></p><p>Title Only</p><p>Description text</p></div>
+    <div></div>
+    <div></div>
+  </div>
+</div>`;
+const atInteriorBlank = await decorateBlock('../blocks/wrs-accordion-tabs/wrs-accordion-tabs.js', WRS_ACCORDION_TABS_INTERIOR_BLANK);
+test('wrs-accordion-tabs: a blank tab_name does not shift tab_title into the name slot', () => {
+  assert.equal(atInteriorBlank.querySelector('.wrs-accordion-tabs-btn').textContent, 'Tab 1');
+  assert.equal(atInteriorBlank.querySelector('.wrs-accordion-tabs-panel-heading').textContent, 'Title Only');
+});
+
 /* A block authored with no tabs yet must still be selectable in the editor. */
-const WRS_ACCORDION_TABS_EMPTY = '<div class="wrs-accordion-tabs" data-aue-resource="urn:block1"><div><div>Heading only</div></div><div><div></div></div><div><div></div></div><div><div></div></div></div>';
+const WRS_ACCORDION_TABS_EMPTY = '<div class="wrs-accordion-tabs" data-aue-resource="urn:block1"><div><div>Heading only</div></div><div><div></div></div><div><div></div></div></div>';
 const atEmpty = await decorateBlock('../blocks/wrs-accordion-tabs/wrs-accordion-tabs.js', WRS_ACCORDION_TABS_EMPTY);
 test('wrs-accordion-tabs: an unconfigured block with a heading stays selectable', () => {
   assert.equal(atEmpty.querySelector('.wrs-accordion-tabs-title').textContent, 'Heading only');
@@ -1778,6 +1827,24 @@ test('wrs-feature-carousel: unconfigured block stays selectable in the editor', 
   assert.ok(wfeatEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* Regression test for the cellSlots() fix in readHeading(): a blank
+ * heading_title with heading_ariaLabel filled must not shift the aria label
+ * into the title slot (and render as a visible <h2> it was never meant to
+ * be). */
+const WFEAT_INTERIOR_BLANK = `<div class="wrs-feature-carousel">
+  <div><p>bg-dark-green</p><div></div><div></div></div>
+  <div><p></p><p>Custom Aria Label</p><p>Some description</p></div>
+  <div></div>
+  <div></div>
+  ${wfeatItemRow({ description: '' })}
+</div>`;
+const wfeatInteriorBlank = await decorateBlock('../blocks/wrs-feature-carousel/wrs-feature-carousel.js', WFEAT_INTERIOR_BLANK);
+test('wrs-feature-carousel: a blank heading_title does not shift heading_ariaLabel into the title slot', () => {
+  assert.equal(wfeatInteriorBlank.querySelector('.wrs-feature-carousel-title'), null, 'a blank title must render no <h2>');
+  assert.equal(wfeatInteriorBlank.querySelector('.wrs-feature-carousel-track').getAttribute('aria-label'), 'Custom Aria Label');
+  assert.equal(wfeatInteriorBlank.querySelector('.wrs-feature-carousel-description').textContent, 'Some description');
+});
+
 /* ------------------------------------------------------------------ *
  * WRS Masthead Carousel - constructed fixtures, not copied from a
  * published page (none of this run's WRS components has been authored
@@ -1904,6 +1971,30 @@ test('wrs-masthead-carousel: fetchPriority is high on the first flagged image, l
   assert.equal(firstImg.hasAttribute('fetchpriority'), false, 'first slide is before the flagged one');
   assert.equal(secondImg.getAttribute('fetchpriority'), 'high');
   assert.equal(fourthImg.getAttribute('fetchpriority'), 'low', 'a later slide of any kind still gets low');
+});
+
+/* Regression test for the cellSlots() fix in readVimeoIdsCell(): a blank
+ * vimeo_desktop with vimeo_mobile filled must land in the MOBILE slot, not
+ * be read into the desktop slot by the dropped-blank shift cellValues() had.
+ * `no-mobile-src` is toggled off `!vimeo.mobile`, so this is directly
+ * observable: the old, buggy read left `mobile` empty (the real id landed
+ * in `desktop` instead), which incorrectly added `no-mobile-src` even
+ * though a mobile video WAS authored. */
+test('wrs-masthead-carousel: a blank vimeo_desktop does not shift vimeo_mobile into the desktop slot', () => {
+  const interiorBlank = `<div class="wrs-masthead-carousel">${wmcParentRows()}
+    <div data-aue-model="wrsmastheadvimeoslide">
+      <div><p>vimeo</p><p></p><p>444555666</p></div>
+      <div><picture><img src="/vimeo-fallback.jpg"></picture><p>Vimeo fallback</p></div>
+      <div><p>inline</p><p>true</p></div>
+      <div></div>
+    </div>
+  </div>`;
+  return decorateBlock('../blocks/wrs-masthead-carousel/wrs-masthead-carousel.js', interiorBlank).then((block) => {
+    const slide = block.querySelector('.wrs-masthead-carousel-slide');
+    assert.equal(slide.classList.contains('no-mobile-src'), false, 'a mobile id WAS authored, so no-mobile-src must not be set');
+    const iframe = slide.querySelector('iframe.vimeo-video');
+    assert.ok(iframe.src.includes('444555666'), 'the authored mobile id must still reach the player');
+  });
 });
 
 test('wrs-masthead-carousel: an image slide with only a header renders no CTA, sub-heading or countdown', () => {

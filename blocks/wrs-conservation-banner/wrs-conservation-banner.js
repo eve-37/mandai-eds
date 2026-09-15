@@ -63,7 +63,7 @@
 
 import { moveInstrumentation } from '../../scripts/scripts.js';
 import {
-  cellText, backgroundUrl, readCta, renderEmpty,
+  cellText, cellSlots, backgroundUrl, readCta, renderEmpty,
 } from '../../scripts/rb-helpers.js';
 
 export default function decorate(block) {
@@ -90,7 +90,12 @@ export default function decorate(block) {
    * however many there are - is the description.
    */
   const contentChildren = [...(contentRow?.children || [])];
-  const title = cellText(contentChildren[0]);
+  // content_title read via cellSlots(), not the raw first child: same
+  // family of fix as the other blocks in this run - if content_title is
+  // blank the slot must stay blank rather than being read as whatever
+  // renders first, see cellSlots()'s own docblock for the known-vs-assumed
+  // caveat around whether AEM preserves that slot at all.
+  const [title = ''] = cellSlots(contentRow);
   const lastIndex = contentChildren.length - 1;
   const gradientEl = lastIndex > 0 ? contentChildren[lastIndex] : null;
   const gradientText = cellText(gradientEl).toLowerCase();

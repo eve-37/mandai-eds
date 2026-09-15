@@ -65,18 +65,18 @@
           "valueType": "string"
         },
         {
-          "component": "boolean",
-          "name": "noTopPadding",
-          "label": "No Top Padding",
-          "description": "Checked to disable top padding (grouped with the item above)",
-          "valueType": "boolean"
-        },
-        {
-          "component": "boolean",
-          "name": "noBottomPadding",
-          "label": "No Bottom Padding",
-          "description": "Checked to disable bottom padding (grouped with the item below)",
-          "valueType": "boolean"
+          "component": "select",
+          "name": "layout_padding",
+          "label": "Section Padding",
+          "description": "Combines the source's two noTopPadding/noBottomPadding checkboxes into one field, so the two booleans never land in the same grouped cell with no way to tell which is which (see block docblock, and blocks/wrs-four-column-listing/ which established this pattern).",
+          "valueType": "string",
+          "value": "none",
+          "options": [
+            { "name": "Normal padding", "value": "none" },
+            { "name": "No top padding", "value": "no-top" },
+            { "name": "No bottom padding", "value": "no-bottom" },
+            { "name": "No top or bottom padding", "value": "no-top-bottom" }
+          ]
         }
       ]
     },

@@ -25,54 +25,60 @@
  */
 
 import { moveInstrumentation } from '../../scripts/scripts.js';
-import { cellText, readCta, resolveHref } from '../../scripts/rb-helpers.js';
+import {
+  cellText, cellValues, cellSlots, readCta, resolveHref,
+} from '../../scripts/rb-helpers.js';
 
 const PREFIX = 'wrs-accordion-tabs';
 
 /**
- * title, opt_style + opt_anchorLink, noTopPadding, noBottomPadding.
+ * title, opt_style + opt_anchorLink, layout_padding.
  *
- * The source dialog's 5 parent fields do not collapse to fewer than 4 cells
- * without merging the two checkboxes into one cell - and grouped checkboxes
- * lose their identity there: AEM/UE renders every value in a grouped cell as
- * "true"/"false" text with no field name attached, so once noTopPadding and
- * noBottomPadding shared a cell there would be no way to tell which "true"
- * belonged to which. Every other grouped-value read in this codebase
- * disambiguates by the VALUE itself (a mask keyword, a colour keyword, an
- * align keyword) - two same-domain booleans have no such keyword to key on.
- * So they are kept as two separate one-field cells instead, using the full
- * 4-cell budget: [title], [opt_style + opt_anchorLink], [noTopPadding],
- * [noBottomPadding]. This is a deliberate change from the initial survey's
- * suggested single 4-field "opt" cell, made for that reason.
+ * The source dialog's two padding checkboxes (noTopPadding/noBottomPadding)
+ * were originally kept as two separate one-field cells, because two
+ * same-domain booleans sharing a grouped cell render as bare "true"/"false"
+ * text with no field name attached - there is no way to tell which belonged
+ * to which. `wrs-four-column-listing` (built later) found the better
+ * answer, and every block since follows it: collapse both checkboxes into
+ * ONE `layout_padding` select covering the same four reachable states
+ * (none / no-top / no-bottom / no-top-bottom) - unambiguous by content
+ * match, one cell instead of two. Retrofitted here for the same reason,
+ * dropping this block from 4 cells to 3: [title],
+ * [opt_style + opt_anchorLink], [layout_padding].
+ *
+ * `wrs-four-column-listing` hit a real bug building this: `none` was
+ * missing from its own vocabulary and got misread as free text, silently
+ * overwriting the anchor id. PADDINGS below includes every value the select
+ * can emit, `none` included, for exactly that reason.
  */
-const PARENT_CELLS = 4;
+const PARENT_CELLS = 3;
 
 const HEADING_TAGS = ['h1', 'h3', 'h4', 'h5', 'h6'];
+const PADDINGS = ['none', 'no-top', 'no-bottom', 'no-top-bottom'];
 
 /**
- * Reads the parent's 4 cells.
+ * Reads the parent's 3 cells.
  *
  * [opt_style, opt_anchorLink] is a genuinely grouped cell: style is one of a
  * known small set of heading tags (or blank, meaning the H2 default), and
  * anchorLink is free author-entered text, so the two are told apart by
  * matching the heading-tag keyword rather than by position - consistent with
- * how every other grouped, blankable cell is read in this codebase. The two
- * padding cells are single boolean values, read directly.
+ * how every other grouped, blankable cell is read in this codebase.
+ * `layout_padding` is a single select value with a real default (`none`),
+ * matched against its own known vocabulary - not read positionally, so it
+ * stays on `cellText()` rather than `cellSlots()`.
  */
 function readParent(parentRows) {
-  const [titleRow, optRow, noTopRow, noBottomRow] = parentRows;
+  const [titleRow, optRow, paddingRow] = parentRows;
 
   const parent = {
     title: cellText(titleRow),
     style: '',
     anchorLink: '',
-    noTopPadding: cellText(noTopRow).toLowerCase() === 'true',
-    noBottomPadding: cellText(noBottomRow).toLowerCase() === 'true',
+    padding: 'none',
   };
 
-  [...(optRow?.querySelectorAll('p') || [])]
-    .map((p) => p.textContent.trim())
-    .filter(Boolean)
+  cellValues(optRow)
     .forEach((value) => {
       if (HEADING_TAGS.includes(value.toLowerCase())) parent.style = value.toLowerCase();
       else parent.anchorLink = value;
@@ -84,6 +90,9 @@ function readParent(parentRows) {
     if (HEADING_TAGS.includes(bare.toLowerCase())) parent.style = bare.toLowerCase();
     else parent.anchorLink = bare;
   }
+
+  const paddingValue = cellText(paddingRow).toLowerCase();
+  if (PADDINGS.includes(paddingValue)) parent.padding = paddingValue;
 
   return parent;
 }
@@ -99,14 +108,19 @@ function readParent(parentRows) {
  * fixtures for the analogous tabName/title pair), so the description is
  * whatever element(s) follow the first two. Unlike the plain-text fields,
  * its markup must be kept as HTML, not flattened to text - that is the one
- * place this reader departs from cellValues()/cellText().
+ * place this reader departs from cellSlots()/cellText().
+ *
+ * tab_name and tab_title are read via `cellSlots()`, not `cellValues()`:
+ * both are freeform text with nothing to disambiguate them by content, so a
+ * blank tab_name with a filled tab_title must not shift tab_title into the
+ * name slot (see cellSlots()'s own docblock for what is known vs assumed
+ * about whether AEM preserves that slot at all).
  */
 function readTab(row) {
   const [tabCell, imageCell, ctaCell] = row.children;
 
+  const [tabName = '', title = ''] = cellSlots(tabCell);
   const tabChildren = [...(tabCell?.children || [])];
-  const tabName = cellText(tabChildren[0]);
-  const title = cellText(tabChildren[1]);
   const descriptionEls = tabChildren.slice(2);
   let descriptionHtml = '';
   if (descriptionEls.length === 1) {
@@ -131,8 +145,8 @@ export default function decorate(block) {
   const parent = readParent(parentRows);
 
   if (parent.anchorLink) block.id = parent.anchorLink;
-  block.classList.toggle('no-top-padding', parent.noTopPadding);
-  block.classList.toggle('no-bottom-padding', parent.noBottomPadding);
+  block.classList.toggle('no-top-padding', parent.padding === 'no-top' || parent.padding === 'no-top-bottom');
+  block.classList.toggle('no-bottom-padding', parent.padding === 'no-bottom' || parent.padding === 'no-top-bottom');
 
   const wrapper = document.createElement('div');
 

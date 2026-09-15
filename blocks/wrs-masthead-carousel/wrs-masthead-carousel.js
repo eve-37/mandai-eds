@@ -128,7 +128,7 @@
 
 import { moveInstrumentation } from '../../scripts/scripts.js';
 import {
-  cellText, cellValues, readCta, renderEmpty, splitRows,
+  cellText, cellValues, cellSlots, readCta, renderEmpty, splitRows,
 } from '../../scripts/rb-helpers.js';
 
 const PREFIX = 'wrs-masthead-carousel';
@@ -198,24 +198,30 @@ function readImageCell(cell) {
  * gradient (select, default '' so it drops out of cellValues() entirely
  * when unset), bottomSpacing (number).
  *
- * Matched by shape against each field's own fixed vocabulary, the same
- * technique `tabs.js`'s TILE_ALIGNS uses - not by position, because header
- * and subHeader are free text with nothing to tell them apart positionally
- * if one is left blank. Accepted limitation, same shape as elsewhere in this
- * codebase: if `content_header` is blank, `content_subHeader`'s value would
- * be read into the header slot instead. Re-verify once authored.
+ * `alignment`/`gradient`/`bottomSpacing` are matched by shape against each
+ * field's own fixed vocabulary, the same technique `tabs.js`'s TILE_ALIGNS
+ * uses - immune to a dropped blank, since a missing entry just never
+ * matches anything, so they stay on `cellValues()`.
+ *
+ * `header`/`subHeader` are different: both are free text with nothing to
+ * tell them apart by content, so they are read via `cellSlots()` at their
+ * fixed field-declaration indices (0, 1) instead - a blank header no longer
+ * pulls subHeader's value into the header slot. This fixes that IF AEM
+ * emits an empty `<p></p>` for the blank field; see cellSlots()'s own
+ * docblock for the known-vs-assumed caveat, and re-verify once authored.
  */
 function readContentCell(cell) {
   const content = {
     header: '', subHeader: '', alignment: 'text-left', gradient: '', bottomSpacing: '',
   };
+  const [header = '', subHeader = ''] = cellSlots(cell);
+  content.header = header;
+  content.subHeader = subHeader;
   cellValues(cell).forEach((raw) => {
     const lower = raw.toLowerCase();
     if (ALIGNMENTS.includes(lower)) { content.alignment = lower; return; }
     if (GRADIENTS.includes(lower)) { content.gradient = lower; return; }
-    if (/^\d+$/.test(raw) && !content.bottomSpacing) { content.bottomSpacing = raw; return; }
-    if (!content.header) { content.header = raw; return; }
-    if (!content.subHeader) content.subHeader = raw;
+    if (/^\d+$/.test(raw) && !content.bottomSpacing) content.bottomSpacing = raw;
   });
   return content;
 }
@@ -283,8 +289,17 @@ function readYoutubeCell(cell) {
   return { path, unmute };
 }
 
+/**
+ * Reads the vimeo_kind / vimeo_desktop / vimeo_mobile cell via `cellSlots()`,
+ * not `cellValues()` - a mobile-only video (desktop id left blank) is a
+ * plausible authoring choice, and `cellValues()`'s dropped blank would have
+ * read the mobile id into the desktop slot instead. Flagged in
+ * docs/wrs-migration-notes.md "## 6. Pre-authoring audit" as the most likely
+ * of this codebase's positional-shift risks to actually bite; this is the
+ * fix for it.
+ */
 function readVimeoIdsCell(cell) {
-  const texts = cellValues(cell).slice(1); // drop the kind marker
+  const texts = cellSlots(cell).slice(1); // drop the kind marker
   return { desktop: texts[0] || '', mobile: texts[1] || '' };
 }
 

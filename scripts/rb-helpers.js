@@ -42,6 +42,48 @@ export function cellValues(el) {
 }
 
 /**
+ * The values held by one cell, ONE ENTRY PER FIELD SLOT, positions preserved.
+ *
+ * `cellValues()`'s `.filter(Boolean)` drops empty paragraphs, so callers that
+ * destructure its result positionally (`values[0]` is field A, `values[1]`
+ * is field B, ...) get every value shifted left by one for each earlier
+ * field an author left blank. `cellSlots()` is the same read WITHOUT that
+ * filter - a blank field still occupies its own index, as `''`.
+ *
+ * What is known vs assumed, stated plainly (see docs/wrs-migration-notes.md
+ * "## 6. Pre-authoring audit" for the full writeup): `splitRows()`'s own
+ * docblock records, from OBSERVED published output, that AEM drops an empty
+ * CELL entirely. Whether AEM emits an empty `<p></p>` for a blank FIELD
+ * INSIDE a grouped cell (in which case this function fixes the shift
+ * completely), or omits that field's paragraph too (in which case position
+ * is unrecoverable from the markup at all, no matter how it's read), is NOT
+ * known - no block in this repo has been authored or published yet. This
+ * function is the cheap fix that is strictly correct in the first case and
+ * no worse than `cellValues()` in the second; it is not a substitute for
+ * checking against real authored/published markup once it exists.
+ *
+ * USE THIS when reading a grouped cell POSITIONALLY, by field declaration
+ * order (`slots[0]` is field A, `slots[1]` is field B, ...). Keep using
+ * `cellValues()` where a cell is read by matching each value's own small,
+ * known vocabulary (a heading tag, `true`/`false`, a mask/align/padding
+ * keyword) rather than by position - that kind of read is already immune to
+ * a dropped blank, since the missing entry simply never matches anything,
+ * and switching it to `cellSlots()` adds nothing.
+ *
+ * Text only, like `cellValues()` - a field whose markup must survive (a
+ * richtext field) still has to be read from the cell's own `children`
+ * directly, not through this or `cellValues()`, either of which flattens to
+ * plain text.
+ */
+export function cellSlots(el) {
+  if (!el) return [];
+  const paragraphs = [...el.querySelectorAll('p')];
+  if (paragraphs.length) return paragraphs.map((p) => p.textContent.trim());
+  const own = el.textContent.trim();
+  return own ? [own] : [];
+}
+
+/**
  * A CSS-background-sized URL for an authored image.
  *
  * EDS renders every image as a `<picture>` whose `<source>` elements carry the

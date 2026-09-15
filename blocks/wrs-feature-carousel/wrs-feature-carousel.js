@@ -79,7 +79,7 @@
 
 import { moveInstrumentation } from '../../scripts/scripts.js';
 import {
-  cellText, cellValues, backgroundUrl, renderEmpty, splitRows, buildDots,
+  cellText, cellValues, cellSlots, backgroundUrl, renderEmpty, splitRows, buildDots,
 } from '../../scripts/rb-helpers.js';
 
 const PREFIX = 'wrs-feature-carousel';
@@ -143,21 +143,24 @@ function readBackground(cell) {
  * joined as its HTML, the same "rest is the richtext" technique readCard()
  * uses.
  *
- * Accepted limitation, same shape as elsewhere in this codebase: if
- * heading_title is left blank while heading_ariaLabel is set, the aria label
- * lands in the title slot instead (and if both are blank, a solitary
- * description paragraph would be misread as the title). Flagged here and in
- * the migration report; re-verify once this block has real authored markup.
+ * Read via `cellSlots()` for the title/ariaLabel pair, not `cellValues()`:
+ * both are freeform text with nothing to disambiguate them by content, so a
+ * blank heading_title with a filled heading_ariaLabel must not shift the
+ * aria label into the title slot. This fixes the shift IF AEM emits an
+ * empty `<p></p>` for the blank field; if it omits the field's paragraph
+ * entirely instead, position is unrecoverable from the markup regardless of
+ * how it's read - see cellSlots()'s own docblock for what is known vs
+ * assumed here, and re-verify once this block has real authored markup.
  */
 function readHeading(cell) {
   const heading = { title: '', ariaLabel: '', descriptionHtml: '' };
   if (!cell) return heading;
 
+  const [title = '', ariaLabel = ''] = cellSlots(cell);
+  heading.title = title;
+  heading.ariaLabel = ariaLabel;
   const children = [...cell.children];
-  const [titleEl, ariaLabelEl, ...descEls] = children;
-  heading.title = cellText(titleEl);
-  heading.ariaLabel = cellText(ariaLabelEl);
-  heading.descriptionHtml = joinRichText(descEls);
+  heading.descriptionHtml = joinRichText(children.slice(2));
   return heading;
 }
 
@@ -172,14 +175,19 @@ function readViewAllCta(cell) {
 /**
  * Reads one carousel item's 4 cells: image(+imageAlt), content_title/
  * content_description, cta_link, display_gradient/display_hide.
+ *
+ * content_title is read via `cellSlots()` (not `cellValues()`/positional
+ * `.children` indexing), so a blank title does not pull the description's
+ * first paragraph into the title slot - see cellSlots()'s docblock for the
+ * known-vs-assumed caveat.
  */
 function readItem(row) {
   const [imageCell, contentCell, ctaCell, displayCell] = [...(row?.children ?? [])];
 
   const picture = imageCell?.querySelector('picture') ?? null;
 
+  const [title = ''] = cellSlots(contentCell);
   const contentChildren = [...(contentCell?.children ?? [])];
-  const title = cellText(contentChildren[0]);
   const descriptionHtml = joinRichText(contentChildren.slice(1));
 
   const href = ctaCell?.querySelector('a')?.getAttribute('href') || '';

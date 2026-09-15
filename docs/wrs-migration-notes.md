@@ -2524,3 +2524,98 @@ practice; not worth pre-emptively churning eight blocks for.
 
 **Authoring guidance meanwhile:** fill these fields in order and avoid skipping one. An empty
 field between two filled ones is the failure case, not an empty field at the end.
+
+### Retrofit: `wrs-accordion-tabs`'s padding fields, and `cellSlots()` for positional reads
+
+Two follow-up fixes, made before any page in this run has been authored, because both stop being
+cheap once content exists (a removed field's data survives as a ghost row; a model shape change
+after authoring needs content cleanup, not just a code change).
+
+**1. `wrsaccordiontabs` retrofitted onto the `layout_padding` pattern.** This block predates
+`wrs-four-column-listing` and originally spent two full cells on `noTopPadding`/`noBottomPadding`
+kept apart specifically because two same-domain booleans sharing a grouped cell render as bare
+`true`/`false` with no field name attached — see the table above's own note that this was "a
+deliberate change from the initial survey's suggested single cell." `wrs-four-column-listing`
+(built later) found the actual right answer: collapse both checkboxes into ONE `layout_padding`
+select covering the same four reachable states (`none`/`no-top`/`no-bottom`/`no-top-bottom`) —
+unambiguous by content match, one cell instead of two. `wrsaccordiontabs` now follows the same
+pattern and drops from 4 cells to 3 (`title`, `opt_style + opt_anchorLink`, `layout_padding`);
+`PARENT_CELLS` is now `3`. The CSS classes (`.no-top-padding`/`.no-bottom-padding`) are unchanged —
+only what drives them changed, from two raw booleans to one select value.
+
+`wrs-four-column-listing` hit a real bug building this originally: `none` was missing from its own
+vocabulary and got misread as free text, silently overwriting the anchor id. `wrsaccordiontabs`'
+`PADDINGS` constant includes `none` from the start for exactly that reason — checked directly
+against the fix, not just copied blind.
+
+**2. `cellSlots()` added to `scripts/rb-helpers.js`**, alongside `cellValues()`. `cellValues()`'s
+`.filter(Boolean)` drops empty paragraphs, so a caller that destructures its result positionally
+(`values[0]` is field A, `values[1]` is field B, ...) gets every value after an earlier blank field
+shifted left by one. `cellSlots()` is the same read WITHOUT that filter — a blank field still
+occupies its own index, as `''`.
+
+**What is known vs assumed, stated plainly, because it matters for whoever authors the first
+page:** `splitRows()`'s own docblock records, from OBSERVED published output, that AEM drops an
+empty CELL entirely. Whether AEM emits an empty `<p></p>` for a blank FIELD INSIDE a grouped cell
+(in which case `cellSlots()` fixes the positional shift completely), or omits that field's
+paragraph too (in which case position is unrecoverable from the markup no matter how it's read),
+is **NOT known** — no block in this repo has been authored or published yet. `cellSlots()` is the
+cheap fix that is strictly correct in the first case and no worse than `cellValues()` in the
+second. It is not a substitute for checking against real authored/published markup once it
+exists — **whoever authors the first page with a grouped cell holding an interior blank field
+should check which case is real**, and update this note.
+
+Switched to `cellSlots()` (genuine behavioural fixes — these previously called `cellValues()` and
+destructured/indexed the filtered result, so an interior blank actually shifted values today):
+
+- `wrs-masthead-carousel`'s `readVimeoIdsCell()` (`vimeo_desktop`/`vimeo_mobile`) — the one flagged
+  above as most likely to bite; a mobile-only video no longer misreads as a desktop-only one.
+- `wrs-masthead-carousel`'s `readContentCell()` for `wrsmastheadimageslide`, specifically
+  `content_header`/`content_subHeader` (read by fixed index from `cellSlots()`); `alignment`/
+  `gradient`/`bottomSpacing` in the same cell stay on `cellValues()`, unaffected because they are
+  matched by their own known vocabulary, not by position.
+- `wrs-experience-carousel`'s `readColors()` (the 8-value `color_*` cell) — already given real
+  defaults during the earlier "8-colour cell" fix above, so this should never see a blank in
+  practice, but reading by slot makes it robust rather than dependent on those defaults surviving
+  future edits.
+- `wrs-accordion-tabs`' `readTab()` for `tab_name`/`tab_title`.
+- `wrs-feature-carousel`'s `readHeading()` for `heading_title`/`heading_ariaLabel`, and its item
+  reader for `content_title`.
+- `wrs-conservation-banner`'s `content_title` read.
+
+Left on the existing direct-`children` read, NOT switched (already immune to the bug, for a
+different reason than "matched by vocabulary" — worth recording why, so it isn't "fixed" again
+redundantly later): `wrs-experience-carousel`'s `readCard()` (`card_title`/`card_description`) and
+its item reader's `content_title`/`content_description`. Both build their positional read directly
+off the cell's own DOM `children` (element objects, needed anyway to preserve richtext markup),
+never through `cellValues()`'s filtered array — so a blank field already keeps its own slot in
+these two, the same guarantee `cellSlots()` provides, just via elements instead of text. Each
+carries an updated comment pointing at this entry and at `cellSlots()`'s own docblock, since the
+underlying known-vs-assumed caveat is identical.
+
+Left on `cellValues()` deliberately, unchanged (matched by content, not position — already immune):
+every select/keyword-matched value in every cell above (heading tags, alignment, gradient,
+bg colours, mask keywords, `layout_padding` itself) plus `cta_newTab`-style boolean reads.
+Switching these to `cellSlots()` would add a dependency on slot-count stability for no benefit,
+since a dropped blank simply never matches anything either way.
+
+**Tests:** three interior-blank regression cases added, one per block whose fix is a genuine
+behavioural change — `wrs-accordion-tabs` (blank `tab_name`, filled `tab_title`), `wrs-masthead-
+carousel` (blank `vimeo_desktop`, filled `vimeo_mobile` — asserts `no-mobile-src` is NOT
+incorrectly added, and that the mobile id still reaches the player), and `wrs-feature-carousel`
+(blank `heading_title`, filled `heading_ariaLabel` — asserts no stray `<h2>` renders and the aria
+label lands on the track, not the title). Plus four new `wrs-accordion-tabs` tests covering all
+four `layout_padding` states, mirroring the ones `wrs-four-column-listing` already has. All carry
+the same constructed-fixture caveat as every other test in this file: re-verify against real
+authored/published markup once it exists, specifically to settle the known-vs-assumed question
+above.
+
+**Files touched:** `blocks/wrs-accordion-tabs/_wrs-accordion-tabs.json` (model: `noTopPadding` +
+`noBottomPadding` → `layout_padding` select); `blocks/wrs-accordion-tabs/wrs-accordion-tabs.js`
+(`PARENT_CELLS` 4→3, `readParent()`, `readTab()`); `scripts/rb-helpers.js` (new `cellSlots()`
+export); `blocks/wrs-masthead-carousel/wrs-masthead-carousel.js`; `blocks/wrs-feature-
+carousel/wrs-feature-carousel.js`; `blocks/wrs-conservation-banner/wrs-conservation-banner.js`;
+`blocks/wrs-experience-carousel/wrs-experience-carousel.js` (comments only, no `cellSlots()` calls
+added to `readCard()`/item content, for the reason above); `tests/blocks.test.mjs`; `component-
+models.json` (regenerated via `npm run build:json`, not hand-edited). `npm run build:json`,
+`npm run lint` and `npm test` all pass (217/217 tests).
