@@ -2564,6 +2564,82 @@
     ]
   },
   {
+    "id": "wrssocialgrid",
+    "fields": [
+      {
+        "component": "text",
+        "name": "title",
+        "label": "Main Tile Title",
+        "description": "Please provide the title.",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
+    "id": "wrssocialtile",
+    "fields": [
+      {
+        "component": "select",
+        "name": "socialIcon",
+        "label": "Feed Type",
+        "description": "Please select Feed Type for Slide",
+        "valueType": "string",
+        "value": "fa-facebook-square",
+        "options": [
+          {
+            "name": "Facebook",
+            "value": "fa-facebook-square"
+          },
+          {
+            "name": "Instagram",
+            "value": "fa-instagram"
+          },
+          {
+            "name": "Twitter",
+            "value": "fa-twitter"
+          },
+          {
+            "name": "Text",
+            "value": "text"
+          },
+          {
+            "name": "Image",
+            "value": "image"
+          }
+        ]
+      },
+      {
+        "component": "reference",
+        "name": "socialFeedImage",
+        "label": "Image Path",
+        "description": "Please provide Slide Image Path. Used by the Facebook, Instagram and Image feed types.",
+        "valueType": "string",
+        "multi": false
+      },
+      {
+        "component": "aem-content",
+        "name": "link_url",
+        "label": "Social Feed Url",
+        "description": "Please provide Slide Social Feed URL. Used by the Facebook, Instagram and Twitter feed types.",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "link_handle",
+        "label": "Social Handle",
+        "description": "Please provide Slide Social Handle value. Used by the Facebook, Instagram and Twitter feed types.",
+        "valueType": "string"
+      },
+      {
+        "component": "richtext",
+        "name": "message",
+        "label": "Message",
+        "description": "Please provide Slide Message. Used by the Text and Twitter feed types. Twitter's source field is plain text (no formatting) - keep Twitter messages unformatted even though this field allows rich text.",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
     "id": "wrsvisitourparks",
     "fields": []
   },

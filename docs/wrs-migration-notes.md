@@ -1571,3 +1571,116 @@ quote" affordance the arrows provided, matching the pattern already accepted els
   unconfigured-outside-editor / unconfigured-in-editor-placeholder pair.
 - `blocks/testimonial/` was **not** touched, as required.
 - `npm run build:json`, `npm run lint` and `npm test` all pass (172/172 tests).
+
+## mandaisocialcontentgrid
+
+**Source:** `wrs-components-export/mandaisocialcontentgrid/` — `wrs/components/mandai/mandaisocialcontentgrid`
+(standalone `cq:Component`, no `sling:resourceSuperType`). Built as `blocks/wrs-social-grid/`
+(`template.name` "WRS Social Grid"), parent id `wrssocialgrid`, child id `wrssocialtile`,
+registered in `models/_section.json`'s `section` filter.
+
+### The 12→4 collapse — checked against the Java bean, not just inferred from the dialog
+
+The survey's "four show/hide branches" undercounted by one: `socialIcon`'s
+`cq-dialog-dropdown-showhide` select has **five** options/branches — facebook, instagram, twitter,
+text, image — each showing a different subset of 12 total dialog fields (`socialFeedImage` /
+`facebookSocialFeedImage` / `instagramSocialFeedImage`; `message` / `twitterMessage`;
+`facebookSocialHandle` / `instagramSocialHandle` / `twitterSocialHandle`;
+`facebookSocialFeedUrl` / `instagramSocialFeedUrl` / `twitterSocialFeedUrl`). Confirmed by reading
+the dialog XML as a tree — five `option-showhide-target` containers, not four.
+
+That reads as 12 unrelated fields, but it is not: `MandaiSocialContentGridItem` — the child Sling
+Model each `./slides` row is adapted to (`item.adaptTo(MandaiSocialContentGridItem.class)` in
+`MandaiSocialContentGridModel.init()`) — is a `sg.com.wrs.core.mandai.objects` class, not shipped
+in this bundle (an "objects" package, out of the Java scope `COMPONENT.md` copies), but its
+accessors are used directly and exclusively throughout the HTL: `item.socialFeedImage`,
+`item.message`, `item.socialHandle`, `item.socialFeedUrl` — **one accessor per concept**, never a
+per-network name, and never once a `facebookSocialHandle`-style name. The item bean itself already
+does the collapse this model makes explicit; the HTL is proof, not inference, since it is
+impossible to read `item.socialFeedImage` for a Facebook item unless the bean maps
+`facebookSocialFeedImage` onto that same getter internally. So this is not the mechanical
+converter's "12 cells, wrong" case the task described flattened away — it is a direct,
+field-for-field port of the component's own backing bean, four cells deep:
+`socialIcon` · `socialFeedImage` · a grouped `link` cell (`link_url` + `link_handle`) · `message`.
+
+### richtext `message` vs textarea `twitterMessage` — an inconsistency in the source, not a real distinction
+
+Kept as **one** richtext field, not two. The source itself treats them identically at render time —
+every `item.message` reference in the HTL renders through the same expression,
+`${item.message @context='html'}`, with no branch that changes behaviour for twitter. The dialog
+widget difference (RTE for `message`, a bare `<textarea>` for `twitterMessage`) reads as an
+authoring-time guard against pasting formatted text into what was historically a 280-character
+platform, not a content-model difference the render path respects. A `richtext` field is a safe
+superset — it can hold unformatted plain text exactly as well as a `<textarea>` can — so the model
+field carries a description telling authors to keep Twitter items unformatted, rather than
+inventing two fields for one rendered concept. This is the one place in this collapse that is a
+policy call rather than a mechanical fact about the bean (the other three cells are a direct port);
+flagged here rather than decided silently.
+
+### `tileOrder` is derived, not authored — confirmed, re-expressed as a CSS modifier class
+
+Confirmed in `MandaiSocialContentGridModel.init()`: `tileOrder = socialFeedList.size() <= 4 ?
+"order:1" : ""`, written into the main tile's `style` attribute
+(`style="${modal.tileOrder @context='styleString'}"`) — there is no dialog field for it anywhere.
+It exists because `.social-grid-component__column:nth-of-type(1) { order: 5; }` in the deployed CSS
+normally pushes the main title tile behind up to 4 feed items; when there are 3 or fewer items
+(≤4 columns total), that would push the title to *last* place instead, so the inline style forces
+it back to first.
+
+Re-derived in `decorate()` as a `wrs-social-grid-compact` modifier class on the block (added when
+`1 + tiles.length <= 4`, `tiles.length` being the authored row count, unfiltered — the same count
+`.size()` used) instead of a JS-computed inline `order` value. `wrs-social-grid.css` reads it:
+`.wrs-social-grid-compact .wrs-social-grid-column.main { order: 1; }`. Below the 992px breakpoint
+`nth-of-type(1)` is already `order: 1` by default (the source's own mobile media query), so the
+class is a no-op there and, like the source's inline style, only actually changes anything at the
+desktop breakpoint.
+
+### The three bundled JS plugins are unrelated to this component — none reimplemented
+
+`social-content-grid.js` (`[data-social-content]`, fetches `/bin/socialcontentgrid.servlet.*.json`
+via Handlebars), `list-social.js` (`.list-social li` hover/click icon popups) and
+`animal-personality-social-grid.js` (`#animal-personality-view-more`,
+`.animal-personality-social-grid__box`) ship in this bundle, but **none** of their selectors appear
+anywhere in this component's own HTL. They belong to sibling components sharing
+`Mandai-EMP-Frontend/app/scripts/plugins/`, bundled by folder proximity, not by relevance — the
+same "check the selector before porting" caution the migration skill gives for CSS applies here to
+JS. This component's own HTL has no interactive JS hook of its own beyond `.lazyload`, a generic
+sitewide lazy-load class with no component-specific logic, superseded by EDS's own `<picture>`
+handling. Nothing was ported.
+
+### The Java model — clean, confirmed
+
+`MandaiSocialContentGridModel` does one repository-adjacent thing (`item.adaptTo(...)` over its own
+`./slides` children, a direct child-resource adaptation, not a query) plus the `tileOrder` string
+computation above. No `QueryBuilder`, no OSGi service lookups, no request/session context. The
+second Java file in the bundle, `PlaceholderManager`, only emits the `wcmmode.edit` "no content"
+placeholder — EDS/UE has its own unconfigured-block placeholder (`renderEmpty()`), so nothing there
+needed porting either.
+
+### The shared RTE config — cross-referenced, not re-argued
+
+`message` uses `/apps/wrs/widgets/richtext/text`, the same shared custom RTE config already flagged
+for its lack of a Universal Editor restricted-style-list equivalent (see component 1's entry).
+Cross-referenced, not repeated here.
+
+### Files touched
+
+- `blocks/wrs-social-grid/_wrs-social-grid.json` — new; parent `wrssocialgrid` (1 field, `title`)
+  with a `filter` naming the child; child `wrssocialtile` (4 cells from 5 fields — `socialIcon`,
+  `socialFeedImage`, grouped `link_url`/`link_handle`, `message` — after the 12→4 collapse above).
+- `blocks/wrs-social-grid/wrs-social-grid.js` — new; `decorate()` reading the parent title cell and
+  4 child cells positionally, the photo/text-column branch matching the source HTL exactly, the
+  `tileOrder` re-derivation, no seams (no server-side logic to flag).
+- `blocks/wrs-social-grid/wrs-social-grid.css` — new; ports every rule in
+  `styles/deployed-bundle-extract.css` traceable to this component's own classes, breakpoints
+  rewritten mobile-first at the source's own 992/1024/1200/1440px cutoffs, literal hex colours (no
+  `--rb-*`/`--wrs-*` token matches this component's own dark-green/twitter-green/cream palette).
+- `models/_section.json` — appended `"wrssocialgrid"` to the `section` filter's `components` array
+  (child id `wrssocialtile` intentionally not added — reachable only through the parent's own
+  filter).
+- `tests/blocks.test.mjs` — added 15 cases: the title cell becoming the heading with instrumentation
+  moved, one case per feed type (facebook, instagram, twitter, text, image) exercising the 12→4
+  collapse directly, instrumentation moving from a child row onto its column, the compact modifier
+  present at 4 total columns and absent at 6, a link cell with a blank handle, a link cell that is
+  entirely blank, and the unconfigured-outside-editor / unconfigured-in-editor-placeholder pair.
+- `npm run build:json`, `npm run lint` and `npm test` all pass (185/185 tests).

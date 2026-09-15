@@ -1,0 +1,290 @@
+/*
+ * WRS Social Grid
+ *
+ * Port of the DEPLOYED bundle, not the LESS checkout - see
+ * ../../../wrs-components-export/mandaisocialcontentgrid/styles/deployed-bundle-extract.css.
+ * That extract's header lists this component's own classes: `social-grid-component`,
+ * `__column`, `__desc`, `__title`, `__username`, `photo`, `twitter`, `lazyload`.
+ * Every rule below is traced to one of those selectors; brand-skin overrides for
+ * Mandai's OTHER parks (`.zoo-style`, `.night-safari-style`, `.river-safari-style`,
+ * `.bird-park-style`, `.mrr-style`) are this repo's Wildlife Reserves Singapore
+ * site only, so only the `.mrr-style`... none apply here; the base
+ * `.social-grid-component` background (`#202721`) is what this site actually
+ * serves and is kept as the default fill.
+ *
+ * `var(--primary-font-regular)` / `var(--primary-font-bold)` are the source's own
+ * font tokens - this repo's `--heading-*`/`--body-*` custom properties belong to
+ * the separately migrated Ranger Buddies brand and were not built for WRS's
+ * palette, so the source's own token names are kept with a generic fallback,
+ * same call wrs-admission-types.css and wrs-conservation-banner.css make. Needs
+ * a real font decision before production.
+ *
+ * Class names are doubly scoped under `.wrs-social-grid` throughout, per house
+ * style - never reusing the source's own BEM-ish `social-grid-component__*`
+ * names, which would collide with nothing here but breaks the convention every
+ * other wrs-* block in this repo follows.
+ *
+ * Breakpoints: the source is desktop-first with cutoffs at max-width:1440px,
+ * max-width:1200px, max-width:1024px and max-width:992px. Rewritten mobile-first
+ * here to match this repo's own `(width >= Npx)` range-query convention; each
+ * rule states which source declaration it came from.
+ *
+ * TILE ORDER: the source's `tileOrder` (Java: `socialFeedList.size() <= 4 ?
+ * "order:1" : ""`, written as an inline style on the main tile) is re-derived
+ * here as `decorate()` adding a `-compact` modifier class instead of an inline
+ * `order` value - see wrs-social-grid.js's own docblock for the full count logic.
+ * `.wrs-social-grid-column:nth-of-type(1)` still carries the source's own
+ * `order: 5` default (pushing the title behind up to 4 items); the modifier
+ * overrides it back to `order: 1` for the <=4-column case, matching the source
+ * exactly. On narrow screens `nth-of-type(1)` is already `order: 1` by default
+ * (see the `(width < 992px)` block below), so the modifier is a no-op there and
+ * only matters at the desktop breakpoint - same as the source, where the inline
+ * style is unconditional but only ever disagrees with the CSS default above 992px.
+ */
+
+.wrs-social-grid {
+  background-color: #202721;
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* extract L240-244 */
+.wrs-social-grid-column {
+  position: relative;
+  overflow: hidden;
+  width: 50%;
+}
+
+/* extract L246-252 - fills the column when the tile is a link */
+.wrs-social-grid-column > a {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+}
+
+/* extract L254-258 - square aspect ratio via padding-bottom trick */
+.wrs-social-grid-column::before {
+  content: "";
+  display: block;
+  padding-bottom: 100%;
+}
+
+/* extract L292-297 */
+.wrs-social-grid-column img {
+  position: absolute;
+  top: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* extract L299-328 (max-width:992px block - this IS the mobile-first base here) */
+.wrs-social-grid-column:nth-of-type(1) { order: 1; }
+.wrs-social-grid-column:nth-of-type(2) { order: 2; }
+.wrs-social-grid-column:nth-of-type(3) { order: 3; }
+.wrs-social-grid-column:nth-of-type(4) { order: 4; }
+.wrs-social-grid-column:nth-of-type(5) { order: 5; }
+.wrs-social-grid-column:nth-child(n + 5) { display: none; }
+
+/* extract L260-290 - the desktop (base, no max-width) block */
+@media (width >= 992px) {
+  .wrs-social-grid-column {
+    width: 25%;
+  }
+
+  .wrs-social-grid-column:nth-of-type(1) { order: 5; }
+  .wrs-social-grid-column:nth-of-type(2) { order: 1; }
+  .wrs-social-grid-column:nth-of-type(3) { order: 2; }
+  .wrs-social-grid-column:nth-of-type(4) { order: 3; }
+  .wrs-social-grid-column:nth-of-type(5) { order: 4; }
+  .wrs-social-grid-column:nth-of-type(6) { order: 6; }
+  .wrs-social-grid-column:nth-of-type(7) { order: 7; }
+  .wrs-social-grid-column:nth-of-type(8) { order: 8; }
+  .wrs-social-grid-column:nth-child(n + 5) { display: block; }
+}
+
+/* re-derived tileOrder - see docblock above */
+.wrs-social-grid-compact .wrs-social-grid-column.main {
+  order: 1;
+}
+
+/* extract L330-332 */
+.wrs-social-grid-column.twitter {
+  background-color: #01722f;
+}
+
+/* extract L351-367 */
+.wrs-social-grid-column.photo::after {
+  content: "";
+  display: block;
+  position: absolute;
+  bottom: 0;
+  z-index: 2;
+  width: 100%;
+  padding-bottom: 33%;
+  pointer-events: none;
+  background-image: linear-gradient(180deg, rgb(0 0 0 / 0%) 0, rgb(0 0 0 / 80%) 100%);
+}
+
+/* Main tile title - extract L369-421 */
+.wrs-social-grid-column.main .wrs-social-grid-title {
+  position: absolute;
+  left: 1.25rem;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  width: 80%;
+}
+
+@media (width >= 1200px) {
+  .wrs-social-grid-column.main .wrs-social-grid-title {
+    left: 3rem;
+    width: 70%;
+  }
+}
+
+.wrs-social-grid-column.main .wrs-social-grid-title h3 {
+  color: #fbebce !important;
+  font-size: 1.25rem;
+  line-height: 1.625rem;
+}
+
+@media (width >= 1024px) {
+  .wrs-social-grid-column.main .wrs-social-grid-title h3 {
+    font-size: 1.875rem;
+    line-height: 2.188rem;
+  }
+}
+
+@media (width >= 1440px) {
+  .wrs-social-grid-column.main .wrs-social-grid-title h3 {
+    font-size: 2.5rem;
+    line-height: 3rem;
+  }
+}
+
+/* Twitter/text tile title - extract L334-349, L369-413 (shared __title box) */
+.wrs-social-grid-column.twitter .wrs-social-grid-title {
+  position: absolute;
+  left: 1.25rem;
+  top: 20px;
+  bottom: auto;
+  width: 80%;
+  color: #fbebce;
+}
+
+@media (width >= 1200px) {
+  .wrs-social-grid-column.twitter .wrs-social-grid-title {
+    left: 3rem;
+    top: 50px;
+    width: 70%;
+  }
+}
+
+.wrs-social-grid-column.twitter .wrs-social-grid-title h4 {
+  color: #fff;
+  font-size: 1.25rem;
+  line-height: 1.625rem;
+}
+
+@media (width >= 1024px) {
+  .wrs-social-grid-column.twitter .wrs-social-grid-title h4 {
+    font-size: 1.625rem;
+    line-height: 1.938rem;
+  }
+}
+
+.wrs-social-grid-title a {
+  position: relative;
+}
+
+/* "text" type description panel - extract L427-484 */
+.wrs-social-grid-desc {
+  position: absolute;
+  left: 1.25rem;
+  bottom: auto;
+  top: 20px;
+  width: 100%;
+  padding-right: 2.5rem;
+  color: #fbebce;
+  font-size: 14px;
+  font-family: var(--primary-font-regular, Arial, sans-serif);
+  line-height: 1.5;
+}
+
+@media (width >= 992px) {
+  .wrs-social-grid-desc {
+    font-size: 1.125rem;
+  }
+}
+
+@media (width >= 1200px) {
+  .wrs-social-grid-desc {
+    left: 3rem;
+    top: 50px;
+    padding-right: 6rem;
+  }
+}
+
+.wrs-social-grid-desc a {
+  position: relative;
+  color: #fc0 !important;
+}
+
+/* username panel - extract L486-538 */
+.wrs-social-grid-username {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  width: 88%;
+  overflow: hidden;
+  z-index: 3;
+  font-size: 14px;
+  line-height: 19px;
+  color: #fff;
+}
+
+@media (width >= 992px) {
+  .wrs-social-grid-username {
+    left: 24px;
+    bottom: 24px;
+    font-size: 18px;
+    line-height: 22px;
+  }
+}
+
+.wrs-social-grid-username i {
+  font-size: 16px;
+  line-height: 19px;
+  margin-right: 7px;
+}
+
+@media (width >= 992px) {
+  .wrs-social-grid-username i {
+    font-size: 35px;
+    line-height: normal;
+    margin-right: 13px;
+  }
+}
+
+.wrs-social-grid-handle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--primary-font-bold, Arial, sans-serif);
+  font-weight: 700;
+  color: #fff !important;
+  font-size: 14px;
+  line-height: 19px;
+}
+
+@media (width >= 992px) {
+  .wrs-social-grid-handle {
+    font-size: inherit;
+    line-height: inherit;
+  }
+}

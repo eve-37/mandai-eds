@@ -1815,6 +1815,132 @@ test('wrs-quote-carousel: an unconfigured block stays selectable in the editor',
   assert.ok(wqcEmptyEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Social Grid - fixtures constructed from this codebase's confirmed cell
+ * shapes (a single-field cell as seen in wrs-admission-types' title/path
+ * cells; a grouped two-field cell rendering one <p> per value as seen in
+ * primary-button's cta_link/cta_variant/cta_newTab cell; a single-field
+ * picture cell as seen in wrs-feature-carousel's image cells), NOT copied
+ * from a published AEM page - none of this component's instances have been
+ * authored yet. Must be re-verified against real published markup once it
+ * has. One case per feed type (facebook/instagram/twitter/text/image) is
+ * included deliberately - collapsing 12 dialog fields into 4 cells is the
+ * main risk in this block, and only a per-type render check can catch a
+ * type whose fields don't actually collapse cleanly.
+ * ------------------------------------------------------------------ */
+
+const wsgFacebookRow = (n) => `<div data-aue-resource="urn:fb${n}"><div>fa-facebook-square</div><div><picture><img src="/fb${n}.png" alt=""></picture></div><div><p><a href="https://facebook.com/mandaiwildlife/post/${n}">facebook</a></p><p>@mandaiwildlife</p></div><div></div></div>`;
+const wsgInstagramRow = (n) => `<div><div>fa-instagram</div><div><picture><img src="/ig${n}.png" alt=""></picture></div><div><p><a href="https://instagram.com/p/${n}">instagram</a></p><p>@mandai.wildlife</p></div><div></div></div>`;
+const wsgTwitterRow = (n) => `<div><div>fa-twitter</div><div></div><div><p><a href="https://twitter.com/mandaiwildlife/status/${n}">twitter</a></p><p>@mandaiwildlife</p></div><div>Baby otter pups spotted at River Wonders!</div></div>`;
+const wsgTextRow = (n) => `<div><div>text</div><div></div><div></div><div>Enjoy the National Day <strong>discounts</strong>, item ${n}!</div></div>`;
+const wsgImageRow = (n) => `<div><div>image</div><div><picture><img src="/gallery${n}.png" alt=""></picture></div><div></div><div></div></div>`;
+
+const WSG = `<div class="wrs-social-grid">
+  <div data-aue-resource="urn:title1">Follow Us</div>
+  ${wsgFacebookRow(1)}${wsgInstagramRow(2)}${wsgTwitterRow(3)}${wsgTextRow(4)}${wsgImageRow(5)}
+</div>`;
+const wsg = await decorateBlock('../blocks/wrs-social-grid/wrs-social-grid.js', WSG);
+
+test('wrs-social-grid: the title cell becomes the main tile heading, instrumentation moved', () => {
+  const h3 = wsg.querySelector('.wrs-social-grid-column.main h3');
+  assert.equal(h3.textContent, 'Follow Us');
+  assert.equal(h3.getAttribute('data-aue-resource'), 'urn:title1');
+});
+
+test('wrs-social-grid: facebook - image column, link, handle and icon', () => {
+  const col = wsg.querySelectorAll('.wrs-social-grid-column')[1];
+  assert.ok(col.classList.contains('photo'));
+  assert.equal(col.querySelector('a').getAttribute('href'), 'https://facebook.com/mandaiwildlife/post/1');
+  assert.equal(col.querySelector('.wrs-social-grid-handle').textContent, '@mandaiwildlife');
+  assert.equal(col.querySelector('.wrs-social-grid-username i').className, 'fab fa-facebook-square');
+  assert.ok(col.querySelector('picture img'));
+});
+
+test('wrs-social-grid: instagram - same shape as facebook, own values', () => {
+  const col = wsg.querySelectorAll('.wrs-social-grid-column')[2];
+  assert.ok(col.classList.contains('photo'));
+  assert.equal(col.querySelector('a').getAttribute('href'), 'https://instagram.com/p/2');
+  assert.equal(col.querySelector('.wrs-social-grid-handle').textContent, '@mandai.wildlife');
+});
+
+test('wrs-social-grid: twitter - no image field, renders as a text column with a link and a title', () => {
+  const col = wsg.querySelectorAll('.wrs-social-grid-column')[3];
+  assert.ok(col.classList.contains('twitter'), 'twitter has no image data, so it must fall into the text-styled column');
+  assert.equal(col.querySelector('a').getAttribute('href'), 'https://twitter.com/mandaiwildlife/status/3');
+  assert.equal(col.querySelector('.wrs-social-grid-title h4').textContent, 'Baby otter pups spotted at River Wonders!');
+  assert.equal(col.querySelector('.wrs-social-grid-handle').textContent, '@mandaiwildlife');
+  assert.equal(col.querySelector('.wrs-social-grid-desc'), null, 'twitter renders a title, not a desc panel');
+});
+
+test('wrs-social-grid: text - no link, renders the message as a desc panel (not a title), richtext markup preserved', () => {
+  const col = wsg.querySelectorAll('.wrs-social-grid-column')[4];
+  assert.ok(col.classList.contains('twitter'), 'the "twitter" column class covers every non-photo tile, including type=text');
+  assert.equal(col.querySelector('a'), null, 'no link cell authored for this type');
+  assert.equal(col.querySelector('.wrs-social-grid-desc').innerHTML, 'Enjoy the National Day <strong>discounts</strong>, item 4!');
+  assert.equal(col.querySelector('.wrs-social-grid-title'), null);
+});
+
+test('wrs-social-grid: image - photo column, no link, no username (no handle authored for this type)', () => {
+  const col = wsg.querySelectorAll('.wrs-social-grid-column')[5];
+  assert.ok(col.classList.contains('photo'));
+  assert.equal(col.querySelector('a'), null);
+  assert.equal(col.querySelector('.wrs-social-grid-username'), null);
+  assert.ok(col.querySelector('picture img'));
+});
+
+test('wrs-social-grid: instrumentation moves from a child row onto the column it becomes', () => {
+  assert.equal(wsg.querySelectorAll('.wrs-social-grid-column')[1].getAttribute('data-aue-resource'), 'urn:fb1');
+});
+
+test('wrs-social-grid: 6 columns total (title + 5 items) does not get the compact modifier', () => {
+  assert.ok(!wsg.classList.contains('wrs-social-grid-compact'));
+});
+
+const WSG_COMPACT = `<div class="wrs-social-grid">
+  <div>Follow Us</div>
+  ${wsgFacebookRow(1)}${wsgTwitterRow(2)}${wsgImageRow(3)}
+</div>`;
+const wsgCompact = await decorateBlock('../blocks/wrs-social-grid/wrs-social-grid.js', WSG_COMPACT);
+test('wrs-social-grid: 4 columns total (title + 3 items) gets the compact modifier, re-deriving tileOrder', () => {
+  assert.ok(wsgCompact.classList.contains('wrs-social-grid-compact'));
+});
+
+const WSG_BLANK_LINK = `<div class="wrs-social-grid">
+  <div></div>
+  <div><div>fa-facebook-square</div><div><picture><img src="/fb.png" alt=""></picture></div><div><p><a href="/mandai">facebook</a></p><p></p></div><div></div></div>
+  <div><div>fa-instagram</div><div><picture><img src="/ig.png" alt=""></picture></div><div><p></p></div><div></div></div>
+</div>`;
+const wsgBlankLink = await decorateBlock('../blocks/wrs-social-grid/wrs-social-grid.js', WSG_BLANK_LINK);
+test('wrs-social-grid: a link cell with a url but a blank handle does not crash decorate() and renders no username', () => {
+  // index 0 is always the main title column - see the next test's comment.
+  const col = wsgBlankLink.querySelectorAll('.wrs-social-grid-column')[1];
+  assert.equal(col.querySelector('a').getAttribute('href'), '/mandai');
+  assert.equal(col.querySelector('.wrs-social-grid-username'), null);
+});
+test('wrs-social-grid: a link cell that is entirely blank does not crash decorate() and renders no link', () => {
+  // The main tile column always renders (matching the source's own
+  // unconditional main-tile <div>, even with a blank title), so it is
+  // always index 0 and item columns start at index 1.
+  const col = wsgBlankLink.querySelectorAll('.wrs-social-grid-column')[2];
+  assert.equal(col.querySelector('a'), null);
+});
+
+const wsgEmptyOutside = await decorateBlock(
+  '../blocks/wrs-social-grid/wrs-social-grid.js',
+  '<div class="wrs-social-grid"><div></div></div>',
+);
+test('wrs-social-grid: renders nothing outside the editor with no title and no items authored', () => {
+  assert.equal(wsgEmptyOutside.children.length, 0);
+});
+
+const wsgEmptyEdit = await decorateBlock(
+  '../blocks/wrs-social-grid/wrs-social-grid.js',
+  '<div class="wrs-social-grid" data-aue-resource="urn:block1"><div></div></div>',
+);
+test('wrs-social-grid: an unconfigured block stays selectable in the editor', () => {
+  assert.ok(wsgEmptyEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {

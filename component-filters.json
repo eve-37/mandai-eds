@@ -39,7 +39,8 @@
       "wrsexperiencecarousel",
       "wrsfeaturecarousel",
       "wrsmastheadcarousel",
-      "wrsquotecarousel"
+      "wrsquotecarousel",
+      "wrssocialgrid"
     ]
   },
   {
@@ -149,6 +150,12 @@
     "id": "wrsquotecarousel",
     "components": [
       "wrsquote"
+    ]
+  },
+  {
+    "id": "wrssocialgrid",
+    "components": [
+      "wrssocialtile"
     ]
   },
   {
