@@ -370,6 +370,31 @@ test('tabs: the published page still hides all but the first panel', () => {
   assert.equal(tb.querySelectorAll('.tabs-panel-label').length, 0);
 });
 
+/* A tile that has just been added has no align value written yet. In the editor
+ * it must still read as a tile, or it shows up as a spurious extra tab until
+ * the author types something. */
+const TAB_NEW_TILE = `<div class="tabs" data-aue-resource="urn:tabs">
+  ${tabsTabRow(1, 'green')}
+  <div data-aue-resource="urn:new" data-aue-model="rbtabtile"><div></div></div>
+</div>`;
+const tbNew = await decorateBlock('../blocks/tabs/tabs.js', TAB_NEW_TILE);
+test('tabs: an empty new tile is a tile, not an extra tab', () => {
+  assert.equal(tbNew.querySelectorAll('.tabs-nav-item').length, 1);
+  assert.equal(tbNew.querySelectorAll('.tabs-tile').length, 1);
+});
+
+/* The same row on a published page has no data-aue-* at all, so the align
+ * keyword is what identifies it there. */
+const TAB_PUBLISHED_TILE = `<div class="tabs">
+  ${tabsTabRow(1, 'green').replace(/ data-aue-[a-z]+="[^"]*"/g, '')}
+  <div><div><p>Tile A</p></div><div>tile-right</div></div>
+</div>`;
+const tbPub = await decorateBlock('../blocks/tabs/tabs.js', TAB_PUBLISHED_TILE);
+test('tabs: a published tile is identified without any instrumentation', () => {
+  assert.equal(tbPub.querySelectorAll('.tabs-nav-item').length, 1);
+  assert.ok(tbPub.querySelector('.tabs-tile.align-right'));
+});
+
 /* A tile dragged above every tab must not vanish. */
 const TAB_ORPHAN = `<div class="tabs">${tabsTileRow(9)}${tabsTabRow(1, 'green')}</div>`;
 const tbOrphan = await decorateBlock('../blocks/tabs/tabs.js', TAB_ORPHAN);

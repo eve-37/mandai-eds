@@ -25,7 +25,24 @@ const PREFIX = 'tabs';
  */
 const TILE_ALIGNS = ['tile-left', 'tile-center', 'tile-right'];
 
+const TILE_MODEL = 'rbtabtile';
+
+/**
+ * In the editor each row says what it is, so ask it directly.
+ *
+ * The align keyword alone is not enough there: a tile that has just been added
+ * has no value written yet, so it reads as a tab and appears as a spurious
+ * extra one until the author types something and the select's default is
+ * persisted - at which point it jumps into place. `data-aue-model` is present
+ * from the moment the tile is created, so the row never misrepresents itself.
+ *
+ * A published page carries no data-aue-* at all, which is what the keyword is
+ * still there for.
+ */
 function isTileRow(row) {
+  const model = row.getAttribute('data-aue-model');
+  if (model) return model === TILE_MODEL;
+
   return [...row.children]
     .flatMap(cellValues)
     .some((v) => TILE_ALIGNS.includes(v.toLowerCase()));
