@@ -1,0 +1,284 @@
+/*
+ * WRS Feature Carousel
+ *
+ * Ported from the DEPLOYED bundle, not the LESS checkout - see
+ * ../../../wrs-components-export/mandaifeaturecarousel/styles/deployed-bundle-extract.css
+ * (`.md-feature-carousel`, `.md-feature-carousel__*`, `.feature-content`,
+ * `.feature-content-inner`, `.text-sap-white`, `.section-title`,
+ * `.description`, `.md-button`,
+ * `.md-3-col-content-fragment-with-filter-and-cta__button` are all named in
+ * its own "extracted by" header comment). `md-feature-carousel.less` /
+ * `md-2-col-feature.less` in this bundle were NOT used as a source - per
+ * COMPONENT.md they come from a checkout behind what is deployed.
+ *
+ * ONE BLOCK, TWO VARIANTS
+ * -----------------------
+ * `.bg-custom` (image background, set by the JS when bg_color is
+ * "bgImage") and the flat colour modifiers (`.bg-dark-green`, `.base`,
+ * `.bg-sap-white`, or no modifier at all when unset) are mutually exclusive,
+ * exactly like the source's own image-carousel-template.html /
+ * color-carousel-template.html split - see the block JS's docblock for the
+ * full template graph.
+ *
+ * SLICK -> NATIVE SCROLL-SNAP
+ * ----------------------------
+ * The source is 2-up desktop/tablet, 1-up mobile via Slick
+ * (`slides-to-show-desktop="2" slides-to-show-tablet="2"
+ * slides-to-show-mobile="1"`). This port reuses the shared
+ * `.rb-track`/`.rb-track-item`/`.rb-dots` scroll-snap primitives
+ * (styles/styles.css), overriding the column width for the 2-up/1-up split
+ * below - the same substitution `wrs-experience-carousel` and
+ * `one-column-banner-carousel` already made (see rb-helpers.js's
+ * buildDots() docblock). None of the extract's `.slick-*` rules are ported
+ * for that reason. Dot colours ARE overridden below to WRS's own palette
+ * rather than left as `.rb-dot`'s shared Ranger Buddies colours - WRS is a
+ * separately-migrated brand with a different palette (the same call
+ * `backgroundsection` and `wrs-experience-carousel` already made).
+ *
+ * BACKGROUND-CHANGE.JS -> CSS custom properties + media query
+ * -------------------------------------------------------------
+ * The image variant's desktop/mobile background swap
+ * (`background-change.js`, read in the `backgroundsection` bundle) is
+ * replaced with two custom properties set in the JS and picked by breakpoint
+ * here - no resize listener needed.
+ */
+
+.wrs-feature-carousel {
+  padding: 60px 0;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: bottom;
+}
+
+@media (width <= 1024px) {
+  .wrs-feature-carousel {
+    background-position: top;
+  }
+}
+
+@media (width <= 992px) {
+  .wrs-feature-carousel {
+    padding: 40px 0;
+  }
+}
+
+/* Image variant - background-change.js's desktop/mobile swap, done in CSS. */
+.wrs-feature-carousel.bg-custom {
+  padding: 60px 0 250px;
+  background-image: var(--wfc-bg-desktop);
+}
+
+@media (width <= 992px) {
+  .wrs-feature-carousel.bg-custom {
+    padding: 40px 0 150px;
+    background-image: var(--wfc-bg-mobile, var(--wfc-bg-desktop));
+  }
+}
+
+/* Colour variants - WRS's own palette, not the shared --rb-* tokens (see
+   docs/wrs-migration-notes.md ## backgroundsection for the same reasoning). */
+.wrs-feature-carousel.bg-dark-green {
+  background-color: #003400;
+}
+
+.wrs-feature-carousel.base {
+  background-color: var(--wrs-bg-base);
+}
+
+.wrs-feature-carousel.bg-sap-white {
+  background-color: var(--wrs-bg-sap-white);
+}
+
+.wrs-feature-carousel-grid {
+  max-width: 75rem;
+  margin: 0 auto;
+}
+
+@media (width >= 1200px) and (width <= 1439px) {
+  .wrs-feature-carousel-grid {
+    max-width: 85.938rem;
+  }
+}
+
+@media (width <= 992px) {
+  .wrs-feature-carousel-grid {
+    max-width: 100%;
+    padding: 0 13px;
+  }
+}
+
+.wrs-feature-carousel-title {
+  text-align: center;
+  color: #003400;
+  line-height: normal;
+  font-size: 3.125rem;
+}
+
+@media (width <= 991px) {
+  .wrs-feature-carousel-title {
+    font-size: 2rem;
+  }
+}
+
+.wrs-feature-carousel.bg-dark-green .wrs-feature-carousel-title {
+  color: #fc0;
+}
+
+.wrs-feature-carousel-description {
+  margin-bottom: 2.5rem;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  font-family: var(--primary-font-regular, inherit);
+  color: #202721;
+  text-align: center;
+}
+
+.wrs-feature-carousel-description p {
+  margin-bottom: 1rem;
+}
+
+/* ---- Carousel track --------------------------------------------------- */
+
+.wrs-feature-carousel-track {
+  margin: 40px 0 0;
+  padding: 0;
+
+  /* 2-up desktop/tablet, matching slides-to-show-desktop="2"/tablet="2". */
+  grid-auto-columns: calc(50% - 8px);
+}
+
+@media (width <= 767px) {
+  .wrs-feature-carousel-track {
+    /* 1-up mobile, matching slides-to-show-mobile="1". */
+    grid-auto-columns: calc(100% - 24px);
+  }
+}
+
+.wrs-feature-carousel-dots .rb-dot {
+  background-color: #e2d5be;
+}
+
+.wrs-feature-carousel-dots .rb-dot.active {
+  background-color: #003400;
+}
+
+.wrs-feature-carousel.bg-dark-green .wrs-feature-carousel-dots .rb-dot.active {
+  background-color: #fc0;
+}
+
+.wrs-feature-carousel-column {
+  display: block;
+  margin: 0 0 50px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (width <= 992px) {
+  .wrs-feature-carousel-column {
+    margin: 0 0 20px;
+  }
+}
+
+.wrs-feature-carousel-column.text-gradient::after {
+  content: '';
+  background-image: linear-gradient(180deg, rgb(0 0 0 / 0%) 0%, rgb(0 0 0 / 80%) 100%);
+  width: 100%;
+  height: 50%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.wrs-feature-carousel-img img {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  border-radius: 20px;
+  display: block;
+}
+
+.wrs-feature-carousel-content {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 25px;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.wrs-feature-carousel-content .feature-content-inner {
+  transition: transform 0.4s;
+  transform: translateY(100%);
+}
+
+.wrs-feature-carousel-item-title {
+  font-family: var(--primary-font-bold, inherit);
+  font-weight: 700;
+  transform: translateY(-100%);
+  transition: transform 0.4s;
+  min-height: 25px;
+  margin-bottom: 0.625rem;
+  font-size: 1.625rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wrs-feature-carousel-item:hover .wrs-feature-carousel-content .feature-content-inner,
+  .wrs-feature-carousel-item:hover .wrs-feature-carousel-item-title {
+    transform: translateY(0);
+  }
+}
+
+@media (width <= 992px) {
+  .wrs-feature-carousel-content {
+    padding: 10px 15px;
+  }
+
+  .wrs-feature-carousel-item-title {
+    margin-top: 0;
+    margin-bottom: 0.625rem;
+    font-size: 1.25rem;
+    line-height: 1.3;
+  }
+
+  .wrs-feature-carousel-content .body-text1 {
+    font-size: 0.875rem;
+    line-height: 1.2;
+  }
+}
+
+.text-sap-white {
+  color: #fbebce !important;
+}
+
+/* ---- View all CTA ------------------------------------------------------ */
+
+.wrs-feature-carousel-view-all {
+  text-align: center;
+}
+
+.wrs-feature-carousel-view-all .md-button {
+  min-width: 143px;
+  padding: 12.5px 20px;
+  font-family: var(--primary-font-bold, inherit);
+  font-weight: 700;
+  background-color: #fc0;
+  border-radius: 22.5px;
+  display: inline-block;
+  text-transform: capitalize;
+  text-shadow: none;
+  outline: 0;
+  border: none;
+  font-size: 16px;
+  line-height: 21px;
+  color: #003400;
+  text-align: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wrs-feature-carousel-view-all a:hover .md-button {
+    background-color: #ffe88e;
+  }
+}

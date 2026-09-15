@@ -1393,6 +1393,165 @@ test('wrs-experience-carousel: unconfigured block stays selectable in the editor
   assert.ok(wecEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Feature Carousel - no published markup exists yet (this component
+ * has not been authored on a real page), so these fixtures are constructed
+ * from this codebase's own confirmed cell shapes rather than copied from a
+ * live page: the bg cell mirrors one-column-banner's grouped image-pair
+ * cell (desktop <picture> then mobile <picture>, in field order) plus a
+ * bare text value for the select, the heading cell mirrors
+ * wrs-experience-carousel's readCard()-style "first N positional, rest is
+ * richtext" read, the item's image+imageAlt cell mirrors
+ * wrs-conservation-banner's tag cell (a bare <picture>, alt baked into the
+ * <img> by AEM's own render), and the cta_link/cta_linkText-style single-
+ * link cells mirror the cta_link/cta_linkText shape proven in cards/
+ * four-column-tiles/wrs-conservation-banner. Must be re-verified against
+ * real published output once this block has been authored.
+ * ------------------------------------------------------------------ */
+function wfeatItemRow({
+  img = '/item.png?width=750&format=png&optimize=medium', alt = 'Item image', title = 'Tiger Trail',
+  description = 'Get up close with our Malayan tigers.', href = '', gradient = '', hide = '',
+} = {}) {
+  const imgCell = img ? `<div><picture><img src="${img}" alt="${alt}"></picture></div>` : '<div></div>';
+  const contentParts = [title, description].filter(Boolean).map((v) => `<p>${v}</p>`).join('');
+  const contentCell = contentParts ? `<div>${contentParts}</div>` : '<div></div>';
+  const ctaCell = href ? `<div><p><a href="${href}">${title}</a></p></div>` : '<div></div>';
+  const displayParts = [gradient, hide].filter(Boolean).map((v) => `<p>${v}</p>`).join('');
+  const displayCell = displayParts ? `<div>${displayParts}</div>` : '<div></div>';
+  return `<div>${imgCell}${contentCell}${ctaCell}${displayCell}</div>`;
+}
+
+/* Colour variant, normal render: heading, 2-paragraph description, 3 items
+ * (one hidden, one unlinked with no gradient, one linked with gradient),
+ * a view-all CTA and an anchor id. */
+const WFEAT = `<div class="wrs-feature-carousel">
+  <div><p>bg-dark-green</p><div></div><div></div></div>
+  <div><p>Discover Our Habitats</p><p>Explore the habitats carousel</p><p>Step into the wild.</p><p>See it for yourself.</p></div>
+  <div><p><a href="/content/wrs/experiences">View All</a></p></div>
+  <div>experiences-carousel</div>
+  ${wfeatItemRow({
+    img: '/tiger.png?width=750&format=png&optimize=medium', alt: 'Tiger', title: 'Tiger Trail', description: 'Get up close with our Malayan tigers.', href: '/content/wrs/tiger-trail', gradient: 'text-gradient', hide: 'false',
+  })}
+  ${wfeatItemRow({
+    img: '/panda.png?width=750&format=png&optimize=medium', alt: 'Panda', title: 'Panda House', description: '', href: '', gradient: '', hide: '',
+  })}
+  ${wfeatItemRow({
+    img: '/hidden.png', alt: 'Hidden', title: 'Hidden Item', description: '', href: '', gradient: '', hide: 'true',
+  })}
+</div>`;
+const wfeat = await decorateBlock('../blocks/wrs-feature-carousel/wrs-feature-carousel.js', WFEAT);
+
+test('wrs-feature-carousel: heading title and multi-paragraph description both render', () => {
+  assert.equal(wfeat.querySelector('.wrs-feature-carousel-title').textContent, 'Discover Our Habitats');
+  const desc = wfeat.querySelector('.wrs-feature-carousel-description');
+  assert.equal(desc.querySelectorAll('p').length, 2);
+  assert.equal(desc.textContent.trim(), 'Step into the wild.See it for yourself.');
+});
+
+test('wrs-feature-carousel: the colour variant applies the bg_color class, not the image variant', () => {
+  assert.ok(wfeat.classList.contains('bg-dark-green'));
+  assert.ok(!wfeat.classList.contains('bg-custom'));
+  assert.equal(wfeat.style.getPropertyValue('--wfc-bg-desktop'), '');
+});
+
+test('wrs-feature-carousel: the anchorLink cell sets the block id', () => {
+  assert.equal(wfeat.id, 'experiences-carousel');
+});
+
+test('wrs-feature-carousel: a display_hide item is dropped entirely, matching cItems.removeIf() in the source', () => {
+  const titles = [...wfeat.querySelectorAll('.wrs-feature-carousel-item-title')].map((el) => el.textContent);
+  assert.deepEqual(titles, ['Tiger Trail', 'Panda House']);
+});
+
+test('wrs-feature-carousel: an item with a slideLink renders as a linked, gradient column', () => {
+  const linked = wfeat.querySelector('.wrs-feature-carousel-column[href="/content/wrs/tiger-trail"]');
+  assert.equal(linked.tagName, 'A');
+  assert.ok(linked.classList.contains('text-gradient'));
+});
+
+test('wrs-feature-carousel: an item with no slideLink renders as an unlinked, non-gradient column', () => {
+  const columns = [...wfeat.querySelectorAll('.wrs-feature-carousel-column')];
+  const unlinked = columns.find((el) => el.textContent.includes('Panda House'));
+  assert.equal(unlinked.tagName, 'DIV');
+  assert.ok(!unlinked.classList.contains('text-gradient'));
+});
+
+test('wrs-feature-carousel: the view-all CTA renders as an anchor around .md-button', () => {
+  const anchor = wfeat.querySelector('.wrs-feature-carousel-view-all a');
+  assert.equal(anchor.getAttribute('href'), '/content/wrs/experiences');
+  assert.equal(anchor.querySelector('.md-button').textContent, 'View All');
+});
+
+/* Image variant: bg_color is "bgImage", so decorate() reads bg_desktop/
+ * bg_mobile through backgroundUrl() instead of applying a colour class -
+ * the mutually-exclusive branch image-carousel-template.html took in the
+ * source. */
+const WFEAT_IMAGE = `<div class="wrs-feature-carousel">
+  <div><p>bgImage</p><p><picture><img src="/fc-desktop.png?width=750&format=png&optimize=medium" alt=""></picture></p><p><picture><img src="/fc-mobile.png?width=750&format=png&optimize=medium" alt=""></picture></p></div>
+  <div><p>Rainforest Encounters</p></div>
+  <div></div>
+  <div></div>
+  ${wfeatItemRow()}
+</div>`;
+const wfeatImage = await decorateBlock('../blocks/wrs-feature-carousel/wrs-feature-carousel.js', WFEAT_IMAGE);
+
+test('wrs-feature-carousel: the image variant applies bg-custom and both background URLs', () => {
+  assert.ok(wfeatImage.classList.contains('bg-custom'));
+  assert.ok(!wfeatImage.classList.contains('bg-dark-green'));
+  assert.match(wfeatImage.style.getPropertyValue('--wfc-bg-desktop'), /fc-desktop\.png\?.*width=2000/);
+  assert.match(wfeatImage.style.getPropertyValue('--wfc-bg-mobile'), /fc-mobile\.png\?.*width=750/);
+});
+
+/* Blank optional cells: no heading, no CTA, no anchor - a lone item must
+ * still render without crashing decorate(). */
+const WFEAT_MINIMAL = `<div class="wrs-feature-carousel">
+  <div><div></div><div></div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  ${wfeatItemRow({
+    img: '/only.png?width=750&format=png&optimize=medium', alt: 'Only item', title: '', description: '',
+  })}
+</div>`;
+const wfeatMinimal = await decorateBlock('../blocks/wrs-feature-carousel/wrs-feature-carousel.js', WFEAT_MINIMAL);
+test('wrs-feature-carousel: blank heading/CTA/anchor cells do not crash decorate(), the item still renders', () => {
+  assert.equal(wfeatMinimal.querySelector('.wrs-feature-carousel-title'), null);
+  assert.equal(wfeatMinimal.id, '');
+  assert.ok(wfeatMinimal.querySelector('.wrs-feature-carousel-img img'));
+});
+
+const WFEAT_INSTRUMENTED = `<div class="wrs-feature-carousel">
+  <div><p>base</p><div></div><div></div></div>
+  <div data-aue-resource="urn:heading1"><p>Title</p></div>
+  <div data-aue-resource="urn:cta1"><p><a href="/x">Go</a></p></div>
+  <div></div>
+  <div data-aue-resource="urn:item1">
+    <div><picture><img src="/i.png?width=750&format=png&optimize=medium" alt="Item"></picture></div>
+    <div><p>Item One</p></div>
+    <div></div>
+    <div></div>
+  </div>
+</div>`;
+const wfeatInstr = await decorateBlock('../blocks/wrs-feature-carousel/wrs-feature-carousel.js', WFEAT_INSTRUMENTED);
+test('wrs-feature-carousel: instrumentation moves onto the grid, item and view-all elements that replace their rows', () => {
+  assert.equal(wfeatInstr.querySelector('.wrs-feature-carousel-grid').getAttribute('data-aue-resource'), 'urn:heading1');
+  assert.equal(wfeatInstr.querySelector('.wrs-feature-carousel-item').getAttribute('data-aue-resource'), 'urn:item1');
+  assert.equal(wfeatInstr.querySelector('.wrs-feature-carousel-view-all a').getAttribute('data-aue-resource'), 'urn:cta1');
+});
+
+const wfeatEmpty = await decorateBlock('../blocks/wrs-feature-carousel/wrs-feature-carousel.js', '<div class="wrs-feature-carousel"></div>');
+test('wrs-feature-carousel: renders nothing when unconfigured outside the editor', () => {
+  assert.equal(wfeatEmpty.children.length, 0);
+});
+
+const wfeatEdit = await decorateBlock(
+  '../blocks/wrs-feature-carousel/wrs-feature-carousel.js',
+  '<div class="wrs-feature-carousel" data-aue-resource="urn:block1"></div>',
+);
+test('wrs-feature-carousel: unconfigured block stays selectable in the editor', () => {
+  assert.ok(wfeatEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {
