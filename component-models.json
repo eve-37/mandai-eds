@@ -2514,6 +2514,56 @@
     ]
   },
   {
+    "id": "wrsquotecarousel",
+    "fields": [
+      {
+        "component": "select",
+        "name": "backgroundColor",
+        "label": "Background Color",
+        "description": "Please select The Color",
+        "valueType": "string",
+        "value": "bg-base",
+        "options": [
+          {
+            "name": "Base",
+            "value": "bg-base"
+          },
+          {
+            "name": "Sap White",
+            "value": "bg-sap-white"
+          }
+        ]
+      },
+      {
+        "component": "text",
+        "name": "ariaLabel",
+        "label": "Aria Label",
+        "description": "Input aria-label text to describe content for accessibility.",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
+    "id": "wrsquote",
+    "fields": [
+      {
+        "component": "richtext",
+        "name": "quote",
+        "label": "Quote",
+        "description": "Please enter Quote Text.",
+        "value": "",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "nameDescription",
+        "label": "Name/Description",
+        "description": "Please enter Name/Description.",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
     "id": "wrsvisitourparks",
     "fields": []
   },

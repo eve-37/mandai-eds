@@ -1,0 +1,87 @@
+/*
+ * WRS Quote Carousel
+ *
+ * Ported from styles/deployed-bundle-extract.css (ground truth; the LESS in
+ * the export bundle is a stale checkout, per house convention) - the extract
+ * carries every rule for `md-quote-carousel` / `md-quote-carousel__message`
+ * with no shared/site-wide gaps.
+ *
+ * Slick's own arrow/dots CSS (`.slick-dots`, `.slick-arrow`) is not ported -
+ * the carousel mechanics are this repo's shared `.rb-track`/`.rb-dots`
+ * primitives (styles/styles.css), not Slick, per wrs-quote-carousel.js's
+ * docblock. The yellow active-dot colour below is the one piece of Slick's
+ * own styling (`.slick-dots li.slick-active { background-color: #fc0 }`)
+ * that genuinely carries across, since `.rb-dot.active` otherwise defaults
+ * to the Ranger Buddies green.
+ *
+ * Breakpoints (992px, 1200px) are the source's own - not this repo's default
+ * 900px - per the migration brief's "map the source's breakpoints to real
+ * numbers rather than assuming."
+ */
+
+.wrs-quote-carousel {
+  padding: 40px 0;
+}
+
+@media (width >= 992px) {
+  .wrs-quote-carousel {
+    padding: 60px 0;
+  }
+}
+
+.wrs-quote-carousel.bg-base {
+  background-color: var(--wrs-bg-base);
+}
+
+.wrs-quote-carousel.bg-sap-white {
+  background-color: var(--wrs-bg-sap-white);
+}
+
+/*
+ * The source shows exactly one quote at a time, no peek - override
+ * .rb-track's shared default (100% / 1.1, edge-to-edge bleed) to a plain
+ * 100% column with no negative-margin bleed.
+ */
+.wrs-quote-carousel .wrs-quote-carousel-track {
+  grid-auto-columns: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.wrs-quote-carousel .wrs-quote-carousel-message {
+  width: 100%;
+  margin: auto;
+  text-align: left;
+}
+
+@media (width >= 992px) {
+  .wrs-quote-carousel .wrs-quote-carousel-message {
+    width: 720px;
+    text-align: center;
+  }
+}
+
+.wrs-quote-carousel .wrs-quote-carousel-quote {
+  margin: 0 0 20px;
+}
+
+@media (width < 1200px) {
+  .wrs-quote-carousel .wrs-quote-carousel-quote {
+    padding: 0 12%;
+  }
+}
+
+.wrs-quote-carousel .wrs-quote-carousel-name {
+  margin: 0 0 20px;
+}
+
+@media (width < 1200px) {
+  .wrs-quote-carousel .wrs-quote-carousel-name {
+    margin-bottom: 0;
+    padding: 0 12%;
+  }
+}
+
+.wrs-quote-carousel .rb-dot.active {
+  background-color: #fc0;
+}

@@ -38,7 +38,8 @@
       "wrsfourcollisting",
       "wrsexperiencecarousel",
       "wrsfeaturecarousel",
-      "wrsmastheadcarousel"
+      "wrsmastheadcarousel",
+      "wrsquotecarousel"
     ]
   },
   {
@@ -142,6 +143,12 @@
       "wrsmastheadvideoslide",
       "wrsmastheadyoutubeslide",
       "wrsmastheadvimeoslide"
+    ]
+  },
+  {
+    "id": "wrsquotecarousel",
+    "components": [
+      "wrsquote"
     ]
   },
   {

@@ -755,6 +755,37 @@
           }
         },
         {
+          "title": "WRS Quote Carousel",
+          "id": "wrsquotecarousel",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block",
+                "template": {
+                  "name": "WRS Quote Carousel",
+                  "model": "wrsquotecarousel",
+                  "filter": "wrsquotecarousel"
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "WRS Quote",
+          "id": "wrsquote",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block/item",
+                "template": {
+                  "name": "WRS Quote",
+                  "model": "wrsquote"
+                }
+              }
+            }
+          }
+        },
+        {
           "title": "WRS Visit Our Parks",
           "id": "wrsvisitourparks",
           "plugins": {

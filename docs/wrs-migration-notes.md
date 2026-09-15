@@ -1482,3 +1482,92 @@ decision later, both noted in `wrs-masthead-carousel.js`'s own docblock:
   header (no CTA/sub-heading/countdown), `viewportScaling`/`isAutoplayCarousel` read from the
   parent rows, and the unconfigured-outside-editor / unconfigured-in-editor-placeholder pair.
 - `npm run build:json`, `npm run lint` and `npm test` all pass (161/161 tests).
+
+## mandaiquotecarousel
+
+**Source:** `wrs-components-export/mandaiquotecarousel/` — `wrs/components/mandai/mandaiquotecarousel`
+(no `sling:resourceSuperType`, standalone leaf component). Simplest component in the run: 2 parent
+fields, one 2-field multifield, a 19-line `@ChildResource` model, one clean 1:1 LESS match.
+
+**Decision: built as a new container block, `blocks/wrs-quote-carousel/`.** Considered reusing the
+existing `testimonial` block first, since both are "a heading/settings plus a repeated
+quote+attribution list" — the same shape `four-column-tiles` was checked against for component 10.
+Here the overlap is closer than that precedent, but still not close enough to reuse outright.
+
+### Why not `testimonial`
+
+Read `blocks/testimonial/testimonial.js`, `.css` and `_testimonial.json` before deciding. Two real,
+dialog-level differences, not just naming:
+
+- **The field models don't match.** `testimonial`'s parent model is one field, `title`. This
+  component's dialog has no title field at all, but has two `testimonial` doesn't: a `backgroundColor`
+  select (`bg-base`/`bg-sap-white` — the same two values `backgroundsection` already added to
+  `models/_section.json`'s `style` field) and a free-text `ariaLabel`. Reusing `testimonial` would
+  silently drop both — a real authoring capability the source dialog has, gone, with no field to
+  recover it. Per the ground rule, dropping an authored field the source has is exactly the kind of
+  divergence not to make quietly.
+- **`quote` is rendered as raw HTML in the source** (`${item.quote @context='html'}`), unlike
+  `testimony`'s plain-text `message`. `testimonial`'s model has no field that preserves markup here.
+- **Visually they diverge too.** `testimonial` always wraps its content in a forced
+  `.rb-section.mask-1.bg-dark-green` band and deliberately ships with no dots (a documented choice in
+  its own CSS docblock — slides peek at 80% instead). This component varies its background per
+  instance between two light neutral fills, shows exactly one full-width quote at a time (no peek),
+  and the deployed CSS carries visible dot navigation (`.slick-dots`, with a yellow active state) that
+  the source actually used. These are different presentation contracts, not a styling nuance.
+
+Given both the field model and the render contract differ, building a separate block is the direct
+port; forcing this component's authored fields (or its background variation) into `testimonial`'s
+fixed one-field, one-look shape would be the "improve the source" mistake the ground rule warns
+against, not a legitimate simplification.
+
+### Cell model
+
+- Parent (`wrsquotecarousel`, 2 cells — `backgroundColor` and `ariaLabel` don't share a prefix, so
+  no grouping applies): `backgroundColor` (select, `bg-base`/`bg-sap-white`, default `bg-base` per
+  the dialog's own `selected="true"`), `ariaLabel` (text).
+- Child (`wrsquote`, 2 cells — `nameDescription` doesn't match any of the five collapsing suffixes,
+  so it stays its own cell): `quote` (**richtext**, not `text` — the closest Universal Editor field
+  with an HTML value, modelling the dialog's textarea-rendered-as-html contract described above),
+  `nameDescription` (text).
+
+`quote` is read via `innerHTML` (falling back to `textContent`) rather than `cellText()`'s plain-text
+read, specifically to keep any authored markup — the one place in this component where the dialog
+widget (plain textarea) and the rendered contract (html context) disagree, and the render contract
+wins per the ground rule.
+
+### Carousel mechanics
+
+Source: Slick, `slides-to-show-desktop/tablet/mobile="1"` — one full quote at a time at every
+breakpoint, no peek, plus prev/next arrows and dots. Ported to this repo's shared
+`.rb-track`/`.rb-dots` scroll-snap primitives (`buildDots()` in `rb-helpers.js`), consistent with
+the same substitution already made for `wrs-feature-carousel` and `wrs-experience-carousel`.
+`.rb-track`'s shared default (`grid-auto-columns: 100% / 1.1`, a deliberate peek) is overridden back
+to a plain `100%` in `wrs-quote-carousel.css`, because a peek is not what this component's source
+did — unlike `testimonial`, whose peek is source-accurate for testimonial's own component. Arrows
+are not ported; dot navigation plus native swipe/keyboard scrolling covers the same "move to the next
+quote" affordance the arrows provided, matching the pattern already accepted elsewhere in this run.
+
+### Files touched
+
+- `blocks/wrs-quote-carousel/_wrs-quote-carousel.json` — new; parent `wrsquotecarousel` (2 fields,
+  `filter` naming the child), child `wrsquote` (2 fields).
+- `blocks/wrs-quote-carousel/wrs-quote-carousel.js` — new; `decorate()` reading the 2 parent + 2
+  child cells above, richtext-safe quote read, scroll-snap track + dots.
+- `blocks/wrs-quote-carousel/wrs-quote-carousel.css` — new; ports
+  `styles/deployed-bundle-extract.css`'s `md-quote-carousel`/`md-quote-carousel__message` rules
+  (breakpoints 992px/1200px, the source's own, not this repo's 900px default), plus the two
+  `--wrs-bg-base`/`--wrs-bg-sap-white` tokens already defined for `backgroundsection`. Slick's own
+  arrow/dot CSS is not ported (mechanics are `.rb-track`/`.rb-dots`); the one piece that does carry
+  across is the yellow active-dot colour (`#fc0`), the only part of Slick's own styling not
+  superseded by the shared primitive's default green.
+- `models/_section.json` — appended `"wrsquotecarousel"` to the `section` filter's `components`
+  array (child id `wrsquote` intentionally not added — reachable only through the parent's own
+  filter).
+- `tests/blocks.test.mjs` — added 11 cases: normal render with richtext markup preserved, the
+  `backgroundColor` cell applying the matching class, the `ariaLabel` cell reaching the track,
+  dots present/absent at 2 vs 1 items, the `bg-base` default when `backgroundColor` is blank, a
+  blank `ariaLabel` leaving no attribute, a blank `nameDescription` not crashing `decorate()`,
+  instrumentation moving from the child row onto the rendered item, and the
+  unconfigured-outside-editor / unconfigured-in-editor-placeholder pair.
+- `blocks/testimonial/` was **not** touched, as required.
+- `npm run build:json`, `npm run lint` and `npm test` all pass (172/172 tests).

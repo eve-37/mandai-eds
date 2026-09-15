@@ -1723,6 +1723,98 @@ test('wrs-masthead-carousel: an unconfigured block stays selectable in the edito
   assert.ok(wmcEmptyEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Quote Carousel - fixtures constructed from this codebase's confirmed
+ * cell shapes (parent select/text cells as seen in wrs-feature-carousel's
+ * bg_color/anchorLink; child richtext/text cells as seen in
+ * wrs-feature-carousel's content_title/content_description and
+ * wrs-conservation-banner's cta cell), NOT copied from a published AEM page
+ * - none of this component's instances have been authored yet. Must be
+ * re-verified against real published markup once it has.
+ * ------------------------------------------------------------------ */
+
+const WQC = `<div class="wrs-quote-carousel">
+  <div>bg-sap-white</div>
+  <div>Guest quotes</div>
+  <div><div>A truly <strong>magical</strong> experience.</div><div>Jane, visitor</div></div>
+  <div><div>Loved every moment.</div><div>Sam, visitor</div></div>
+</div>`;
+const wqc = await decorateBlock('../blocks/wrs-quote-carousel/wrs-quote-carousel.js', WQC);
+
+test('wrs-quote-carousel: normal render - two quotes, richtext markup preserved', () => {
+  const items = [...wqc.querySelectorAll('.wrs-quote-carousel-item')];
+  assert.equal(items.length, 2);
+  assert.equal(items[0].querySelector('.wrs-quote-carousel-quote').innerHTML, 'A truly <strong>magical</strong> experience.');
+  assert.equal(items[0].querySelector('.wrs-quote-carousel-name').textContent, 'Jane, visitor');
+  assert.equal(items[1].querySelector('.wrs-quote-carousel-quote').textContent, 'Loved every moment.');
+});
+
+test('wrs-quote-carousel: the backgroundColor cell applies the matching bg-* class', () => {
+  assert.ok(wqc.classList.contains('bg-sap-white'));
+  assert.ok(!wqc.classList.contains('bg-base'));
+});
+
+test('wrs-quote-carousel: the ariaLabel cell sets the track aria-label', () => {
+  assert.equal(wqc.querySelector('.wrs-quote-carousel-track').getAttribute('aria-label'), 'Guest quotes');
+});
+
+test('wrs-quote-carousel: two or more items get dots', () => {
+  assert.equal(wqc.querySelectorAll('.rb-dot').length, 2);
+});
+
+const WQC_DEFAULTS = `<div class="wrs-quote-carousel">
+  <div></div>
+  <div></div>
+  <div><div>Only quote.</div><div>Only Name</div></div>
+</div>`;
+const wqcDefaults = await decorateBlock('../blocks/wrs-quote-carousel/wrs-quote-carousel.js', WQC_DEFAULTS);
+test('wrs-quote-carousel: a blank backgroundColor cell falls back to bg-base, matching the dialog default', () => {
+  assert.ok(wqcDefaults.classList.contains('bg-base'));
+});
+test('wrs-quote-carousel: a blank ariaLabel cell leaves the track with no aria-label', () => {
+  assert.equal(wqcDefaults.querySelector('.wrs-quote-carousel-track').hasAttribute('aria-label'), false);
+});
+test('wrs-quote-carousel: a single item gets no dots', () => {
+  assert.equal(wqcDefaults.querySelectorAll('.rb-dot').length, 0);
+});
+
+const WQC_BLANK_NAME = `<div class="wrs-quote-carousel">
+  <div>bg-base</div>
+  <div></div>
+  <div><div>No name given.</div><div></div></div>
+</div>`;
+const wqcBlankName = await decorateBlock('../blocks/wrs-quote-carousel/wrs-quote-carousel.js', WQC_BLANK_NAME);
+test('wrs-quote-carousel: a quote with a blank nameDescription cell does not crash decorate()', () => {
+  assert.equal(wqcBlankName.querySelector('.wrs-quote-carousel-quote').textContent, 'No name given.');
+  assert.equal(wqcBlankName.querySelector('.wrs-quote-carousel-name'), null);
+});
+
+const WQC_INSTRUMENTED = `<div class="wrs-quote-carousel">
+  <div>bg-base</div>
+  <div></div>
+  <div data-aue-resource="urn:quote1"><div>Instrumented quote.</div><div>Attribution</div></div>
+</div>`;
+const wqcInstr = await decorateBlock('../blocks/wrs-quote-carousel/wrs-quote-carousel.js', WQC_INSTRUMENTED);
+test('wrs-quote-carousel: instrumentation moves from the child row onto the rendered item', () => {
+  assert.equal(wqcInstr.querySelector('.wrs-quote-carousel-item').getAttribute('data-aue-resource'), 'urn:quote1');
+});
+
+const wqcEmptyOutside = await decorateBlock(
+  '../blocks/wrs-quote-carousel/wrs-quote-carousel.js',
+  '<div class="wrs-quote-carousel"><div>bg-base</div><div></div></div>',
+);
+test('wrs-quote-carousel: renders nothing outside the editor with no quotes authored', () => {
+  assert.equal(wqcEmptyOutside.children.length, 0);
+});
+
+const wqcEmptyEdit = await decorateBlock(
+  '../blocks/wrs-quote-carousel/wrs-quote-carousel.js',
+  '<div class="wrs-quote-carousel" data-aue-resource="urn:block1"><div>bg-base</div><div></div></div>',
+);
+test('wrs-quote-carousel: an unconfigured block stays selectable in the editor', () => {
+  assert.ok(wqcEmptyEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {
