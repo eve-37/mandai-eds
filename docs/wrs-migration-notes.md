@@ -97,6 +97,133 @@ with no special metadata, unless/until the `classTag` survey above turns up real
 None. No block folder was created, `models/_section.json` was read but not modified, and no other
 target file was changed for this component.
 
+## image
+
+**Source:** `wrs-components-export/image/` — `wrs/components/commons/image`
+(`sling:resourceSuperType="core/wcm/components/image/v3/image"`).
+
+**Decision: no block was built, and no existing file was changed.**
+
+### Why
+
+This is a Core Components v3 proxy, not a WRS-authored component. `COMPONENT.md` and the HTL
+confirm it: no project Java (`data-sly-use.image="com.adobe.cq.wcm.core.components.models.Image"`,
+the stock OOTB model), no project LESS (`.cmp-image__*` is unmodified Core Components markup), and
+the HTL is verbatim stock v3 except for one class-list addition:
+
+```html
+class="cmp-image${!wcmmode.disabled ? ' cq-dd-image' : ''} ${properties.imageAlignment} ${properties.removeBottomPadding}"
+```
+
+The dialog matches: it is entirely inherited from
+`core/wcm/components/image/v3/image` (asset reference, alt, title, link, caption, lazy-loading —
+none of that is in this bundle because none of it is project code) plus one project-added tab
+with exactly two fields:
+
+- `imageAlignment` — select, three fixed options: `text-center` ("Center"), `text-left` ("Left"),
+  `text-right` ("Right")
+- `removeBottomPadding` — checkbox, `value="mb-0"` / `uncheckedValue=""`
+
+`styles/deployed-bundle-extract.css` is consistent with a proxy this thin — three of the four
+component classes (`cmp-image__image`, `cmp-image__link`, `cmp-image__title`) have **no rules at
+all** in the deployed bundle, and the only real styling is:
+
+```css
+.cmp-image { margin: 43px 0; }              /* 40px 0 at <=992px */
+.cmp-image.mb-0 { margin-bottom: 0 !important; }
+.cmp-image.mt-0 { margin-top: 0 !important; }  /* no dialog control emits mt-0 — dead in this component */
+```
+
+i.e. vertical spacing around the image, optionally zeroed at the bottom. `imageAlignment`'s CSS
+(`.text-center/.text-left/.text-right`) is not in this extract — it is a shared, global utility
+class (not extracted per `COMPONENT.md`'s "shared classes" note), consistent with it being a
+generic text-alignment utility applied to the whole `.cmp-image` box rather than something this
+component defines.
+
+### The target already has an `image` content type — and it has no attachment point for these two fields
+
+`models/_image.json` defines `image` as unstructured default content
+(`resourceType: core/franklin/components/image/v1/image`, `template: {}` — no `model`, no fields
+in the properties rail at all). There is no `blocks/image/` folder; EDS decorates a default-content
+`<picture>` natively, with no `decorate()` and no dialog to extend. This is a different mechanism
+from a block's model-backed fields, and it is the same one used by the two dialog fields that
+*are* covered already — the reference (`image`) and alt text (`imageAlt`) fields visible in
+`models/_image.json` are the Universal Editor's native asset-picker equivalents of the inherited
+Core Components fields, not something built for WRS.
+
+That leaves `imageAlignment` and `removeBottomPadding` as the only two things this component adds
+on top of stock behaviour, and there is nowhere in this boilerplate to attach a per-instance select
+or checkbox to a default-content image — doing so would mean inventing a dialog for a content type
+that deliberately has none.
+
+### Considered and rejected: routing through `models/_section.json`'s `style` field
+
+`backgroundsection` (above) extended the section `style` multiselect for exactly this kind of
+small, enumerable presentational toggle, so it's the obvious thing to check here too. It doesn't
+fit, for a reason specific to this component rather than a blanket rule:
+
+`backgroundsection`'s HTL wraps the **entire** parsys — one background treatment genuinely applies
+to everything in the section, so section-level metadata is the right granularity. `image`'s
+`imageAlignment`/`removeBottomPadding` are properties of **one image among possibly several**
+pieces of content in a section (text, other images, a CTA). Promoting them to section style would
+apply the same alignment/spacing to the whole section's content, not just the image that had the
+setting authored on it — a divergence the ground rule explicitly warns against ("a background
+colour applied to the whole card when the source puts it on the caption panel alone" is the same
+shape of mistake, one level up). A multiselect also can't represent "this image is right-aligned
+but that other image in the same section keeps default spacing."
+
+### Considered and rejected: building a dedicated `wrs-image` block
+
+Wrapping the two fields in a custom block would work mechanically (a `reference` + `imageAlt` +
+`imageAlignment` (select) + `removeBottomPadding` (boolean) model, 2 cells after grouping, a thin
+`decorate()` around `createOptimizedPicture`). It was rejected because it would duplicate
+functionality the boilerplate's native `image` content type already provides better — the
+Universal Editor's built-in asset picker, cropping, and responsive `srcset` handling for default
+images — purely to carry two CSS modifier classes. That fails the ground rule's "do not add
+unnecessary things" as directly as inventing a field would.
+
+### What is lost, stated plainly
+
+Moving to the boilerplate's default `image` content type keeps the asset reference and alt text
+(`models/_image.json` already has both) but drops everything else this component's *inherited*
+Core Components dialog offered, none of which has an EDS/Universal-Editor equivalent today:
+
+- **`imageAlignment`** (center/left/right) — no field to author it; every image renders with
+  whatever the surrounding content's default alignment is.
+- **`removeBottomPadding`** — no field to author it; there is no `.cmp-image`-style default
+  vertical margin around a default-content image to begin with, so this specific loss is largely
+  moot, but any future per-image spacing control still has nowhere to attach.
+- **Link** (`image.imageLink`, the `<a class="cmp-image__link">` wrapper) — inherited from stock
+  Core Components, not in this bundle, and not present in `models/_image.json` either. An author
+  can no longer make an image itself clickable through this component's dialog.
+- **Title / caption** (`image.title`, shown as visible `<span class="cmp-image__title">` or hidden
+  `<meta>` depending on `displayPopupTitle`) — same: inherited, not ported, no field in the target.
+- **Lazy-loading control** (`image.lazyEnabled`) — inherited Core Components behaviour tab field;
+  the target has no per-image authoring toggle for it.
+- **`extraClientlibs`** (`core.wcm.components.image.v3.editor`,
+  `...pageimagethumbnail.v1`) — Core Components *editor-only* behaviours (smart-crop overlay, DM
+  asset editing UI). These have no Universal Editor equivalent and none is needed — the Universal
+  Editor's native asset picker replaces this UI, not a functional loss of authoring capability, but
+  worth recording since this dialog is the only one in the set that declares clientlibs.
+
+### What a human needs to decide
+
+- **Whether `imageAlignment`/`removeBottomPadding` are used often enough in live WRS content to be
+  worth a real fix.** If so, the fix is a small, genuinely new field on the default `image` content
+  type itself (extending `models/_image.json` with an alignment select and a spacing boolean, read
+  by a light per-image CSS rule) — not a block, and not section metadata. That is a change to
+  shared infrastructure (`models/_image.json` is used by every image on every page, WRS or not) and
+  was out of scope for a single-component pass.
+- **Whether link/caption/lazy-loading are needed anywhere in the live WRS content.** If content
+  audits show these are actually authored (not just inherited-but-unused dialog fields), that is a
+  larger, shared decision: whether to extend the default `image` content type for the whole site,
+  or accept the loss for content migrated from this component.
+
+### Files touched
+
+None. No block folder was created, `models/_section.json` and `models/_image.json` were left
+unchanged, and no CSS was added.
+
 ## backgroundsection
 
 **Source:** `wrs-components-export/backgroundsection/` — `wrs/components/commons/backgroundsection`
