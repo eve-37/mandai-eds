@@ -2296,3 +2296,91 @@ None. No block folder, no `models/_section.json` change, no test cases — build
 would have required inventing content this bundle does not evidence (see above). `npm run
 build:json`, `npm run lint` and `npm test` were run to confirm the repo's existing state (all other
 18 components) is undisturbed by this component's non-build; results below.
+
+---
+
+# Cross-cutting findings
+
+Things that emerged across the run and belong to no single component. Written at the end of the
+19-component pass.
+
+## 1. The ancestor-page inheritance cascade has no EDS equivalent
+
+Found in `footer`, then `header`, then `topparkadvisory`, and it is the single largest
+content-migration consequence of this run.
+
+WRS site chrome is authored **once on an ancestor page** and inherited down the tree via
+`HierarchyNodeInheritanceValueMap` / `getAbsoluteParent(...).getChild(...)`. In `header` it governs
+nearly every field; in `footer` the conservation banner and the address/opening-hours panels; in
+`topparkadvisory` it decides which announcements a given page even sees.
+
+EDS has no cascade. Every page needs its content placed explicitly, or a shared fragment authored
+and referenced. **This is not a per-component fix** — it is a decision about how WRS site chrome
+is authored at all after migration, and it should be made before content migration starts rather
+than discovered during it.
+
+## 2. Shared section infrastructure needs one piece of work, not three
+
+Three components independently hit the same gap in `decorateSections()`:
+
+- `aside` — an authored `anchorLink` cannot become a real DOM `id` (non-`style` metadata keys
+  become `data-*`)
+- `section` — an authored `ariaLabel` becomes an inert `data-aria-label`, so the section is
+  neither named nor a landmark
+- `aside` / `section` — the wrapper is unconditionally `div.section`, so the semantic tag is lost
+
+These are one change, not three: a named landmark needs a real tag, a real accessible name, and a
+real `id` for `aria-labelledby` to point at. Scheduling them separately would mean touching shared
+section decoration three times.
+
+**Accessibility note:** the loss is silent. Nothing errors and nothing looks different — the page
+simply stops exposing landmarks to screen readers. If live content fills these fields, this is a
+regression that ships quietly.
+
+## 3. Assets and fonts the target repo does not have
+
+Hit independently by `wrs-accordion-tabs`, `wrs-admission-types` and others:
+
+- **Font Awesome** is not in this repo. Every `fa-*` glyph in WRS markup was substituted with a
+  Unicode character carrying the same size/colour/position treatment. Two source RTE styles
+  (`cta-touring-button`, `fa-train`) are Font Awesome icon hacks and cannot render here at all.
+- **WRS brand fonts** are not here either. `--primary-font-bold` and `Poppins-Regular` fall back to
+  Arial. Colour values that matched no `--rb-*` token were kept literal and namespaced `--wrs-*`
+  rather than forced onto the Ranger Buddies palette.
+
+Each substitution is documented in its own block's CSS docblock. Collectively they mean **no
+migrated block is pixel-accurate to the source yet**, and that is a design decision to confirm, not
+a defect to file.
+
+## 4. Grouped cells and freeform siblings — a real limit, and a refinement worth taking
+
+AEM omits a blank field from a grouped cell rather than emitting a placeholder. So when a grouped
+cell holds **more than two freeform values with no distinguishing vocabulary**, positional reading
+misattributes them if an author leaves an earlier one blank. Surfaced most sharply by
+`wrs-experience-carousel`'s eight colours. `key-value: true` is the real escape hatch; it was not
+applied because it restructures a block's whole markup.
+
+Where values *do* have distinct vocabularies (a mask keyword, a heading tag, an alignment), grouping
+is safe and is used throughout.
+
+**Refinement found mid-run, and a recommended retrofit.** `wrs-accordion-tabs` (component 1) spent
+one cell each on `noTopPadding` and `noBottomPadding`, because two same-domain booleans render as
+bare `true`/`false` with nothing to tell them apart. Component 10 found the better answer:
+collapse both into a single four-value select covering the same reachable states — unambiguous by
+content match, and one cell instead of two. Components 10 onward use it.
+
+Component 1 was left as built rather than churned at the end of a long run. **But if it is to be
+changed, now is the only cheap moment:** no content has been authored against these models yet, and
+the project rule is that a field cannot be removed once authored content exists (the property
+survives in AEM, keeps emitting a row, and shifts every positional read after it). After first
+authoring, this retrofit stops being free.
+
+## 5. What "done" means for this run
+
+Every block here is lint-clean, unit-tested and registered in the author palette. **None has been
+authored in the Universal Editor or published.** Per the migration skill's own standard, "passes
+CI" is meaningfully weaker than "has been authored once" — and every test fixture in this run is
+constructed from this repo's confirmed cell shapes rather than copied from real published markup.
+
+Expect a review pass. The failures that survive this kind of run are cell-parsing and layout
+faults that only appear against real published DOM.
