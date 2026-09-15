@@ -1932,3 +1932,140 @@ copy.
   no code changes; the minor spacing gap noted above was flagged, not built, for the same
   shared-infrastructure reason `columncontrol`'s entry gives.
 - `npm run build:json`, `npm run lint` and `npm test` all pass (192/192 tests).
+
+## section
+
+**Source:** `wrs-components-export/section/` — `wrs/components/article/section`.
+
+**Decision: no block was built. No code was changed.** Same outcome as `## aside` above.
+
+### Why
+
+Identical in kind to `aside` — the whole HTL is a `<section>` wrapping
+`foundation/components/parsys`, with no model logic, no styles and no JS:
+
+```html
+<section class="${properties.classTag}" id="${properties.anchorLink}"
+         aria-label="${properties.ariaLabel}" aria-labelledby="${properties.ariaLabelledBy}">
+  <sly data-sly-resource="${'section' @ resourceType='foundation/components/parsys'}"></sly>
+</section>
+```
+
+The `decorateSections()` analysis in the `## aside` entry applies unchanged and is not repeated
+here: a `style` metadata key becomes CSS classes, every other key becomes a `data-*` attribute,
+there is no `id` special case, and the wrapper is unconditionally `div.section`.
+
+`classTag` and `anchorLink` carry over from `aside` with the same two open questions.
+
+### The one thing `aside` did not have: `ariaLabel` and `ariaLabelledBy`
+
+This is the genuinely new finding, and it is worse than it first looks.
+
+Section metadata turns every non-`style` key into a `data-*` attribute. So an authored
+`ariaLabel` becomes `data-aria-label="..."` on the section div — **which does nothing at all for
+a screen reader.** It is not a wrong value; it is an inert attribute with a similar name. Nothing
+errors, nothing looks different, and the accessible name is silently gone.
+
+It compounds with the tag finding from `aside`. In the source this is a real `<section>` with an
+accessible name, which is what makes it a **landmark** that screen-reader users can navigate
+between. In EDS it is a `<div class="section">` with an inert `data-aria-label`: not a landmark,
+and not named. Both halves of the semantics are lost, not one.
+
+**What it would take to fix:** a generic handler in `decorateSections()` mapping known ARIA keys
+to real attributes (`if (key === 'ariaLabel') section.setAttribute('aria-label', value)`), which
+is the same shape of shared-infrastructure change as the `id` handler flagged under `## aside` —
+and ideally the same change, since a landmark with `aria-labelledby` needs a real `id` on the
+element it points at. Doing it properly probably also means the conditional-tag change, so that
+named sections render as `<section>`. That is three related changes to shared section decoration,
+which is why it is flagged as one piece of work rather than bolted onto this component.
+
+### What a human needs to decide
+
+- **Whether these sections are actually named in live content.** If `ariaLabel`/`ariaLabelledBy`
+  were filled in on real pages, this is an accessibility regression that ships silently, and the
+  `decorateSections()` work above should be scheduled before migration rather than after. If they
+  were left blank in practice, there is nothing to lose and the fields can be dropped.
+- The `classTag` and `anchorLink` questions already recorded under `## aside`.
+
+**Recommendation:** same as `aside` — drop the wrapper and author the children into a plain EDS
+section — **unless** the accessibility survey above finds real authored ARIA values, in which case
+the shared section work is a prerequisite, not a follow-up.
+
+### Files touched
+
+None.
+
+## sectiontitle
+
+**Source:** `wrs-components-export/sectiontitle/` — `wrs/components/commons/sectiontitle`.
+
+**Decision: built `blocks/wrs-section-title/`** (leaf block, id `wrssectiontitle`).
+
+### Why a block rather than default content
+
+A heading with an optional link is close to default content, and the boilerplate already has a
+`title` model — so this was weighed, not assumed.
+
+What decided it: the source carries four presentation fields alongside the text — `style` (which
+of h1–h6), `align`, `bottomPadding`, and `anchorLink`. Default content gives the heading level
+for free (the author writes the heading), but has nowhere to put alignment, bottom padding or an
+anchor id.
+
+Pushing those to section metadata was rejected on the same granularity grounds the `## image`
+entry used, one level down: they are properties of *this title*, not of the section it sits in,
+and a section can hold other content alongside the title. Extending the shared `title` model was
+rejected for the same reason it was under `## image` — it is site-wide infrastructure affecting
+every heading on every page, and this is one component's migration.
+
+### Cell model — 6 fields into 4 cells
+
+- `title`
+- `opt_style` + `opt_anchorLink` — the same pairing `wrs-accordion-tabs` uses for the identical
+  fields, disambiguated by keyword (a value matching the fixed h1–h6 set is the style; anything
+  else is the free-text anchor)
+- `display_align` + `display_bottomPadding` — two more fixed, non-overlapping vocabularies. Unlike
+  the two same-domain booleans that forced `wrs-accordion-tabs` to spend a cell each, none of
+  these four values can be mistaken for another
+- `link`
+
+### Confirmed behaviour difference — `getProperURL` is not fully ported
+
+`SectionTitleModel` is plain injected strings plus one call, `CommonUtils.getProperURL(link,
+resourceResolver)`. Reading `CommonUtils.java` directly shows it does two things:
+
+1. resolves `link` as a page and, if that page's `cq:template` is the WRS redirect-page template,
+   substitutes its `redirectTarget` property instead
+2. appends `.html` to `/content` paths
+
+Part 2 is a pure formatting rule and is ported, via the same `resolveHref()` helper every other
+block's internal link uses. **Part 1 is not ported** — it is a live read of a *different* page's
+template and `redirectTarget` at request time, which is the "reads other pages" case that needs a
+bridge rather than an invented client-side substitute.
+
+**Consequence:** an authored `link` pointing at a WRS redirect page will link to the redirect page
+itself here, where the source silently followed it to its target. Blast radius is small (it only
+matters for links into redirect pages) but it is a real, confirmed difference, not a theoretical
+one.
+
+### Styles
+
+`.section-title` is one of the site-wide shared classes the bundle extract deliberately does not
+attribute to any one component — it appears in hundreds of rules, most of them *other* components
+scoping it (`.main-footer .section-title`, `.md-feature-carousel .section-title`, …). Only
+genuinely unscoped base rules were taken. This is the trap component 1 hit, and the reason the
+rendered appearance of this component in AEM is context-dependent in a way the EDS block
+deliberately is not.
+
+### What a human needs to decide
+
+- Whether links into redirect pages are used with this component, and if so whether the
+  redirect-following behaviour needs restoring (which makes this a bridge case).
+- Whether the block's fixed base styling is acceptable given that the source's appearance varied
+  with whatever ancestor component happened to scope `.section-title`.
+
+### Files touched
+
+- `blocks/wrs-section-title/` — `_wrs-section-title.json`, `.js`, `.css` (new)
+- `models/_section.json` — appended `wrssectiontitle`
+- `tests/blocks.test.mjs` — cases for the heading level, align, both padding modifiers, the
+  linked and unlinked forms, instrumentation, and the unconfigured/editor placeholder

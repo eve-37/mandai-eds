@@ -2011,6 +2011,105 @@ test('wrs-pull-quote: unconfigured block stays selectable in the editor', () => 
   assert.ok(wpqEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Section Title - no published markup exists yet (this component has
+ * not been authored on a real page), so this fixture is constructed from
+ * this codebase's own confirmed cell shapes rather than copied from a live
+ * page: a single-field cell (title) renders bare text with no <p>, a
+ * grouped cell with two authored values renders one <p> per value, and a
+ * grouped cell with only one of its two fields authored (the required
+ * select always present, the optional field blank) falls back to bare
+ * text too - the same shapes wrs-accordion-tabs' opt cell and
+ * wrs-featured-listing's lone aem-content cell already confirm. Must be
+ * re-verified against real output once this block has been authored once.
+ * ------------------------------------------------------------------ */
+const WST_FULL = `<div class="wrs-section-title" data-aue-resource="urn:block1">
+  <div data-aue-resource="urn:title1">Quick Facts</div>
+  <div><p>h3</p><p>quick-facts</p></div>
+  <div><p>title-left</p><p>section-title-space--no-padding-bottom</p></div>
+  <div><a href="/content/wrs/en/about">About</a></div>
+</div>`;
+const wstFull = await decorateBlock('../blocks/wrs-section-title/wrs-section-title.js', WST_FULL);
+
+test('wrs-section-title: style selects the heading tag', () => {
+  const heading = wstFull.querySelector('.wrs-section-title-heading');
+  assert.equal(heading.tagName, 'H3');
+});
+
+test('wrs-section-title: anchorLink becomes the heading id', () => {
+  assert.equal(wstFull.querySelector('.wrs-section-title-heading').id, 'quick-facts');
+});
+
+test('wrs-section-title: align adds the align-left modifier', () => {
+  assert.ok(wstFull.querySelector('.wrs-section-title-heading').classList.contains('align-left'));
+});
+
+test('wrs-section-title: bottomPadding=None adds no-padding-bottom to the block', () => {
+  assert.ok(wstFull.classList.contains('no-padding-bottom'));
+  assert.equal(wstFull.classList.contains('small-padding-bottom'), false);
+});
+
+test('wrs-section-title: a link makes the title text an anchor, with the .html suffix appended', () => {
+  const a = wstFull.querySelector('.wrs-section-title-heading a');
+  assert.equal(a.getAttribute('href'), '/content/wrs/en/about.html');
+  assert.equal(a.textContent, 'Quick Facts');
+});
+
+test('wrs-section-title: instrumentation moves onto the anchor, not the heading, when a link is authored', () => {
+  const a = wstFull.querySelector('.wrs-section-title-heading a');
+  assert.equal(a.getAttribute('data-aue-resource'), 'urn:title1');
+  assert.equal(wstFull.querySelector('.wrs-section-title-heading').hasAttribute('data-aue-resource'), false);
+});
+
+/* Minimal fixture: only the required fields (title, the default style/align)
+ * are authored - anchorLink, bottomPadding and link are all left blank. */
+const WST_MINIMAL = `<div class="wrs-section-title" data-aue-resource="urn:block2">
+  <div data-aue-resource="urn:title2">Our Mission</div>
+  <div>h2</div>
+  <div>title-center</div>
+  <div></div>
+</div>`;
+const wstMinimal = await decorateBlock('../blocks/wrs-section-title/wrs-section-title.js', WST_MINIMAL);
+
+test('wrs-section-title: blank anchorLink/bottomPadding/link cells do not throw and default sensibly', () => {
+  const heading = wstMinimal.querySelector('.wrs-section-title-heading');
+  assert.equal(heading.tagName, 'H2');
+  assert.equal(heading.hasAttribute('id'), false);
+  assert.equal(heading.classList.contains('align-left'), false);
+  assert.equal(wstMinimal.classList.contains('no-padding-bottom'), false);
+  assert.equal(wstMinimal.classList.contains('small-padding-bottom'), false);
+  assert.equal(heading.querySelector('a'), null);
+  assert.equal(heading.textContent, 'Our Mission');
+});
+
+test('wrs-section-title: instrumentation moves onto the heading itself when there is no link', () => {
+  assert.equal(wstMinimal.querySelector('.wrs-section-title-heading').getAttribute('data-aue-resource'), 'urn:title2');
+});
+
+const wstSmall = await decorateBlock('../blocks/wrs-section-title/wrs-section-title.js', `<div class="wrs-section-title">
+  <div>Smaller Padding</div>
+  <div><p>h4</p></div>
+  <div><p>title-center</p><p>section-title-space--small-padding-bottom</p></div>
+  <div></div>
+</div>`);
+test('wrs-section-title: bottomPadding=Smaller adds small-padding-bottom to the block', () => {
+  assert.ok(wstSmall.classList.contains('small-padding-bottom'));
+  assert.equal(wstSmall.classList.contains('no-padding-bottom'), false);
+});
+
+const wstEmpty = await decorateBlock('../blocks/wrs-section-title/wrs-section-title.js', '<div class="wrs-section-title"></div>');
+test('wrs-section-title: renders nothing when unconfigured outside the editor', () => {
+  assert.equal(wstEmpty.children.length, 0);
+});
+
+const wstEdit = await decorateBlock(
+  '../blocks/wrs-section-title/wrs-section-title.js',
+  '<div class="wrs-section-title" data-aue-resource="urn:block3"></div>',
+);
+test('wrs-section-title: unconfigured block stays selectable in the editor', () => {
+  assert.ok(wstEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {

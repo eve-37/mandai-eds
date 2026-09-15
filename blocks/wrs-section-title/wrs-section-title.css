@@ -1,0 +1,155 @@
+/*
+ * WRS Section Title
+ *
+ * Port of styles/deployed-bundle-extract.css in
+ * wrs-components-export/sectiontitle/ (extracted by class name from
+ * section-title-space, sm-container, title-block - the ground truth; the
+ * .less checkout is behind what is deployed, per COMPONENT.md).
+ *
+ * Two things confirmed by reading the extract closely, both ported as-is
+ * rather than "fixed", per the ground rule:
+ *
+ * 1. The decorative underline (`h1.title-block:after`/`h2.title-block:after`
+ *    in the extract) is a `::after` pseudo-element with its own
+ *    `background-color: #333`, NOT a background-image on the heading despite
+ *    the `background: no-repeat center bottom` declaration on the heading
+ *    itself - that shorthand resets background-image to none, so the only
+ *    visible decoration is the pseudo-element line. The extract's
+ *    `.wrs-style` brand-scoping is dropped and applied unconditionally, the
+ *    same call every other WRS block in this repo makes (this repo migrates
+ *    WRS content only - see wrs-pull-quote.css).
+ *
+ * 2. `.md.section-title-space h2.title-block` in the extract overrides the
+ *    generic h2 treatment: no background image, `color:#003400`,
+ *    `padding-bottom:0`, bold. The source's `.md` class is hardcoded on
+ *    EVERY instance's wrapper div (`<div class="md section-title-space ...">`
+ *    in the HTL, not a brand/variant toggle), so this override ALWAYS wins
+ *    for the default h2 style - meaning the underline/#333/padding-bottom
+ *    treatment below is only ever visible for h1. This is confirmed by
+ *    reading both rules side by side, not a guess, and it is ported
+ *    faithfully even though it produces a real inconsistency in the source:
+ *    when h2 is used, the heading text is #003400 but the underline
+ *    pseudo-element (unaffected by the .md override) stays #333 - two
+ *    different greens on the same heading. Not "fixed" here.
+ *
+ * h3-h6 have NO dedicated rule anywhere in the extract - only h1/h2 get the
+ * padding-bottom/underline/colour treatment. h3-h6 render with only the base
+ * `.title-block` rule (line-height, text-align). That is a real gap in the
+ * source's own CSS, not an omission here.
+ *
+ * `var(--primary-font-bold)` is the source's own token, present in the
+ * deployed CSS but not defined anywhere in this bundle or this repo's
+ * styles.css. Kept as-is rather than remapped to `--heading-font-family*`
+ * (a different, separately migrated brand's token) - same call
+ * wrs-pull-quote.css already makes. Needs a real font decision before
+ * production.
+ *
+ * `.sm-container .grid { width: 62.5rem }` only applies at >=1200px in the
+ * source (fluid/full-width below that) - ported as the one min-width the
+ * extract actually specifies, using this repo's own breakpoints file
+ * convention of range syntax.
+ */
+
+.wrs-section-title {
+  padding-top: 2.688rem;
+  padding-bottom: 2.688rem;
+}
+
+@media (width <= 991px) {
+  .wrs-section-title {
+    padding-top: 1.875rem;
+    padding-bottom: 1.875rem;
+  }
+}
+
+@media (width <= 480px) {
+  .wrs-section-title {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+}
+
+/* display_bottomPadding: Smaller - 43px to 16px, per the source's own field
+   description (not itself a value present in the deployed extract). */
+.wrs-section-title.small-padding-bottom {
+  padding-bottom: 1rem;
+}
+
+.wrs-section-title.no-padding-bottom {
+  padding-bottom: 0;
+}
+
+.wrs-section-title-inner {
+  margin: 0 auto;
+}
+
+@media (width >= 1200px) {
+  .wrs-section-title-inner {
+    width: 62.5rem;
+    max-width: 100%;
+    padding: 0 0.625rem;
+  }
+}
+
+.wrs-section-title-heading {
+  /* .title-block (base) */
+  line-height: 1;
+  text-align: center;
+  margin: 0;
+}
+
+.wrs-section-title-heading.align-left {
+  text-align: left;
+}
+
+/* Both padding modifiers zero the heading's own bottom padding, so the
+   block-level value above is the only one in play. Declared after the base
+   heading rule so specificity climbs in source order. */
+.wrs-section-title.small-padding-bottom .wrs-section-title-heading,
+.wrs-section-title.no-padding-bottom .wrs-section-title-heading {
+  padding-bottom: 0;
+}
+
+/* h1.title-block, h2.title-block - decorative underline + spacing, visible
+   for h1 always and for h2 only when the .md override (below) is absent. */
+h1.wrs-section-title-heading,
+h2.wrs-section-title-heading {
+  position: relative;
+  padding-bottom: 1.25rem;
+  color: #333;
+}
+
+@media (width <= 767px) {
+  h1.wrs-section-title-heading,
+  h2.wrs-section-title-heading {
+    padding-bottom: 0.813rem;
+  }
+}
+
+h1.wrs-section-title-heading::after,
+h2.wrs-section-title-heading::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 3.125rem;
+  height: 1px;
+  transform: translateX(-50%);
+  background-color: #333;
+}
+
+h1.wrs-section-title-heading.align-left::after,
+h2.wrs-section-title-heading.align-left::after {
+  left: 0;
+  transform: translateX(0);
+}
+
+/* .md.section-title-space h2.title-block - always wins over the generic h2
+   rule above, per the confirmed finding in the file header. */
+h2.wrs-section-title-heading {
+  font-family: var(--primary-font-bold);
+  font-weight: 700;
+  color: #003400;
+  padding-bottom: 0;
+  width: 100%;
+}
