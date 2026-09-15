@@ -1455,6 +1455,69 @@
     ]
   },
   {
+    "id": "wrsconservationbanner",
+    "fields": [
+      {
+        "component": "text",
+        "name": "content_title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "richtext",
+        "name": "content_description",
+        "label": "Description",
+        "value": "",
+        "valueType": "string"
+      },
+      {
+        "component": "boolean",
+        "name": "content_gradient",
+        "label": "Enable Gradient Overlay",
+        "valueType": "boolean"
+      },
+      {
+        "component": "reference",
+        "name": "bg_desktop",
+        "label": "Banner Image (desktop)",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "bg_mobile",
+        "label": "Banner Image (mobile)",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "tagImage",
+        "label": "Tag Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "tagImageAlt",
+        "label": "Tag Image Alt Text",
+        "valueType": "string"
+      },
+      {
+        "component": "aem-content",
+        "name": "cta_link",
+        "label": "CTA Link",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "cta_linkText",
+        "label": "CTA Text",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
     "id": "wrsfeaturedlisting",
     "fields": []
   },

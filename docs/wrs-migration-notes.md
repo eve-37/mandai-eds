@@ -480,3 +480,165 @@ fields plus the two button labels is the safer target.
   called out above, instrumentation-moved, a blank/unpicked row, unconfigured-outside-editor, and
   unconfigured-in-editor placeholder.
 - `npm run build:json`, `npm run lint` and `npm test` all pass (89/89 tests).
+
+## footer
+
+**Source:** `wrs-components-export/footer/` — `wrs/components/structure/footer`
+(`sling:resourceSuperType="wcm/foundation/components/parsys"`). 32 top-level dialog fields across
+19 fieldsets, plus 8 multifields (`footerIcons`, `staticLinks`, and `items1`…`items6` — a
+hand-unrolled six-copy multifield behind `rootTitle1..6`/`rootPath1..6`). `FooterModel.java` is 584
+lines; it also pulls in the 684-line `PagePropertiesInheritance.java`.
+
+**Decision: a partial migration.** Only the `conservationBannerTab` panel (10 dialog fields) is
+built as a block, `blocks/wrs-conservation-banner/`. Everything else is flagged, not built.
+`blocks/footer/` (the site's actual footer, a `/footer` document-fragment loader) is untouched, per
+the task constraint — it already covers where most of the flagged content belongs.
+
+### Why the whole component does not fit as one block, or even as one container
+
+- 32 top-level fields cannot fit 4 cells under any grouping the skill allows — grouping collapses
+  *related* fields, it does not shrink an inventory of unrelated site furniture (address, social
+  icons, six nav columns, legal links, help button) down to four slots.
+- A container block has exactly one `filter`, and therefore one accepted child shape. This dialog
+  has eight distinct multifields with different field shapes (`footerIcons`: 6 fields;
+  `items1`…`items6`: 2 fields each, but six *separate* fields, not one shared one;
+  `staticLinks`: 2 fields). That is eight child types, not one — a single container cannot express
+  it, and per the skill, a block item cannot itself be a container either, which rules out nesting
+  columns-of-links-as-containers-of-containers too.
+- `rootTitle{1..6}`/`rootPath{1..6}`/`items{1..6}` is a multifield that someone unrolled by hand
+  into six numbered copies rather than authoring it as one repeatable field, apparently to get
+  Granite's fixed-columns layout to lay out six fieldsets side by side in the dialog. In EDS this
+  collapses back to what it always was: one repeatable "nav column" structure, not six.
+
+### Why even the conservation banner needed a closer look before building it
+
+`FooterModel` has two code paths, chosen by a `cancelFooterInheritance` page property
+(`processFooterInherited()` vs `processCancelFooterInherited()`). Read side by side (lines
+276–391), **every** `conservation*` getter — not just address/opening-hours — is populated the
+same way as the rest of the footer's config: by default, `processFooterInherited()` walks up to 5
+ancestor pages via `HierarchyNodeInheritanceValueMap` looking for the nearest one with a `footer`
+child resource, and reads the conservation fields off *that* resource. Only when an author checks
+"cancel footer inheritance" on a page does `processCancelFooterInherited()` read the fields off the
+current page's own footer node directly.
+
+So the conservation banner is content-shaped (10 flat fields, no repository queries, no OSGi
+services, no request context — genuinely presentational data, unlike the opening-hours lookup
+below) but it is **not** authored per-page in the source; it is authored once on an ancestor page
+and cascades to every descendant that does not opt out. That cascade has no EDS equivalent — EDS
+resolves a page's own content, not an inherited ancestor's. Building the block does not restore
+this: every page that should show the banner will need it placed explicitly. This is called out
+both here and in the block's own docblock, and is a real behaviour change a human should sign off
+on (e.g. deciding whether a small number of pages genuinely need the banner individually authored,
+versus whether the inheritance behaviour needs a different solution — a shared library/library
+block, or template defaults — before this migrates further).
+
+`hideConservation` (a checkbox, default shown) is dropped from the model: in EDS, not placing the
+block is how an author hides it. A checkbox on top of block-presence would just be a second, easily
+-desynced way to say the same thing.
+
+### The conservation banner block
+
+- Folder: `blocks/wrs-conservation-banner/`, id `wrsconservationbanner`, per the naming rule
+  (`template.name` "WRS Conservation Banner" → slugified folder). Registered in
+  `models/_section.json`'s `section` filter.
+- **Cell model (9 fields — `hideConservation` dropped — into 4 cells):**
+  - `content_title`, `content_description`, `content_gradient` → **`content`** cell. Grouped
+    because all three describe the text panel painted over the banner (heading, rich-text copy,
+    and whether the radial gradient behind it is on) — an author edits them together, and the
+    source itself paints them as one `.wrapp-content` unit.
+  - `bg_desktop`, `bg_mobile` → **`bg`** cell. Same `bg_desktop`/`bg_mobile` shape and
+    `backgroundUrl()` rewrite already proven in `blocks/one-column-banner/` for the source's
+    desktop/mobile image swap (`conservationBannerImage`/`conservationBannerImageMobile`).
+  - `tagImage`, `tagImageAlt` → collapses to **one** cell via the `imageAlt` suffix rule (source:
+    `conservationTagImage` + `conservationTagAltText`, the small badge/tag graphic inside the
+    banner-box).
+  - `cta_link`, `cta_linkText` → **`cta`** cell (source: `conservationCtaLink` +
+    `conservationCtaText`). No variant/new-tab fields exist for this CTA in the source dialog — the
+    HTL anchor carries no `target` — so only the two fields the dialog actually has are modelled.
+- The CTA is deliberately **not** built with the shared `buildCta()`/`.rb-cta` torn-edge button used
+  elsewhere in this repo. The source renders a plain rounded pill button (`.md-button-big`),
+  visually unrelated to the Ranger Buddies CTA shape — the ground rule is to port what the source
+  does, not what looks consistent with sibling blocks. `readCta()` is still reused for the grouped
+  cell read (it tolerates the absent variant/newTab fields); the rendered markup and CSS are this
+  component's own.
+- CSS ported from `styles/deployed-bundle-extract.css`, selectors `.md-short-masthead-component`,
+  `.cover-picture`, `.wrapp-content`, `.banner-box`, `.desc`, `.md-button-big` (extract lines
+  ~1807–1841, ~5017–5234), rewritten mobile-first under new doubly-scoped class names
+  (`.wrs-conservation-banner-*`), matching the house style in `wrs-admission-types.css`. One gap is
+  called out in the CSS file itself: the extract's own header lists `wrapp-content` as a shared,
+  too-broad-to-extract site-wide class (414 rules), so no `position`/centering rule for it is in
+  this bundle — the `position: absolute; left: 50%; transform: translateX(-50%)` centering used
+  here is a reconstruction, not a verified port, flagged for re-check once authored.
+
+### What was flagged, not built, and where it belongs
+
+- **The six nav columns** (`columnOne`…`columnSix`, each `rootTitle{n}`/`rootPath{n}` plus an
+  `items{n}` multifield of up to 6 links) — site navigation furniture, not a content-shaped block.
+  Belongs in the `/footer` document that `blocks/footer/` already loads via `loadFragment()`,
+  authored as a nav list in the document itself. If it needs to be author-editable as structured
+  data rather than free document markup, that is a "should footer nav become a block" architecture
+  call for a human, out of scope here.
+- **Social/footer icons** (`footerIcons` multifield: path, Font Awesome class, default/hover image,
+  alt, QR code — 6 fields) and **static links** (`staticLinks`: title + path) — same call: belongs
+  in the `/footer` document as authored content, not a block.
+- **Address panel** (`titleAddress`, `descAddress`) and **social section title**
+  (`titleFollowUs`) — plain text, belongs in the `/footer` document.
+- **Copyright/legal** (`copyright`, `subCopyright`) — plain text, belongs in the `/footer`
+  document.
+- **Help button** (`hideHelpButton`, `helpButtonRedirectPath`) — a single link, belongs in the
+  `/footer` document, or as a small dedicated block if it needs to appear on pages independent of
+  the footer fragment — a human call, not made here.
+- **Opening hours** (`dataOpenHours`, a pathbrowser field) — needs an explicit architecture
+  decision, not a document/authoring one. `dataOpenHours` is a *path to a different page's config
+  node*: `FooterModel` calls
+  `ResourceUtils.getResourceByResourceType(resourceResolver, SLING_RESOURCE_TYPE_FOOTER_CONFIG,
+  dataOpenHours)`, then reads `timeOpenHours`/`descOpenHours`/`titleOpenHours` off *that* resource's
+  `ValueMap` — a live repository read of a separate content node by resource type, at request time.
+  There is no EDS/GraphQL equivalent to "resolve a path to a node and read fields off whatever
+  resource type is found there" without a servlet or an equivalent server-side/edge lookup; this is
+  exactly the "reads other pages" case the skill says to flag rather than invent a client-side
+  substitute for. Per the skill, this would call for the `aem-eds-servlet-bridge` skill and a human
+  decision before building anything, once opening-hours is prioritized.
+- **The main-section/top-section/legal-section `hide*` booleans** (`hideTopSection`,
+  `hideMainSection`) apply to groups of the content above, not to anything built here — they travel
+  with whatever authoring solution is chosen for those sections.
+
+### What a human needs to decide
+
+- Whether the conservation banner's lost page-hierarchy inheritance (cascades from an ancestor page
+  to all descendants in the source; requires explicit per-page placement in EDS) needs a
+  compensating authoring convention, or whether explicit per-page placement is acceptable.
+- Whether the six nav columns, social icons, static links, address, copyright and help button
+  become structured blocks (author-editable fields) or stay as free-form content inside the
+  `/footer` document — this is a real content-modelling choice, not something this pass should
+  decide by default.
+- The opening-hours architecture (servlet bridge vs. some other resolution of the
+  `dataOpenHours` → config-node lookup) before any opening-hours UI is built.
+- `PagePropertiesInheritance` (684 lines: `AddThisServices`, `Externalizer`,
+  `LiveRelationshipManager`, `SlingSettingsService`, cookies) backs `pageProperties.hideInMFA` and
+  `pageProperties.mfaUserAgent` in the footer HTL, used on the conservation banner's own wrapping
+  `<div>` in the source (`... ${pageProperties.hideInMFA ? 'hide' : ''}`) as well as the help button
+  and main `<footer>`. None of this reached the migrated block — it is a page-property/OSGi-service
+  condition, not a dialog field of this component — but a human should confirm no MFA-specific
+  hide behaviour is expected of the conservation banner block before it goes live.
+
+### Files touched
+
+- `blocks/wrs-conservation-banner/_wrs-conservation-banner.json` — new; single leaf model
+  (`wrsconservationbanner`), no container/filter (no multifield in this panel).
+- `blocks/wrs-conservation-banner/wrs-conservation-banner.js` — new; `decorate()` reading the 4
+  cells above, including a from-both-ends read for the `content` cell so a multi-paragraph rich
+  description cannot shift the trailing gradient boolean.
+- `blocks/wrs-conservation-banner/wrs-conservation-banner.css` — new; ports
+  `styles/deployed-bundle-extract.css`'s conservation-banner rules under new scoped class names,
+  with the `wrapp-content` centering gap called out above.
+- `models/_section.json` — appended `"wrsconservationbanner"` to the `section` filter's
+  `components` array.
+- `tests/blocks.test.mjs` — added 8 cases: normal render (title/rich description), gradient
+  modifier toggle, both background images resolving through `backgroundUrl()`, tag image alt text,
+  CTA anchor/button shape (and that it is *not* `.rb-cta`), instrumentation on content/tag/CTA,
+  the multi-paragraph-description/trailing-boolean boundary case, and the
+  unconfigured-outside-editor / unconfigured-in-editor-placeholder pair.
+- `npm run build:json`, `npm run lint` and `npm test` all pass (98/98 tests).
+- `blocks/footer/` was **not** touched, as required — it already covers the destination for most of
+  the flagged content (the `/footer` document it loads).

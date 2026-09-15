@@ -1,0 +1,212 @@
+/*
+ * WRS Conservation Banner
+ *
+ * Port of the DEPLOYED bundle, not the LESS checkout - see
+ * ../../../wrs-components-export/footer/styles/deployed-bundle-extract.css
+ * (its header names `md-short-masthead-component` /
+ * `md-short-masthead-component--v2` among the classes it was extracted by).
+ * Selectors/declarations below are traced to specific rules in that extract;
+ * values are copied, not invented. New, doubly-scoped class names are used
+ * instead of the source's own (`.md-short-masthead-component`,
+ * `.cover-picture`, `.wrapp-content`, `.banner-box`, `.desc`,
+ * `.md-button-big`) - same call `wrs-admission-types.css` makes - because
+ * `wrapp-content` in particular is explicitly listed in the extract's own
+ * header as a shared site-wide class too broad to extract cleanly (414
+ * rules), so its declarations here are read off the scoped
+ * `.md-short-masthead-component .wrapp-content` rules only, not the bare
+ * class.
+ *
+ * `var(--primary-font-bold)` is the source's own font token; this repo's
+ * `--heading-*`/`--body-*` custom properties belong to the separately
+ * migrated Ranger Buddies brand and do not match these values (a yellow/cream
+ * palette on dark green, not RB's), so literal hex values are kept rather
+ * than remapped - same call wrs-admission-types.css and
+ * wrs-accordion-tabs.css make. Needs a real font decision before production.
+ *
+ * Breakpoints: the source is desktop-first with cutoffs at max-width:1024px,
+ * max-width:992px and max-width:767px. Rewritten mobile-first here to match
+ * this repo's own `(width >= Npx)` range-query convention; each rule below
+ * states which source declaration it came from.
+ *
+ * The source picks the desktop/mobile banner image via two separate `<img>`
+ * elements toggled by display:none/inline-block per breakpoint, driven by a
+ * lazyload plugin that is not part of this bundle (JS runtime, not copied -
+ * see COMPONENT.md). decorate() instead resolves both authored images ahead
+ * of time (bg_desktop/bg_mobile, EDS-optimised width via backgroundUrl()) and
+ * sets them as CSS custom properties, and this file picks between them with
+ * a media query alone - same approach as blocks/one-column-banner/.
+ */
+
+.wrs-conservation-banner-inner {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+/*
+ * extract L5017-5027 (base, desktop-first), L5041-5050 (max-width:1024
+ * override -> position:top below 1024), L5052-5061 (max-width:767 override
+ * -> height:667 below 768). Rewritten mobile-first:
+ *   <768:        height 667, position top   (both overrides active)
+ *   768-1023:    height 700, position top   (only the 1024 override active)
+ *   >=1024:      height 700, position bottom (base rule, no override active)
+ */
+.wrs-conservation-banner-cover {
+  width: 100%;
+  height: 667px;
+  background-image: var(--conservation-bg-mobile);
+  background-position: top;
+  background-size: cover;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+@media (width >= 768px) {
+  .wrs-conservation-banner-cover {
+    height: 700px;
+  }
+}
+
+@media (width >= 1024px) {
+  .wrs-conservation-banner-cover {
+    background-image: var(--conservation-bg-desktop);
+    background-position: bottom;
+  }
+}
+
+/*
+ * extract L5071-5091 (base, desktop-first: top:15%, width:34.375rem),
+ * L5077-5083 (max-width:992 -> width:25.938rem!important, margin:auto),
+ * L5085-5091 (max-width:767 -> width:23.625rem!important, top:8%), plus
+ * L5212-5222 (.text-on-top .wrapp-content, unconditionally present since the
+ * HTL always carries the `text-on-top` class - top:15% base / top:8% below
+ * 767 - same values, so no separate variant is needed here).
+ *
+ * Source order puts the 767 query after the 992 query, so at <=767 both
+ * apply and the later (767) wins any conflict: width 23.625rem, top 8%.
+ * Between 768-991 only the 992 query is active: width 25.938rem, top stays
+ * the base 15%. Rewritten mobile-first:
+ *   <768:      top 8%,  width 23.625rem
+ *   768-991:   top 15%, width 25.938rem
+ *   >=992:     top 15%, width 34.375rem
+ *
+ * The extract has no `position`/`left`/centering declaration for
+ * `.md-short-masthead-component .wrapp-content` itself - `wrapp-content` is
+ * explicitly listed in the extract's own header as a shared, too-broad-to-
+ * extract class (414 rules), so its base positioning lives outside this
+ * bundle. `position: absolute` + `left: 50%` + `transform: translateX(-50%)`
+ * below is a reconstruction to centre the panel over the cover image, not a
+ * verified port - flagged for re-check once the block is authored and can be
+ * compared against the live source page.
+ */
+.wrs-conservation-banner-content {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 23.625rem;
+  max-width: calc(100% - 2rem);
+  pointer-events: none;
+  text-align: center;
+}
+
+@media (width >= 768px) {
+  .wrs-conservation-banner-content {
+    top: 15%;
+    width: 25.938rem;
+  }
+}
+
+@media (width >= 992px) {
+  .wrs-conservation-banner-content {
+    width: 34.375rem;
+  }
+}
+
+/* extract L5169-5179 (.wrapp-content.text-gradient::after) */
+.wrs-conservation-banner-content.gradient {
+  position: relative;
+}
+
+.wrs-conservation-banner-content.gradient::after {
+  content: '';
+  position: absolute;
+  width: 53.125rem;
+  height: 53.125rem;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse 300px 240px, #000, transparent);
+}
+
+/* extract L5093-5127, L5141-5167 (.wrapp-content h2 / .desc, colours) */
+.wrs-conservation-banner-title {
+  margin: 0 0 10px;
+  color: #fc0;
+}
+
+.wrs-conservation-banner-desc {
+  margin-bottom: 20px;
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 700;
+  color: #fbebce;
+}
+
+.wrs-conservation-banner-desc p {
+  margin: 0;
+}
+
+/* extract L5181-5185 (.wrapp-content a): the wrapper has pointer-events:none
+   above so only its interactive children remain clickable. */
+.wrs-conservation-banner-cta-link {
+  position: relative;
+  pointer-events: all;
+  z-index: 3;
+  display: inline-block;
+  text-decoration: none;
+}
+
+/* extract L5187-5210 (.wrapp-content .banner-box / img / mobile-desktop
+   toggle) - the tag/badge image, not the full-bleed cover. */
+.wrs-conservation-banner-tag {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.wrs-conservation-banner-tag img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* extract L1820-1837 (.md-button-big) */
+.wrs-conservation-banner-cta {
+  min-width: 190px;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  background-color: #fc0;
+  border-radius: 30px;
+  display: inline-block;
+  text-transform: capitalize;
+  outline: 0;
+  border: none;
+  color: #003400;
+  font-size: 1rem;
+  line-height: 24px;
+  text-align: center;
+  cursor: pointer;
+}
+
+/* extract L1839-1841 (.no-touch .md-button-big:hover) */
+@media (hover: hover) and (pointer: fine) {
+  .wrs-conservation-banner-cta:hover {
+    background-color: #ffe88e;
+  }
+}
+
+/* Editor-only empty-state placeholder, shared shape with other WRS blocks. */
+.wrs-conservation-banner .rb-placeholder {
+  padding: 1rem;
+}

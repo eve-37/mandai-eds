@@ -921,6 +921,99 @@ test('wrs-featured-listing: unconfigured block stays selectable in the editor', 
   assert.ok(wflEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Conservation Banner - no published markup exists yet (this component
+ * has not been authored on a real page), so this fixture is constructed from
+ * this codebase's own confirmed cell shapes rather than copied from a live
+ * page: the content cell mirrors wrs-accordion-tabs' tabCell shape (bare <p>
+ * children, richtext kept as markup), the bg cell mirrors
+ * one-column-banner-carousel's grouped image-pair cell, the tag cell mirrors
+ * four-column-tiles' single reference+imageAlt cell (a bare <picture>, alt
+ * baked into the <img> by AEM's own render), and the cta cell mirrors the
+ * cta_link/cta_linkText shape proven in cards/four-column-tiles/
+ * wrs-accordion-tabs. It should be re-verified against real output once this
+ * block has been authored.
+ * ------------------------------------------------------------------ */
+const WCB = `<div class="wrs-conservation-banner">
+  <div><p>Save Our Rainforests</p><p>Every visit helps fund conservation work across the region.</p><p>true</p></div>
+  <div><p><picture><img src="/cb-desktop.png?width=750&format=png&optimize=medium" alt=""></picture></p><p><picture><img src="/cb-mobile.png?width=750&format=png&optimize=medium" alt=""></picture></p></div>
+  <div><picture><img src="/cb-tag.png" alt="Conservation badge"></picture></div>
+  <div><p><a href="/content/wrs/conservation">Learn More</a></p></div>
+</div>`;
+const wcb = await decorateBlock('../blocks/wrs-conservation-banner/wrs-conservation-banner.js', WCB);
+
+test('wrs-conservation-banner: title and rich description both render', () => {
+  assert.equal(wcb.querySelector('.wrs-conservation-banner-title').textContent, 'Save Our Rainforests');
+  assert.equal(
+    wcb.querySelector('.wrs-conservation-banner-desc').textContent,
+    'Every visit helps fund conservation work across the region.',
+  );
+});
+
+test('wrs-conservation-banner: the gradient boolean toggles the modifier class, not a CTA/desc reader', () => {
+  assert.ok(wcb.querySelector('.wrs-conservation-banner-content').classList.contains('gradient'));
+});
+
+test('wrs-conservation-banner: desktop and mobile background images both resolve via backgroundUrl()', () => {
+  const cover = wcb.querySelector('.wrs-conservation-banner-cover');
+  assert.match(cover.style.getPropertyValue('--conservation-bg-desktop'), /cb-desktop\.png\?.*width=2000/);
+  assert.match(cover.style.getPropertyValue('--conservation-bg-mobile'), /cb-mobile\.png\?.*width=750/);
+});
+
+test('wrs-conservation-banner: the tag image renders with its alt text intact', () => {
+  const img = wcb.querySelector('.wrs-conservation-banner-tag img');
+  assert.equal(img.getAttribute('alt'), 'Conservation badge');
+});
+
+test('wrs-conservation-banner: the CTA link renders as an anchor wrapping a button, not the shared rb-cta shape', () => {
+  const anchor = wcb.querySelector('.wrs-conservation-banner-cta-link');
+  assert.equal(anchor.getAttribute('href'), '/content/wrs/conservation');
+  const button = anchor.querySelector('.wrs-conservation-banner-cta');
+  assert.equal(button.textContent, 'Learn More');
+  assert.equal(wcb.querySelector('.rb-cta'), null);
+});
+
+const WCB_INSTRUMENTED = `<div class="wrs-conservation-banner">
+  <div data-aue-resource="urn:content1"><p>Title</p><p>Copy</p><p>false</p></div>
+  <div><div></div></div>
+  <div data-aue-resource="urn:tag1"><picture><img src="/tag.png" alt="Tag"></picture></div>
+  <div data-aue-resource="urn:cta1"><p><a href="/x">Go</a></p></div>
+</div>`;
+const wcbInstr = await decorateBlock('../blocks/wrs-conservation-banner/wrs-conservation-banner.js', WCB_INSTRUMENTED);
+test('wrs-conservation-banner: instrumentation moves onto the content, tag and CTA elements that replace their rows', () => {
+  assert.equal(wcbInstr.querySelector('.wrs-conservation-banner-content').getAttribute('data-aue-resource'), 'urn:content1');
+  assert.equal(wcbInstr.querySelector('.wrs-conservation-banner-tag').getAttribute('data-aue-resource'), 'urn:tag1');
+  assert.equal(wcbInstr.querySelector('.wrs-conservation-banner-cta-link').getAttribute('data-aue-resource'), 'urn:cta1');
+});
+
+/* A rich, multi-paragraph description must not shift the trailing gradient
+ * boolean - the boundary is found from both ends, not by a fixed index. */
+const WCB_RICH = `<div class="wrs-conservation-banner">
+  <div><p>Title Only</p><p>First line.</p><p><strong>Bold</strong> second line.</p><p>false</p></div>
+  <div><div></div></div>
+  <div></div>
+  <div></div>
+</div>`;
+const wcbRich = await decorateBlock('../blocks/wrs-conservation-banner/wrs-conservation-banner.js', WCB_RICH);
+test('wrs-conservation-banner: a multi-paragraph rich description keeps the trailing boolean as the gradient flag', () => {
+  assert.equal(wcbRich.querySelector('.wrs-conservation-banner-title').textContent, 'Title Only');
+  assert.ok(wcbRich.querySelector('.wrs-conservation-banner-desc strong'));
+  assert.equal(wcbRich.querySelector('.wrs-conservation-banner-content').classList.contains('gradient'), false);
+});
+
+const wcbEmpty = await decorateBlock('../blocks/wrs-conservation-banner/wrs-conservation-banner.js', '<div class="wrs-conservation-banner"></div>');
+test('wrs-conservation-banner: renders nothing when unconfigured outside the editor', () => {
+  assert.equal(wcbEmpty.children.length, 0);
+});
+
+const wcbEdit = await decorateBlock(
+  '../blocks/wrs-conservation-banner/wrs-conservation-banner.js',
+  '<div class="wrs-conservation-banner" data-aue-resource="urn:block1"></div>',
+);
+test('wrs-conservation-banner: unconfigured block stays selectable in the editor', () => {
+  assert.ok(wcbEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {
