@@ -71,15 +71,18 @@
  *   only "inline" is implemented, "popup" falls back to inline rendering -
  *   flagged, not invented).
  *
- * TWO SCRIPTS THE SOURCE HTL REFERENCES BUT THE BUNDLE DOES NOT CONTAIN
+ * SCRIPTS THE SOURCE HTL REFERENCES
  * -------------------------------------------------------------
- * - `timer-countdown.js` - referenced via `data-load-plugins` on the
- *   countdown markup, not present in the export. Its exact behaviour (how
- *   `gmt` combines with the `timer` datepicker value to produce an absolute
- *   target) cannot be verified. A minimal countdown IS implemented below
- *   (see `initCountdown()`), built from what the markup and field
- *   descriptions imply, not copied from source - flagged in the function's
- *   own comment, including the specific assumption about `gmt`.
+ * - `timer-countdown.js` - was missing from the export when this block was
+ *   written, so `initCountdown()` below was built from what the markup and
+ *   field descriptions imply rather than copied. The file has since been
+ *   recovered from Mandai-EMP-Frontend and CHECKED AGAINST this
+ *   implementation: both assumptions held. It reads `data-time-end` with a
+ *   plain `new Date(...)` and never touches `gmt` at all, and it guards the
+ *   expiry redirect with `mode === 'publish'`, which is what `!isEditMode`
+ *   expresses here. The source also clamps the four units to 0 on expiry,
+ *   which this does. No change was needed - recorded so the next reader does
+ *   not re-derive it.
  * - Nothing in the bundle wires `.md-masthead__volume-button` /
  *   `.md-masthead__play-button` clicks for THIS component's own controller
  *   markup - `video-banner.js`'s `embedSoundControl()` targets a different,
