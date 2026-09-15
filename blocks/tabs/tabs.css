@@ -5,8 +5,8 @@
  *
  * The source nests a tiles multifield inside the tabs multifield, which the EDS
  * content model cannot express - see the note in tabs.js. Tabs and tiles are
- * siblings instead, so in the editor every panel is shown at once (.tabs-editing)
- * to give each tab a drop target. Those rules never apply on a published page.
+ * siblings instead, grouped back together at render time. The editor renders
+ * exactly as the published page does, one panel at a time.
  *
  * Accessibility is upgraded rather than ported. The source used <li onClick>
  * with an id of the array index, which is unreachable by keyboard and
@@ -101,35 +101,6 @@
 .tabs .tabs-panel-cta {
   margin-top: 32px;
   text-align: center;
-}
-
-/*
- * Editor only. Every panel is open at once so a tile can be dropped into any
- * tab, which needs the panels visibly separated or the author cannot tell where
- * one tab ends and the next begins.
- */
-.tabs.tabs-editing .tabs-panel {
-  border: 1px dashed var(--rb-mid-green);
-  border-radius: 8px;
-  margin-top: 24px;
-  padding: 8px 16px 24px;
-}
-
-.tabs.tabs-editing .tabs-panel-label {
-  margin: 0 0 8px;
-  color: var(--rb-mid-green);
-  font-family: var(--heading-font-family-alt);
-  font-size: var(--body-font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-/* An empty grid is the drop target for a tab with no tiles yet, so it has to
- * occupy space rather than collapse to nothing. */
-.tabs.tabs-editing .tabs-tiles:empty {
-  min-height: 64px;
-  border: 1px dashed var(--rb-dark-beige);
-  border-radius: 4px;
 }
 
 @media (width >= 768px) {

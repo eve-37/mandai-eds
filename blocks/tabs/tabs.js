@@ -86,21 +86,17 @@ export default function decorate(block) {
   }
 
   /*
-   * In the editor every panel is shown at once, stacked and labelled.
+   * The editor renders exactly as the published page does: one panel at a time.
    *
-   * Tiles are siblings of tabs in the model, and the Universal Editor works out
-   * where a dragged tile lands from the DOM position of the instrumented
-   * elements inside the block. The rendered order here - tab 1, its tiles,
-   * tab 2, its tiles - is exactly the model order, so that calculation is
-   * correct. But a hidden panel is not a drop target, so with only the first
-   * panel visible the author could only ever drop a tile into the first tab.
-   * Nothing is wrong with the content model; there is simply nowhere to aim.
-   *
-   * Showing every panel gives each tab a visible target, including an empty
-   * grid for a tab with no tiles yet. The published page is unaffected.
+   * Every panel was briefly shown at once, because a hidden panel is not a drop
+   * target and a tile could then only be dropped into the first tab. That is no
+   * longer the constraint - instrumenting the tab on its head element rather
+   * than on the panel is what actually let a tile belong to any tab - and
+   * stacking every panel made the editor preview misrepresent the page badly
+   * enough to read as a bug. An author who wants to work on another tab clicks
+   * it, exactly as a visitor would.
    */
   const isEditMode = block.hasAttribute('data-aue-resource');
-  if (isEditMode) block.classList.add('tabs-editing');
 
   const nav = document.createElement('div');
   nav.className = `${PREFIX}-nav`;
@@ -140,7 +136,7 @@ export default function decorate(block) {
     panel.id = `${id}-panel`;
     panel.setAttribute('role', 'tabpanel');
     panel.setAttribute('aria-labelledby', `${id}-tab`);
-    if (index !== 0 && !isEditMode) panel.hidden = true;
+    if (index !== 0) panel.hidden = true;
 
     /*
      * The tab's instrumentation goes on a head element INSIDE the panel, never
@@ -159,13 +155,6 @@ export default function decorate(block) {
     const head = document.createElement('div');
     head.className = `${PREFIX}-panel-head`;
     if (tabRow) moveInstrumentation(tabRow, head);
-
-    if (isEditMode) {
-      const label = document.createElement('p');
-      label.className = `${PREFIX}-panel-label`;
-      label.textContent = tabName;
-      head.append(label);
-    }
 
     if (title) {
       const h2 = document.createElement('h2');
@@ -221,10 +210,7 @@ export default function decorate(block) {
         b.setAttribute('aria-selected', selected ? 'true' : 'false');
         b.classList.toggle('active', selected);
       });
-      // In the editor the panels all stay open, so the nav scrolls to one
-      // rather than hiding the rest and taking away the drop targets.
-      if (isEditMode) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      else [...panels.children].forEach((p, i) => { p.hidden = i !== index; });
+      [...panels.children].forEach((p, i) => { p.hidden = i !== index; });
     });
     if (index === 0) navButton.classList.add('active');
   });

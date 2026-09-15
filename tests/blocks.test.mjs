@@ -337,17 +337,20 @@ test('tabs: a tab with only a name still gets its label', () => {
   assert.equal(tbSparse.querySelector('.tabs-nav-item').textContent, 'Only a name');
 });
 
-/* Editor mode: a hidden panel is not a drop target, so with only the first
- * panel visible a tile could only ever be dropped into the first tab. */
+/* The editor must render the same as the published page: one panel at a time.
+ * Every panel was briefly shown at once as a drop-target workaround, which made
+ * the editor preview misrepresent the page. */
 const tbEdit = await decorateBlock(
   '../blocks/tabs/tabs.js',
   `<div class="tabs" data-aue-resource="urn:tabs">${tabsTabRow(1, 'green')}${tabsTabRow(2, 'yellow')}</div>`,
 );
-test('tabs: every panel is a drop target in the editor', () => {
+test('tabs: the editor hides all but the selected panel, as the page does', () => {
   const panels = [...tbEdit.querySelectorAll('.tabs-panel')];
   assert.equal(panels.length, 2);
-  assert.ok(panels.every((p) => p.hidden === false), 'no panel may be hidden while editing');
-  assert.ok(tbEdit.classList.contains('tabs-editing'));
+  assert.equal(panels[0].hidden, false);
+  assert.equal(panels[1].hidden, true);
+  assert.ok(!tbEdit.classList.contains('tabs-editing'));
+  assert.equal(tbEdit.querySelectorAll('.tabs-panel-label').length, 0);
 });
 
 test('tabs: a tab with no tiles still gets an empty grid to drop into', () => {
@@ -356,18 +359,14 @@ test('tabs: a tab with no tiles still gets an empty grid to drop into', () => {
   assert.equal(grids[1].children.length, 0);
 });
 
-test('tabs: each editor panel is labelled with its tab name', () => {
-  assert.deepEqual(
-    [...tbEdit.querySelectorAll('.tabs-panel-label')].map((l) => l.textContent),
-    ['Tab 1', 'Tab 2'],
-  );
-});
-
-test('tabs: the published page still hides all but the first panel', () => {
-  const panels = [...tb.querySelectorAll('.tabs-panel')];
-  assert.equal(panels[1].hidden, true);
-  assert.ok(!tb.classList.contains('tabs-editing'));
-  assert.equal(tb.querySelectorAll('.tabs-panel-label').length, 0);
+test('tabs: clicking a nav button swaps which panel is shown', () => {
+  const buttons = [...tbEdit.querySelectorAll('.tabs-nav-item')];
+  buttons[1].click();
+  const panels = [...tbEdit.querySelectorAll('.tabs-panel')];
+  assert.equal(panels[0].hidden, true);
+  assert.equal(panels[1].hidden, false);
+  assert.equal(buttons[1].getAttribute('aria-selected'), 'true');
+  buttons[0].click();
 });
 
 /* A tile that has just been added has no align value written yet. In the editor
