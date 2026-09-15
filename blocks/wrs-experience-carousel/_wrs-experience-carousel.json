@@ -49,12 +49,30 @@
           "valueType": "string",
           "value": "",
           "options": [
-            { "name": "Default (H4)", "value": "" },
-            { "name": "H1", "value": "h1" },
-            { "name": "H2", "value": "h2" },
-            { "name": "H3", "value": "h3" },
-            { "name": "H5", "value": "h5" },
-            { "name": "H6", "value": "h6" }
+            {
+              "name": "Default (H4)",
+              "value": ""
+            },
+            {
+              "name": "H1",
+              "value": "h1"
+            },
+            {
+              "name": "H2",
+              "value": "h2"
+            },
+            {
+              "name": "H3",
+              "value": "h3"
+            },
+            {
+              "name": "H5",
+              "value": "h5"
+            },
+            {
+              "name": "H6",
+              "value": "h6"
+            }
           ]
         },
         {
@@ -71,8 +89,14 @@
           "valueType": "string",
           "value": "left",
           "options": [
-            { "name": "Left Aligned", "value": "left" },
-            { "name": "Right Aligned", "value": "right" }
+            {
+              "name": "Left Aligned",
+              "value": "left"
+            },
+            {
+              "name": "Right Aligned",
+              "value": "right"
+            }
           ]
         },
         {
@@ -96,10 +120,22 @@
           "valueType": "string",
           "value": "none",
           "options": [
-            { "name": "Normal padding", "value": "none" },
-            { "name": "No top padding", "value": "no-top" },
-            { "name": "No bottom padding", "value": "no-bottom" },
-            { "name": "No top or bottom padding", "value": "no-top-bottom" }
+            {
+              "name": "Normal padding",
+              "value": "none"
+            },
+            {
+              "name": "No top padding",
+              "value": "no-top"
+            },
+            {
+              "name": "No bottom padding",
+              "value": "no-bottom"
+            },
+            {
+              "name": "No top or bottom padding",
+              "value": "no-top-bottom"
+            }
           ]
         },
         {
@@ -107,49 +143,57 @@
           "name": "color_body",
           "label": "Content Body Default Color",
           "description": "Hex or CSS colour value. This field, and the seven below, are all freeform colour text - there is no colorfield component in this project's Universal Editor field set, matching the same 'text' idiom used everywhere else in this repo for a free colour value (see docs/wrs-migration-notes.md ## backgroundsection). All eight are explicitly prefixed color_ so none of them accidentally collapse into a sibling via the model-build suffix rule - contentBody + Title/Text are exactly the Title/Text suffixes the xwalk max-cells linter collapses onto a base field named contentBody, which would silently have merged three distinct colours into one had the original field names been kept as-is.",
-          "valueType": "string"
+          "valueType": "string",
+          "value": "#003400"
         },
         {
           "component": "text",
           "name": "color_bodyHover",
           "label": "Content Body Hover Effect Color",
-          "valueType": "string"
+          "valueType": "string",
+          "value": "#009b4d"
         },
         {
           "component": "text",
           "name": "color_bodyTitle",
           "label": "Content Body Title Color",
-          "valueType": "string"
+          "valueType": "string",
+          "value": "#fbebce"
         },
         {
           "component": "text",
           "name": "color_bodyTitleHover",
           "label": "Content Body Title Hover Effect Color",
-          "valueType": "string"
+          "valueType": "string",
+          "value": "#fbebce"
         },
         {
           "component": "text",
           "name": "color_bodyText",
           "label": "Content Body Text Color",
-          "valueType": "string"
+          "valueType": "string",
+          "value": "#fbebce"
         },
         {
           "component": "text",
           "name": "color_bodyTextHover",
           "label": "Content Body Text Hover Effect Color",
-          "valueType": "string"
+          "valueType": "string",
+          "value": "#fbebce"
         },
         {
           "component": "text",
           "name": "color_bodyArrow",
           "label": "Content Body Arrow Link Color",
-          "valueType": "string"
+          "valueType": "string",
+          "value": "#ffcc00"
         },
         {
           "component": "text",
           "name": "color_bodyArrowHover",
           "label": "Content Body Arrow Link Hover Effect Color",
-          "valueType": "string"
+          "valueType": "string",
+          "value": "#ffe88e"
         }
       ]
     },

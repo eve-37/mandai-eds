@@ -2464,3 +2464,63 @@ constructed from this repo's confirmed cell shapes rather than copied from real 
 
 Expect a review pass. The failures that survive this kind of run are cell-parsing and layout
 faults that only appear against real published DOM.
+
+## 6. Pre-authoring audit
+
+Run before the first Universal Editor authoring session, because some of this stops being
+cheap once content exists.
+
+### Automated checks — all passing
+
+Across all 31 block partials and 52 definition ids in the repo (WRS and the earlier `rb-*` set):
+
+- every block folder name equals its slugified `template.name` (a mismatch 404s the JS with
+  nothing in the console explaining it)
+- every definition's `model` and `filter` id resolves
+- no duplicate definition ids anywhere
+- every parent id is in the section filter; no child item id is
+- every block has its `<folder>/<folder>.js`
+- no orphan collapsible fields
+- **every model is within the 4-cell limit**, and every `PARENT_CELLS` constant in a
+  `decorate()` equals the parent cells its model actually yields after grouping
+
+### Fixed during the audit: the 8-colour cell
+
+`wrsexperiencecarousel`'s `color_*` cell held 8 freeform text fields with **no defaults**, read
+positionally by index. AEM omits a blank field from a grouped cell rather than emitting a
+placeholder, so an author filling the 5th colour and leaving the first four blank would have had
+every value land on the wrong property — silently, with no error.
+
+Each field is now seeded with the value the block's CSS already falls back to, so AEM always emits
+all 8 and positions cannot shift. The defaults double as the real starting palette an author sees.
+
+### Still carrying positional shift risk — guidance, not a defect
+
+Eight cells hold two or more optional free-text values read positionally. The same rule applies:
+leave an earlier field blank while filling a later one and the values misattribute.
+
+| Block / model | Cell | Fields |
+|---|---|---|
+| wrs-accordion-tabs / wrsaccordiontab | tab | tab_name, tab_title, tab_description |
+| wrs-feature-carousel / wrsfeaturecarousel | heading | heading_title, heading_ariaLabel, heading_description |
+| wrs-masthead-carousel / wrsmastheadvimeoslide | vimeo | vimeo_desktop, vimeo_mobile |
+| wrs-conservation-banner / wrsconservationbanner | content | content_title, content_description |
+| wrs-experience-carousel / wrsexperiencecarousel | card | card_title, card_description |
+| wrs-experience-carousel / wrsexperiencecarouselitem | content | content_title, content_description |
+| wrs-feature-carousel / wrsfeaturecarouselitem | content | content_title, content_description |
+| wrs-masthead-carousel / wrsmastheadimageslide | content | content_header, content_subHeader |
+
+Most are low severity: the first field is a title an author fills anyway, and getting it wrong is
+visible immediately. Two deserve attention:
+
+- **`vimeo_desktop` / `vimeo_mobile`** — a mobile-only video is a plausible authoring choice, and
+  it would be read as the desktop id. The most likely of these to actually bite.
+- **the two 3-field cells** — more positions, more ways to shift.
+
+They were left as-is rather than re-modelled: the fix is either a default per field (only sensible
+where a default value is meaningful — it is not, for a video id) or `key-value: true`, which
+bypasses the 4-cell limit but restructures the block's whole markup. Worth doing if it bites in
+practice; not worth pre-emptively churning eight blocks for.
+
+**Authoring guidance meanwhile:** fill these fields in order and avoid skipping one. An empty
+field between two filled ones is the failure case, not an empty field at the end.
