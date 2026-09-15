@@ -1684,3 +1684,251 @@ Cross-referenced, not repeated here.
   present at 4 total columns and absent at 6, a link cell with a blank handle, a link cell that is
   entirely blank, and the unconfigured-outside-editor / unconfigured-in-editor-placeholder pair.
 - `npm run build:json`, `npm run lint` and `npm test` all pass (185/185 tests).
+
+## richtext
+
+**Source:** `wrs-components-export/richtext/` — `wrs/components/commons/richtext`, the only
+component in this run with `sling:resourceSuperType="foundation/components/parbase"`. No Java
+model backs it at all (`PlaceholderManager` only emits the `wcmmode.edit` "no content" placeholder,
+same as everywhere else) — every branch renders straight off `${properties.x @ context='html'}`.
+15 top-level dialog fields, no multifield: `richtextOptions` (select, the layout switch),
+`showTypes` (select, only consulted for one of the five `richtextOptions` values), `gridSmall`
+(checkbox), 9 RTE fields and 3 pathbrowsers.
+
+**Decision: mostly reuse `columns` (no code), plus one small new leaf block,
+`blocks/wrs-pull-quote/`, for the two showType treatments that have real, confirmed CSS.**
+`disclaimer` and the `default` showType are default content, not a block. `columncontrol`'s and
+`image`'s already-established reasoning both apply here, and are cross-referenced rather than
+re-argued at length.
+
+### The render matrix, read from the HTL as a tree, not counted from the dialog
+
+The HTL's `data-sly-test`s show `showTypes` is not a sibling switch of `richtextOptions` — it is
+nested *inside* the `oneColumn` branch only. Every other `richtextOptions` value (`twoColumn`,
+`threeColumn`, `oneColumnOneImage`, `twoColumnTwoImage`) never tests `showTypes` at all. So the
+actual mutually-exclusive render matrix is 8 branches, not the "seven layouts" the survey estimated
+— the survey undercounted by one because it likely treated `oneColumn`'s `default` sub-branch as
+not worth counting separately from "one column", when the HTL in fact has four distinct
+`data-sly-test`s for it (`default`/`disclaimer`/`inlineQuote`/`haftPage`), each its own `<div>`:
+
+| # | richtextOptions | showTypes | Renders | EDS mapping |
+|---|---|---|---|---|
+| 1 | `oneColumn` | `default` | plain text | default content, no block |
+| 2 | `oneColumn` | `disclaimer` | plain text, different class | default content, no block (see below) |
+| 3 | `oneColumn` | `inlineQuote` | `<blockquote>“ text ”</blockquote>` | **`wrs-pull-quote`**, `variant: quote` |
+| 4 | `oneColumn` | `haftPage` | same blockquote, narrower, no margin | **`wrs-pull-quote`**, `variant: halfPage` |
+| 5 | `twoColumn` | n/a | 2-up text row | `columns`, 2 text cells |
+| 6 | `threeColumn` | n/a | 3-up text row | `columns`, 3 text cells |
+| 7 | `oneColumnOneImage` | n/a | image + text, 2-up | `columns`, image cell + text cell |
+| 8 | `twoColumnTwoImage` | n/a | 2-up, each image+text stacked | `columns`, 2 cells each holding an image and a paragraph |
+
+### Why 5–8 are `columns` with no new code, checked against the deployed CSS, not assumed
+
+Same shape of finding as `columncontrol`: `styles/deployed-bundle-extract.css` carries **no
+grid/width rules at all** for the two/three-column rows — Bootstrap's `.row`/`.col-sm-12
+.col-md-{6,4}` classes come from the site's global grid, not this component's own stylesheet, and
+the only component-owned rules touching them are typography/spacing (`margin-bottom`, list
+`font-size`) already handled by `blocks/columns/`'s and the boilerplate's own defaults.
+`blocks/columns/columns.js` derives its column count from the number of authored cells
+(`columns-${n}-cols`), not from a dropdown, so a 2- or 3-cell `columns` block is a direct
+equivalent of `twoColumn`/`threeColumn` with no field to model.
+
+Rows 7–8 (image + text) are not a harder case than plain columns, and this is the pleasant
+surprise of this component: `blocks/columns/columns.js` already special-cases a column whose only
+content is a `<picture>` — `columns-img-col`, `order: 0` — putting the image first and the rest of
+that column's content (`order: 1`) after it, in normal document flow. That is *exactly* the
+`one-column-text-image`/`two-column-text-image` shape (`<img>` then text, in the same column), for
+free, because `columns`' own filter (`text`, `image`, `button`, `title`) already lets a single cell
+hold both an image and a paragraph as separate default-content blocks. No new field, no new CSS.
+
+The two things ported from the deployed extract for these rows are margin-only and go in
+`styles.css`'s existing `.columns` conventions, not a new file — but were **not** added here,
+because they are 1.25rem top/bottom margins on `.one-column-text-image`/`.two-column-text-image`
+specifically, a component-scoped selector `columns` does not carry, and adding them would mean
+editing the shared `blocks/columns/**`, which this run's scope and the `columncontrol` precedent
+both rule out doing unilaterally for one component's spacing preference. Flagged, not built.
+
+### `disclaimer`: checked, and the evidence says "no distinguishing style", not "unknown"
+
+`COMPONENT.md`'s own header lists `column-disclaimer` under "NOT EXTRACTED — too broad, 820 rules,
+shared/inherited" in the deployed bundle. The one piece of evidence available in this checkout —
+`styles/md-richtext.less`, confirmed stale elsewhere in this run but still evidence — puts
+`.column-disclaimer` in the *same* selector group as `.one-column-only-text` (the `default`
+branch's own class), sharing identical declarations (`font-family`, `color`, `font-size: 20px`,
+`line-height: 26px`). That is direct evidence the two showTypes rendered identically at the point
+that checkout was taken, not merely an absence of evidence. Treated as default content, same as
+`default` — but flagged, because the LESS is stale and a live-site check before go-live is cheap
+and worth doing: if `disclaimer` has since grown real fine-print styling on the live site that
+never made it into either source in this bundle, that is a small, additive CSS class to add later,
+not a reason to build a block now on no evidence.
+
+### `inlineQuote`/`haftPage`: the one place a block is genuinely warranted
+
+Unlike `disclaimer`, these have real, confirmed CSS in the ground-truth extract
+(`.blockquote blockquote`, `.blockquote.haftpage`, plus a WRS-brand-specific colour/weight
+override) — a distinct visual treatment `columns`/default content cannot produce: quote-mark
+wrapping, a styled `<blockquote>`, and (for `haftPage`) a narrowed, margin-collapsed variant of the
+same element. That is exactly the shape of thing `columncontrol` and `image`'s entries say *is*
+worth a small dedicated block, as opposed to duplicating something EDS already does for free.
+
+Built as `blocks/wrs-pull-quote/` (id `wrspullquote`, **not** `wrsquote` — that id is already taken
+by `wrs-quote-carousel`'s child model). Two fields only: `text` (richtext) and `variant` (select,
+`quote`/`halfPage`, default `quote`) — a direct, minimal port of the two fields the source actually
+varies (`oneColumnText`, `showTypes`, restricted to its two styled values). `default` and
+`disclaimer` are deliberately not options on this block's `variant` select: offering them here
+would give authors two different ways to produce the same "plain paragraph" output (this block with
+`variant` unset in spirit, or plain default content), which is exactly the kind of redundant,
+easily-desynced authoring surface the ground rule warns against. The model field's own description
+tells authors as much.
+
+The curly quote marks (`&ldquo; ... &rdquo;`) are rendered as literal text nodes wrapping the
+content in `decorate()`, matching the source's own literal HTL markup, not a CSS `::before`/`::after`
+pair — ported as the source does it, even though wrapping already-block-level richtext HTML in
+inline quote characters like this is an odd thing for the source itself to do.
+
+`gridSmall` ("Using in accordion") is not ported anywhere. It narrows the *whole component's*
+outer wrapper for use inside an accordion tab panel, and `blocks/wrs-accordion-tabs/` already
+constrains its own panel width independently of anything nested inside it — so a pull quote (or
+any other content) placed inside a tab panel is already width-constrained by its container. Flagged
+for re-check once a pull quote is actually authored inside a live accordion tab, not built as a
+speculative second width toggle.
+
+### The naming trap in the brief, checked directly against the dialog XML — does not fire, but only by luck of exact wording
+
+`oneColumnText` looks, by the collapsing-suffix rule (`<base>` + `Text`/`Title`/`Type`/`Alt`/
+`MimeType`), like it should merge into a field named `oneColumn`. Walking the dialog XML as a tree
+(not grepping `name=` attributes) shows there is **no field literally named `oneColumn`** anywhere
+in this dialog — `oneColumn` only exists as (a) one `<items>` *value* of the `richtextOptions`
+select, and (b) the `id` of a `cq-dialog-dropdown-showhide` container `<div>` that has no `name`
+attribute and stores nothing. The collapsing rule's own precondition — "only if the base field
+exists" — is not met, so `oneColumnText` correctly stays its own field. This is a real trap for any
+mechanical converter that derives fields by scanning for `name="..."`/`value="..."` strings across
+the whole file rather than walking the tree and checking `sling:resourceType`, because the string
+`oneColumn` genuinely appears three times in this dialog for three unrelated reasons (a select
+value, a container id, and the real field name's own prefix) and only the tree walk tells them
+apart — exactly the caution the skill gives for reading dialogs as trees, confirmed concretely here.
+
+`oneColumnOneImageText`, by contrast, collapses onto `oneColumnOneImage` correctly *and*
+desirably: `oneColumnOneImage` is a real pathbrowser field (`name="./oneColumnOneImage"`), and the
+pairing is exactly the semantic pairing an author would expect (the image and the text that goes
+with it in that one layout). Not that it matters for this component's actual model — no built block
+here groups these two fields; `oneColumnOneImage`'s image and text are two separate `columns` cells,
+not one grouped cell — but it is worth recording as the one case in this dialog where the mechanical
+rule and human intent for once agree, unlike `oneColumnText`'s near-miss above.
+
+### The custom RTE style vocabulary — the component where it matters most, given a real answer here
+
+Nine of this component's fifteen fields are exactly the same shared RTE config,
+`/apps/wrs/widgets/richtext/text` (`aem-widgets/richtext/.content.xml`), cross-referenced from
+several earlier entries in this document (`mandaiexperiencecarouselfeature`,
+`mandaisocialcontentgrid`) as lacking a Universal Editor equivalent. This component is where that
+gap has the most surface area — its entire authored content, in every layout, is this RTE — so it
+gets the full answer here instead of another cross-reference.
+
+**The gap, stated precisely.** AEM Classic's RTE `styles` plugin gives authors a "Styles" toolbar
+pulldown (`styles:getStyles:styles-pulldown` in the widget config above) that wraps a text
+selection in `<span class="cssName">`, from a fixed, author-facing list of named choices. This
+project's target model (`component-models.json`'s `richtext` field component) has no equivalent
+config surface — the field is a plain rich text editor with the Universal Editor's own fixed
+toolbar (bold/italic/underline, links, lists, headings, sub/superscript), and there is nowhere in
+the xwalk model schema used by this repo to declare a restricted, named style list for it. This is
+a platform gap, not something this component's migration can code around.
+
+**What the eight declared styles actually are, checked against both available sources, not
+assumed to all be equivalent:**
+
+| `cssName` | Evidence in this bundle | What it is |
+|---|---|---|
+| `text-green` | `md-richtext.less`: `font-size: 26px` (20px ≤tablet), bold serif, dark green, `!important` | confirmed — a large accent-heading emphasis style |
+| `small-note` | `md-richtext.less`: `font-size: 12px; line-height: 16px` | confirmed — fine-print/footnote sizing |
+| `cta-touring-button` | `cssName="fa fa-map-marker"` | not a text style at all — a Font Awesome icon glyph class, misusing the styles pulldown to inject an icon |
+| `fa-train` | `cssName="fa fa-train"` | same — another FA icon glyph, not text styling |
+| `red-hightlight` | none in either LESS or the deployed extract | unverifiable — name implies a colour treatment, no confirmed values anywhere in this bundle |
+| `desc-font-20` / `desc-font-22` / `desc-font-24` | none in either source | unverifiable — presumably `font-size: 20/22/24px`, no confirmed values |
+
+Two further, compounding findings: (1) this target repo does not ship Font Awesome (confirmed
+already in the `wrs-accordion-tabs`/`wrs-admission-types` entries, which both replace FA glyphs
+with Unicode characters) — so `cta-touring-button`/`fa-train` cannot render as intended in this
+target *regardless* of the RTE-config gap; and (2) of the six genuine text styles, only two
+(`text-green`, `small-note`) have any confirmed CSS anywhere available to this migration, from a
+LESS checkout already established elsewhere in this run to be stale.
+
+**What happens to content authored with these styles, stated plainly:**
+
+- **Going forward, authors cannot apply any of these eight styles through the Universal Editor.**
+  There is no styles pulldown; the richtext toolbar this repo's `richtext` field exposes is fixed
+  and does not include a mechanism for a project-defined class list. This is true everywhere this
+  RTE config is used, not only here — restated here because this component has nine fields' worth
+  of surface area for it, the most of any component in this run.
+- **For content carried over from the old site, the literal markup (e.g. `<span
+  class="text-green">…</span>`) can in principle survive a raw-HTML paste into the new richtext
+  field**, since the field ultimately stores/renders HTML — but this is not guaranteed: most rich
+  text field implementations sanitise pasted HTML to a safe subset and may strip class attributes
+  not on an allow-list, and this repo's target model does not define or test for one. Whether the
+  Universal Editor's richtext field actually preserves an arbitrary `class` attribute on save needs
+  to be verified against the real editor, not assumed either way, before anyone relies on it during
+  content migration.
+- **Even if the class survives migration, only `text-green` and `small-note` have anywhere to land
+  visually** — this repo's `styles.css` does not define either class today. Porting them (two small,
+  global, standalone typography rules with no other component dependency — unlike `image`'s
+  rejected per-component routes, these do not collide with anything) would be a cheap, additive fix
+  *if* a human confirms they are still wanted, but is a change to shared `styles.css` typography
+  used everywhere the `richtext` field appears, not scoped to one block's `blocks/<folder>/**` —
+  out of this run's authorised scope for a single component, same reasoning `backgroundsection`'s
+  entry gives for why its analogous shared-infrastructure fix was flagged rather than built.
+- **Practical migration guidance:** for every existing `richtext` instance, whoever migrates the
+  content should check its stored HTML for these eight class names before pasting it into the new
+  field. `red-hightlight`/`desc-font-*`/the two FA-icon styles have no confirmed target treatment at
+  all and should be treated as lost — strip them or flag the specific page for a human style
+  decision. `text-green`/`small-note` are the only two worth attempting to preserve, and only once
+  (a) the two classes exist in this repo's `styles.css` and (b) the Universal Editor is confirmed to
+  keep the `class` attribute through a save round-trip.
+
+### The content-migration consequence of the `columns` mapping, stated concretely
+
+There is no automatic converter in this run from an AEM `richtext` instance's flat properties
+(`twoColumnFirstText`, `twoColumnSecondText`, …) into a `columns` block's per-cell structure — this
+was true for `columncontrol` too, and is restated here because `richtext` is likely the more common
+of the two components in live content. For every existing page using `richtext` in a multi-column
+or image+text layout, migrating it means a human:
+
+1. Opens the page in the Universal Editor and inserts a `columns` block with the right cell count
+   (2 for `twoColumn`/`oneColumnOneImage`/`twoColumnTwoImage`, 3 for `threeColumn`).
+2. Copies each source field's rendered content into the correct cell, **in the dialog's own field
+   order** — `twoColumnFirstText` → first cell, `twoColumnSecondText` → second cell, and so on —
+   since that order is the only thing that determines left-to-right position once the content is
+   flat `columns` cells with no field names attached.
+3. For the two image layouts, places the image as its own default-content block at the top of the
+   relevant cell (ahead of the paragraph text) so `columns.js`'s existing `columns-img-col`
+   ordering picks it up automatically — no new field or setting to configure, but the image has to
+   be the *only* other content in that slot of the cell for the ordering rule to recognise it as an
+   image column.
+4. For `inlineQuote`/`haftPage` content, inserts a `wrs-pull-quote` block instead and picks the
+   matching `variant`.
+
+None of this is scriptable from the AEM repository's stored properties alone without a bespoke
+one-off migration tool (out of scope for this component pass); it is page-by-page manual
+re-authoring work, and should be budgeted as such rather than assumed to be a mechanical property
+copy.
+
+### Files touched
+
+- `blocks/wrs-pull-quote/_wrs-pull-quote.json` — new; single leaf model `wrspullquote` (2 fields:
+  `text` richtext, `variant` select `quote`/`halfPage`), no container/filter (no multifield in this
+  component at all).
+- `blocks/wrs-pull-quote/wrs-pull-quote.js` — new; `decorate()` reading the 2 cells positionally,
+  joining a positionally-read richtext cell's children into HTML (`joinRichText()`, the same
+  technique `wrs-feature-carousel`/`wrs-conservation-banner` use), wrapping it in literal curly
+  quote text nodes, no seams (no server-side logic anywhere in this component to flag).
+- `blocks/wrs-pull-quote/wrs-pull-quote.css` — new; ports `styles/deployed-bundle-extract.css`'s
+  `.blockquote`/`.blockquote.haftpage` rules plus the WRS-brand colour override, applied directly
+  since this repo only migrates WRS content.
+- `models/_section.json` — appended `"wrspullquote"` to the `section` filter's `components` array.
+- `tests/blocks.test.mjs` — added 7 cases: normal quote render with curly-quote wrapping, a
+  multi-paragraph quote keeping each paragraph's own markup, the `halfPage` modifier class, a blank
+  variant cell defaulting to `quote`, instrumentation moving onto the rendered element, and the
+  unconfigured-outside-editor / unconfigured-in-editor-placeholder pair.
+- `blocks/columns/**` was **not** touched, as required — rows 5–8 of the matrix above reuse it with
+  no code changes; the minor spacing gap noted above was flagged, not built, for the same
+  shared-infrastructure reason `columncontrol`'s entry gives.
+- `npm run build:json`, `npm run lint` and `npm test` all pass (192/192 tests).

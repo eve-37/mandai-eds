@@ -1941,6 +1941,76 @@ test('wrs-social-grid: an unconfigured block stays selectable in the editor', ()
   assert.ok(wsgEmptyEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Pull Quote - no published markup exists yet, so this fixture is
+ * constructed from this codebase's own confirmed cell shapes: the richtext
+ * cell mirrors wrs-conservation-banner's content-description reading (a
+ * <div> holding the rich text's own <p> children directly, HTML kept, not
+ * flattened) and the variant select mirrors every other lone select cell in
+ * this repo (primary-button's `position`, wrs-conservation-banner's
+ * gradient marker) - a bare text value in its own cell. Must be re-verified
+ * against real published markup once this block has been authored.
+ * ------------------------------------------------------------------ */
+const WPQ = `<div class="wrs-pull-quote">
+  <div><p>Every visit helps fund conservation work.</p></div>
+  <div>quote</div>
+</div>`;
+const wpq = await decorateBlock('../blocks/wrs-pull-quote/wrs-pull-quote.js', WPQ);
+
+test('wrs-pull-quote: renders a blockquote wrapped in curly quote characters', () => {
+  const bq = wpq.querySelector('blockquote');
+  assert.ok(bq);
+  assert.match(bq.textContent, /^“\s*Every visit helps fund conservation work\.\s*”$/);
+  assert.equal(wpq.querySelector('.wrs-pull-quote-inner').classList.contains('half-page'), false);
+});
+
+const WPQ_MULTI = `<div class="wrs-pull-quote">
+  <div><p>First line.</p><p><strong>Bold</strong> second line.</p></div>
+  <div>halfPage</div>
+</div>`;
+const wpqMulti = await decorateBlock('../blocks/wrs-pull-quote/wrs-pull-quote.js', WPQ_MULTI);
+
+test('wrs-pull-quote: a multi-paragraph quote keeps each paragraph\'s own markup (outerHTML, not flattened text)', () => {
+  const bq = wpqMulti.querySelector('blockquote');
+  assert.ok(bq.querySelector('strong'));
+  assert.equal(bq.querySelectorAll('p').length, 2);
+});
+
+test('wrs-pull-quote: the halfPage variant adds the half-page modifier class', () => {
+  assert.ok(wpqMulti.querySelector('.wrs-pull-quote-inner').classList.contains('half-page'));
+});
+
+const WPQ_UNKNOWN_VARIANT = `<div class="wrs-pull-quote">
+  <div><p>Falls back to quote.</p></div>
+  <div></div>
+</div>`;
+const wpqDefaultVariant = await decorateBlock('../blocks/wrs-pull-quote/wrs-pull-quote.js', WPQ_UNKNOWN_VARIANT);
+test('wrs-pull-quote: a blank variant cell defaults to the quote (non-half-page) style', () => {
+  assert.equal(wpqDefaultVariant.querySelector('.wrs-pull-quote-inner').classList.contains('half-page'), false);
+});
+
+const WPQ_INSTRUMENTED = `<div class="wrs-pull-quote">
+  <div data-aue-resource="urn:text1"><p>Instrumented text.</p></div>
+  <div>quote</div>
+</div>`;
+const wpqInstr = await decorateBlock('../blocks/wrs-pull-quote/wrs-pull-quote.js', WPQ_INSTRUMENTED);
+test('wrs-pull-quote: instrumentation moves from the text row onto the element that replaces it', () => {
+  assert.equal(wpqInstr.querySelector('.wrs-pull-quote-inner').getAttribute('data-aue-resource'), 'urn:text1');
+});
+
+const wpqEmpty = await decorateBlock('../blocks/wrs-pull-quote/wrs-pull-quote.js', '<div class="wrs-pull-quote"></div>');
+test('wrs-pull-quote: renders nothing when unconfigured outside the editor', () => {
+  assert.equal(wpqEmpty.children.length, 0);
+});
+
+const wpqEdit = await decorateBlock(
+  '../blocks/wrs-pull-quote/wrs-pull-quote.js',
+  '<div class="wrs-pull-quote" data-aue-resource="urn:block1"></div>',
+);
+test('wrs-pull-quote: unconfigured block stays selectable in the editor', () => {
+  assert.ok(wpqEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {

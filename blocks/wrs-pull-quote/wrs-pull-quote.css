@@ -1,0 +1,54 @@
+/*
+ * WRS Pull Quote
+ *
+ * Port of the DEPLOYED bundle, not the LESS checkout - see
+ * ../../../wrs-components-export/richtext/styles/deployed-bundle-extract.css
+ * (extracted by the classes `blockquote`/`haftpage`). Selectors/declarations
+ * below are traced to specific rules in that extract; values are copied, not
+ * invented, with two exceptions noted below.
+ *
+ * The extract carries brand-scoped colour overrides for five different
+ * Mandai properties (`.zoo-style`, `.bird-park-style`, `.night-safari-style`,
+ * `.river-safari-style`, `.mrr-style`, `.wrs-style`). This repo only migrates
+ * WRS content, so the `.wrs-style .rich-text .blockquote blockquote` rule is
+ * applied directly and unconditionally (no brand-scoping class needed here) -
+ * it is more specific than the brand-less base rule below and would always
+ * win in the source's own cascade anyway.
+ *
+ * `var(--primary-font-regular)` is the source's own font token, present
+ * verbatim in the deployed CSS but not defined anywhere in this bundle or in
+ * this repo's styles.css. Kept as-is rather than remapped to `--body-font-*`
+ * (a different, separately migrated brand's token, per the same call
+ * wrs-conservation-banner.css and wrs-admission-types.css already make) -
+ * needs a real font decision before production.
+ */
+
+.wrs-pull-quote-inner {
+  /* .aem-Grid>.richtext .md.rich-text .blockquote { display:flex; } */
+  display: flex;
+}
+
+.wrs-pull-quote-inner blockquote {
+  /* .rich-text .blockquote blockquote (base) */
+  margin: 1.25rem 2.5rem;
+
+  /* .wrs-style .rich-text .blockquote blockquote (brand override, more
+     specific than the base rule above - applied directly, see header) */
+  color: #999a28;
+  font-family: var(--primary-font-regular);
+  font-size: 0.925rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* .rich-text .blockquote.haftpage / .blockquote.haftpage blockquote */
+.wrs-pull-quote-inner.half-page {
+  max-width: 18.75rem;
+
+  /* .aem-Grid>.richtext .md.rich-text .blockquote.haftpage { margin-bottom:.938rem; } */
+  margin-bottom: 0.938rem;
+}
+
+.wrs-pull-quote-inner.half-page blockquote {
+  margin: 0;
+}

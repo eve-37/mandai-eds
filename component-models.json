@@ -2514,6 +2514,36 @@
     ]
   },
   {
+    "id": "wrspullquote",
+    "fields": [
+      {
+        "component": "richtext",
+        "name": "text",
+        "label": "Quote Text",
+        "value": "",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "variant",
+        "label": "Style",
+        "description": "Matches the source dialog's showTypes field: only the two options that carry real, distinct styling in the deployed site are offered here. \"Default\" and \"Disclaimer\" rich text does not use this block - author it as plain text/columns content instead.",
+        "value": "quote",
+        "valueType": "string",
+        "options": [
+          {
+            "name": "Quote",
+            "value": "quote"
+          },
+          {
+            "name": "Half Page",
+            "value": "halfPage"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "id": "wrsquotecarousel",
     "fields": [
       {

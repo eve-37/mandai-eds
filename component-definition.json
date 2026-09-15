@@ -755,6 +755,21 @@
           }
         },
         {
+          "title": "WRS Pull Quote",
+          "id": "wrspullquote",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block",
+                "template": {
+                  "name": "WRS Pull Quote",
+                  "model": "wrspullquote"
+                }
+              }
+            }
+          }
+        },
+        {
           "title": "WRS Quote Carousel",
           "id": "wrsquotecarousel",
           "plugins": {
