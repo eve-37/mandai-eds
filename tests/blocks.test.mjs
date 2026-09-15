@@ -201,6 +201,22 @@ test('testimonial: a blank quote keeps its instrumentation so it can be edited',
   assert.deepEqual(items.map((li) => li.getAttribute('data-aue-resource')), ['urn:t1', 'urn:t2', 'urn:t3']);
 });
 
+/* Verbatim from the published page: a quote with a message but no name. The
+ * trailing empty cell is dropped, so the row again looks like a parent row. */
+const TESTIMONIAL_NO_NAME = `<div class="testimonial">
+  <div><div>This is a testimonial</div></div>
+  <div><div>This is testimony A</div></div>
+  <div><div>This is testimony B</div></div>
+</div>`;
+const tsNoName = await decorateBlock('../blocks/testimonial/testimonial.js', TESTIMONIAL_NO_NAME);
+test('testimonial: a quote with no name still renders its message', () => {
+  const items = [...tsNoName.querySelectorAll('li.testimonial-item')];
+  assert.equal(items.length, 2);
+  assert.equal(items[0].querySelector('blockquote').textContent, 'This is testimony A');
+  assert.equal(items[0].querySelector('cite').textContent, '');
+  assert.equal(tsNoName.querySelector('.testimonial-heading').textContent, 'This is a testimonial');
+});
+
 const TESTIMONIAL = `<div class="testimonial">
   <div><div>What they say</div></div>
   <div><div>Best day out.</div><div>Aisha</div></div>
@@ -403,6 +419,31 @@ test('missions: a mission separates its own image from its logos', () => {
   const item = ms.querySelector('li.missions-item');
   assert.equal(item.querySelector('.missions-item-media img').getAttribute('src'), '/m1.png');
   assert.equal(item.querySelectorAll('.missions-item-logos picture').length, 2);
+});
+
+/* Verbatim from the published page: one mission, one logo. Both picture cells
+ * then hold exactly one picture, so counting pictures cannot tell them apart -
+ * and the logo used to disappear. */
+const MISSION_ONE_LOGO = `<div class="missions">
+  <div><div><p>Missions</p><p>more description here</p><p>mask-1</p></div></div>
+  <div><div><picture><img src="/hero.png" alt="hero"></picture></div></div>
+  <div><div><p><a href="/">View More</a></p><p>green</p></div></div>
+  <div><div><p><a href="/detail">More Detailed</a></p><p>green</p></div></div>
+  <div><div><p>Mission Child 1</p><p>12/10/2026 - 14/10/2026</p><p>Mandai Zoo</p><p>Please come look look see see</p></div><div><picture><img src="/photo.png" alt=""></picture></div><div><picture><img src="/logo.png" alt=""></picture></div></div>
+</div>`;
+const msOne = await decorateBlock('../blocks/missions/missions.js', MISSION_ONE_LOGO);
+test('missions: a single logo is not mistaken for the mission photo', () => {
+  const item = msOne.querySelector('li.missions-item');
+  assert.equal(item.querySelector('.missions-item-media img').getAttribute('src'), '/photo.png');
+  assert.equal(item.querySelectorAll('.missions-item-logos img').length, 1);
+  assert.equal(item.querySelector('.missions-item-logos img').getAttribute('src'), '/logo.png');
+});
+
+test('missions: the picture cells are kept out of the copy', () => {
+  const item = msOne.querySelector('li.missions-item');
+  assert.equal(item.querySelector('h3').textContent, 'Mission Child 1');
+  assert.equal(item.querySelector('.missions-item-meta').textContent, '12/10/2026 - 14/10/2026 · Mandai Zoo');
+  assert.equal(item.querySelectorAll('.missions-item-body h3').length, 1);
 });
 
 test('missions: date and location read as one meta line', () => {

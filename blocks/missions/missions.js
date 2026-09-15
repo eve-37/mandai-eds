@@ -49,26 +49,44 @@ function buildMission(row) {
   moveInstrumentation(row, li);
 
   const cells = [...row.children];
-  // The logos cell is the one holding several pictures; the single-picture cell
-  // is the mission's own image. Count `picture` only - `picture, img` matches
-  // both elements of the same image, so one picture counted as two and every
-  // mission image was taken for a logo strip.
-  const pictureCounts = cells.map((c) => c.querySelectorAll('picture').length);
-  const logosIndex = pictureCounts.findIndex((n) => n > 1);
-  const imageIndex = pictureCounts.findIndex((n, i) => n === 1 && i !== logosIndex);
 
-  if (imageIndex >= 0) {
+  /*
+   * A mission is three cells in model order: content_, image (+imageAlt), and
+   * the logos_ group. Only the last two hold pictures, so of the picture-
+   * bearing cells the first is the mission's own photo and the rest are logos.
+   *
+   * Counting pictures does not work. "Several pictures means logos" broke the
+   * moment a mission was authored with a single logo - both cells held one
+   * picture, the logo cell was never identified, and the logo silently vanished.
+   * Counting `picture, img` was worse still: that matches both elements of the
+   * same image, so every single photo counted as two and was taken for a logo
+   * strip.
+   */
+  const pictureCells = cells.filter((c) => c.querySelector('picture'));
+  let imageCell = null;
+  let logosCell = null;
+  if (pictureCells.length > 1) {
+    [imageCell, logosCell] = pictureCells;
+  } else if (pictureCells.length === 1) {
+    // One picture cell is ambiguous, except that several pictures in a single
+    // cell can only be the logos group - one field cannot hold more than one.
+    const [only] = pictureCells;
+    if (only.querySelectorAll('picture').length > 1) logosCell = only;
+    else imageCell = only;
+  }
+
+  if (imageCell) {
     const media = document.createElement('div');
     media.className = `${PREFIX}-item-media`;
-    media.append(cells[imageIndex].querySelector('picture'));
+    media.append(imageCell.querySelector('picture'));
     li.append(media);
   }
 
   const body = document.createElement('div');
   body.className = `${PREFIX}-item-body`;
 
-  cells.forEach((cell, i) => {
-    if (i === logosIndex || i === imageIndex) return;
+  cells.forEach((cell) => {
+    if (cell === logosCell || cell === imageCell) return;
     const [title, daterange, location, desc] = cellValues(cell);
     if (title) {
       const h3 = document.createElement('h3');
@@ -93,10 +111,10 @@ function buildMission(row) {
 
   if (body.children.length) li.append(body);
 
-  if (logosIndex >= 0) {
+  if (logosCell) {
     const logos = document.createElement('div');
     logos.className = `${PREFIX}-item-logos`;
-    [...cells[logosIndex].querySelectorAll('picture')].forEach((p) => logos.append(p));
+    [...logosCell.querySelectorAll('picture')].forEach((p) => logos.append(p));
     li.append(logos);
   }
 
