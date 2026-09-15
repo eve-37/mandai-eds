@@ -65,10 +65,33 @@
 .tabs .tabs-tile.align-center { text-align: center; }
 .tabs .tabs-tile.align-right { text-align: right; }
 
+/*
+ * Every tile image is forced to the same 16:9 box and cropped to fill it.
+ *
+ * The source set `width: 100%; height: auto`, so a tile was as tall as whatever
+ * the author uploaded and a row of tiles came out ragged. It got away with it
+ * because the torn-edge mask is a fixed 16:9 shape (1700x956) - anything else
+ * had its edges clipped or padded by the mask rather than being sized to it.
+ * Fixing the box is what the mask always assumed.
+ *
+ * `object-fit: cover` crops rather than squashes, so faces and animals keep
+ * their proportions; the trade-off is that the edges of a very tall or very
+ * wide upload are cut off.
+ */
+.tabs .tabs-tile-media {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
 .tabs .tabs-tile-media img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  mask-image: url('../../assets/tile-mask-16-9.svg');
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  mask-position: center;
 }
 
 .tabs .tabs-tile h3 {
