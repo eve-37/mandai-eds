@@ -33,6 +33,17 @@
   --rb-light-yellow: #ffdf7d;
   --rb-white: #fff;
 
+  /*
+   * WRS backgroundsection colours - the WRS site (wrs/components/commons/
+   * backgroundsection) is a separately-migrated brand from Ranger Buddies and
+   * these two values don't match any --rb-* token, so they get their own
+   * namespace rather than being forced onto the rb palette. Values are from
+   * wrs-components-export/backgroundsection/styles/deployed-bundle-extract.css
+   * (the deployed bundle, not the behind-deploy LESS checkout).
+   */
+  --wrs-bg-base: #faf5e9;
+  --wrs-bg-sap-white: #fbebce;
+
   /* semantic colours - what the boilerplate and blocks actually consume */
   --background-color: var(--rb-light-beige);
   --light-color: var(--rb-dark-beige);
@@ -484,6 +495,23 @@ main .section.highlight {
   background-color: var(--light-color);
   margin: 0;
   padding: 40px 0;
+}
+
+/*
+ * WRS backgroundsection port (wrs/components/commons/backgroundsection).
+ * The source component only ever wraps a parsys in a flat-colour div for two
+ * of its four dialog options - "Base" and "Sap White" - so those two become
+ * `style` options here rather than a block. The other two options
+ * (`specified` image, `colourPicker` colour) are per-instance free values a
+ * fixed `style` list can't hold; see docs/wrs-migration-notes.md#backgroundsection
+ * for why they were flagged instead of built.
+ */
+main .section.bg-base {
+  background-color: var(--wrs-bg-base);
+}
+
+main .section.bg-sap-white {
+  background-color: var(--wrs-bg-sap-white);
 }
 
 /*

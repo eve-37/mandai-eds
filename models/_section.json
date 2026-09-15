@@ -33,6 +33,14 @@
             {
               "name": "Highlight",
               "value": "highlight"
+            },
+            {
+              "name": "WRS Background Base",
+              "value": "bg-base"
+            },
+            {
+              "name": "WRS Background Sap White",
+              "value": "bg-sap-white"
             }
           ]
         }
