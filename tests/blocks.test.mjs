@@ -258,6 +258,13 @@ test('three-column-tiles: each tile keeps its own caption and CTA variant', () =
   assert.ok(items[1].querySelector('.rb-cta.yellow'));
 });
 
+test('three-column-tiles: each tile CTA is the narrow secondary button', () => {
+  // ThreeColTiles/Tile.js is the only rb-aem component importing SecondaryButton.
+  const items = [...tc.querySelectorAll('li.three-column-tiles-item')];
+  assert.ok(items.every((li) => li.querySelector('.rb-cta.rb-cta-narrow')));
+  assert.equal(tc.querySelectorAll('li .rb-cta-wide').length, 0);
+});
+
 test('three-column-tiles: the tile CTA text is not mistaken for the caption', () => {
   const first = tc.querySelector('li.three-column-tiles-item');
   assert.notEqual(first.querySelector('h4').textContent, 'View More Details');

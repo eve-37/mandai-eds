@@ -85,7 +85,10 @@ export default function decorate(block) {
         li.append(name);
       }
 
-      const button = buildCta(tileCta);
+      // The SECONDARY button - 140px wide against the primary's 220px, and
+      // squatter. ThreeColTiles/Tile.js imports SecondaryButton, and it is the
+      // only rb-aem component that does; every other embedded CTA is primary.
+      const button = buildCta(tileCta, { wide: false });
       if (button) {
         const wrap = document.createElement('div');
         wrap.className = `${PREFIX}-item-cta`;
