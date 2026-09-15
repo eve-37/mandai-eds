@@ -167,14 +167,28 @@ export function renderEmpty(block, label) {
 }
 
 /**
- * Container children arrive as sibling rows alongside the parent's own property
- * rows and have to be told apart by shape.
+ * Splits a container block's rows into the parent's own property rows and its
+ * child rows.
  *
- * Verified against real authored markup: every parent property is ONE cell,
- * including a grouped `cta_` cell, while a child row carries one cell per field
- * group. Cell count is therefore the discriminator - not "does it contain a
- * picture", which misreads a child whose image the author has not set yet.
+ * Counting cells does NOT work, and the failure is silent. Observed on a
+ * published page: three Testimony children with both fields left blank each
+ * rendered as `<div><div></div></div>` - AEM drops empty cells, so a two-field
+ * child collapses to one cell and is indistinguishable from a parent property.
+ * Those three quotes vanished with no error anywhere. A child with a message
+ * but no name fails the same way.
+ *
+ * Position is stable where cell count is not. The parent's property rows always
+ * come first, one per field group, and are emitted even when empty - the same
+ * observation that breaks cell counting proves rows survive when cells do not.
+ * So `parentCells` is a constant read off the model, not something to infer.
+ *
+ * @param {Element} block
+ * @param {number} parentCells number of cells the parent model produces
  */
-export function isChildRow(row) {
-  return row.children.length >= 2;
+export function splitRows(block, parentCells) {
+  const rows = [...block.children];
+  return {
+    parentRows: rows.slice(0, parentCells),
+    childRows: rows.slice(parentCells),
+  };
 }

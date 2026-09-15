@@ -1,8 +1,8 @@
 import { moveInstrumentation } from '../../scripts/scripts.js';
+import { cellText, splitRows } from '../../scripts/rb-helpers.js';
 
-function cellText(el) {
-  return el?.textContent?.trim() ?? '';
-}
+/** title - see _testimonial.json. */
+const PARENT_CELLS = 1;
 
 /**
  * Testimonial - a heading plus a carousel of quotes.
@@ -12,13 +12,16 @@ function cellText(el) {
  * One quote at a time at every breakpoint, which is what the source did.
  */
 export default function decorate(block) {
-  const rows = [...block.children];
   const isEditMode = block.hasAttribute('data-aue-resource');
 
-  // A testimony row has two cells (message, name); the parent title has one.
-  const itemRows = rows.filter((row) => row.children.length >= 2);
-  const titleRow = rows.find((row) => row.children.length === 1);
+  const { parentRows, childRows } = splitRows(block, PARENT_CELLS);
+  const [titleRow] = parentRows;
   const title = cellText(titleRow);
+
+  // A quote with nothing in it renders nothing, but must not be dropped from the
+  // list - its position is what keeps the remaining quotes aligned with their
+  // authoring instrumentation.
+  const itemRows = childRows;
 
   if (!title && !itemRows.length) {
     if (isEditMode) {

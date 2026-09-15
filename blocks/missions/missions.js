@@ -1,17 +1,28 @@
 import { moveInstrumentation } from '../../scripts/scripts.js';
 import {
-  MASKS, readCta, buildCta, renderEmpty, isChildRow,
+  MASKS, readCta, buildCta, renderEmpty, splitRows,
 } from '../../scripts/rb-helpers.js';
 
 const PREFIX = 'missions';
 
-/** Text values of a cell's children, in order. */
-function values(cell) {
-  const parts = [...cell.querySelectorAll('p, div')]
-    .map((el) => el.textContent.trim())
+/** content_, image (+imageAlt), cta_, detail_ - see _missions.json. */
+const PARENT_CELLS = 4;
+
+/**
+ * Text values of a cell's children, in order.
+ *
+ * Only `p` elements count. Querying `p, div` as well returns the containing
+ * cell, whose textContent is every value run together - so the first "value"
+ * became "Missionsmore description heremask-1" and was used as the title, while
+ * the real mask never matched. Fall back to the element's own text only when
+ * there are no paragraphs at all, which is the single-value case.
+ */
+function values(el) {
+  const parts = [...el.querySelectorAll('p')]
+    .map((p) => p.textContent.trim())
     .filter(Boolean);
   if (parts.length) return parts;
-  const own = cell.textContent.trim();
+  const own = el.textContent.trim();
   return own ? [own] : [];
 }
 
@@ -58,7 +69,10 @@ function buildMission(row) {
   const cells = [...row.children];
   // The logos cell is the one holding several pictures; the single-picture cell
   // is the mission's own image.
-  const pictureCounts = cells.map((c) => c.querySelectorAll('picture, img').length);
+  // Count `picture` only. `picture, img` matches both elements of the same
+  // image, so one picture counted as two and every mission image was taken for
+  // a logo strip.
+  const pictureCounts = cells.map((c) => c.querySelectorAll('picture').length);
   const logosIndex = pictureCounts.findIndex((n) => n > 1);
   const imageIndex = pictureCounts.findIndex((n, i) => n === 1 && i !== logosIndex);
 
@@ -109,9 +123,8 @@ function buildMission(row) {
 }
 
 export default function decorate(block) {
-  const rows = [...block.children];
-  const missionRows = rows.filter(isChildRow);
-  const parent = readParent(rows.filter((row) => !isChildRow(row)));
+  const { parentRows, childRows: missionRows } = splitRows(block, PARENT_CELLS);
+  const parent = readParent(parentRows);
 
   if (!parent.title && !missionRows.length) {
     renderEmpty(block, 'Missions — add a title and some missions');

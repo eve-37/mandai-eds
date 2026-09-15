@@ -1,4 +1,5 @@
 import { moveInstrumentation } from '../../scripts/scripts.js';
+import { splitRows } from '../../scripts/rb-helpers.js';
 
 const MASKS = ['mask-1', 'mask-2'];
 const VARIANTS = ['green', 'yellow'];
@@ -16,22 +17,8 @@ function resolveHref(raw) {
   return raw;
 }
 
-/**
- * Container children arrive as sibling rows alongside the parent's own property
- * rows, so the two have to be told apart by shape.
- *
- * Verified against real authored markup: every parent property is one cell
- * (`<div><div>value</div></div>`), including the grouped cta_ cell, while a
- * child row carries one cell per field group - two here, image and caption,
- * exactly as the boilerplate's cards block does.
- *
- * Cell count is therefore the discriminator, not "does it contain a picture":
- * a tile whose image the author left blank still has two cells, and would
- * otherwise be misread as a parent property and silently swallow the title.
- */
-function isTileRow(row) {
-  return row.children.length >= 2 || !!row.querySelector('picture, img');
-}
+/** title, subtitle, mask, cta_ - see _four-column-tiles.json. */
+const PARENT_CELLS = 4;
 
 /**
  * Reads the parent properties.
@@ -140,9 +127,8 @@ function buildDots(track, tiles) {
 }
 
 export default function decorate(block) {
-  const rows = [...block.children];
-  const tileRows = rows.filter(isTileRow);
-  const parent = readParent(rows.filter((row) => !isTileRow(row)));
+  const { parentRows, childRows: tileRows } = splitRows(block, PARENT_CELLS);
+  const parent = readParent(parentRows);
   const isEditMode = block.hasAttribute('data-aue-resource');
 
   // Shared section treatment from styles/styles.css, not block-local.

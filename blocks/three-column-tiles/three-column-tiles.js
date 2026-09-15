@@ -1,14 +1,15 @@
 import { moveInstrumentation } from '../../scripts/scripts.js';
 import {
-  MASKS, cellText, readCta, buildCta, buildDots, renderEmpty, isChildRow,
+  MASKS, cellText, readCta, buildCta, buildDots, renderEmpty, splitRows,
 } from '../../scripts/rb-helpers.js';
 
 const PREFIX = 'three-column-tiles';
 
+/** title, subtitle, mask, cta_ - see _three-column-tiles.json. */
+const PARENT_CELLS = 4;
+
 export default function decorate(block) {
-  const rows = [...block.children];
-  const childRows = rows.filter(isChildRow);
-  const parentRows = rows.filter((row) => !isChildRow(row));
+  const { parentRows, childRows } = splitRows(block, PARENT_CELLS);
 
   let mask = '';
   let cta = null;
