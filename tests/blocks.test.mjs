@@ -309,6 +309,18 @@ test('tabs: the align prefix is stripped before it reaches the class', () => {
   assert.equal(tb.querySelectorAll('.tabs-tile.align-tile-center').length, 0);
 });
 
+test('tabs: no tile is nested inside a tab, or the editor cannot move it', () => {
+  // A tile's nearest instrumented ancestor must be the block - the container it
+  // belongs to in the model - and never the tab whose panel it renders in.
+  [...tb.querySelectorAll('.tabs-tile')].forEach((tile) => {
+    const owner = tile.parentElement.closest('[data-aue-resource]');
+    assert.equal(owner, null, 'a tile must not sit inside an instrumented tab');
+  });
+  // ...and the tabs are still instrumented, on the head rather than the panel.
+  assert.equal(tb.querySelectorAll('.tabs-panel-head[data-aue-resource]').length, 2);
+  assert.equal(tb.querySelectorAll('.tabs-panel[data-aue-resource]').length, 0);
+});
+
 test('tabs: a tile keeps its image, copy and instrumentation', () => {
   const tile = tb.querySelector('.tabs-tile');
   assert.equal(tile.querySelector('img').getAttribute('src'), '/tile1.png');

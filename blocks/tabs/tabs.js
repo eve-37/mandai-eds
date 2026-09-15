@@ -124,21 +124,40 @@ export default function decorate(block) {
     panel.setAttribute('role', 'tabpanel');
     panel.setAttribute('aria-labelledby', `${id}-tab`);
     if (index !== 0 && !isEditMode) panel.hidden = true;
-    if (tabRow) moveInstrumentation(tabRow, panel);
+
+    /*
+     * The tab's instrumentation goes on a head element INSIDE the panel, never
+     * on the panel itself.
+     *
+     * A tile is a sibling of its tab in the content model, but it is rendered
+     * inside that tab's panel. Put the tab's data-aue-* on the panel and the
+     * tile's nearest instrumented ancestor becomes the tab - so the editor
+     * reads the tile as the tab's child and offers no way to move one between
+     * tabs, because a Tab is a component and not a container.
+     *
+     * With the instrumentation on a head that holds only the tab's own copy,
+     * the panel is an ordinary uninstrumented wrapper and every tile resolves
+     * up to the block, which is the container it actually belongs to.
+     */
+    const head = document.createElement('div');
+    head.className = `${PREFIX}-panel-head`;
+    if (tabRow) moveInstrumentation(tabRow, head);
 
     if (isEditMode) {
       const label = document.createElement('p');
       label.className = `${PREFIX}-panel-label`;
       label.textContent = tabName;
-      panel.append(label);
+      head.append(label);
     }
 
     if (title) {
       const h2 = document.createElement('h2');
       h2.className = `${PREFIX}-panel-title`;
       h2.textContent = title;
-      panel.append(h2);
+      head.append(h2);
     }
+
+    if (head.children.length || tabRow) panel.append(head);
 
     if (tileRows.length || isEditMode) {
       const grid = document.createElement('ul');
