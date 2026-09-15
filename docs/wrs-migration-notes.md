@@ -642,3 +642,215 @@ block is how an author hides it. A checkbox on top of block-presence would just 
 - `npm run build:json`, `npm run lint` and `npm test` all pass (98/98 tests).
 - `blocks/footer/` was **not** touched, as required — it already covers the destination for most of
   the flagged content (the `/footer` document it loads).
+
+## header
+
+**Source:** `wrs-components-export/header/` — `wrs/components/structure/header`
+(`sling:resourceSuperType="wcm/foundation/components/parsys"`). 17 top-level dialog fields across
+4 tabs, plus 5 multifields (`navItems`, `languageItems`, `memberSettings`, `mainNavItems`,
+`visitOurParksItems`). `HeaderModel.java` is 870 lines; it also pulls in the 684-line
+`PagePropertiesInheritance.java`.
+
+**Decision: a partial migration, the narrowest of the run.** Only the `visitOurParksItems` panel
+(3 dialog fields) is built as a container block, `blocks/wrs-visit-our-parks/`. Everything else —
+navigation, language switcher, login/logout, ticket/cart, the `topparkadvisory` embed, the
+transparent/solid toggles — is flagged, not built. `blocks/header/` (the site's actual header, a
+`/nav` fragment loader plus its own branded CSS) is untouched, per the task constraint.
+
+### Why the whole component does not fit as one block, or even as one container
+
+Same structural argument as `footer`, confirmed independently here:
+
+- 17 top-level fields do not fit 4 cells under any grouping the skill allows — `useTransparent`,
+  `makeHeaderSolid`, `linkPage`, `urlLogo`, `urlLogoTransparent`, `title`, `searchAltText`,
+  `searchLink`, `loginText`, `loginUrl`, `welcomeText`, `welcomeUrl`, `logoutMessage`,
+  `logoutCtaLabel`, `redirectPath`, `ticketLabel`, `ticketLink` are 17 unrelated settings, not a
+  set of related fields grouping collapses.
+- A container block has exactly one `filter`. This dialog has five distinct multifields with five
+  different field shapes (`navItems`: 2 fields; `languageItems`: 3; `memberSettings`: 3, one a
+  checkbox; `mainNavItems`: 3, one a checkbox; `visitOurParksItems`: 3, one a `/content/dam`
+  image) — five child types, not one. `mainNavItems` is also, per the source's own
+  `PageManager`/`pageChildren` walk (`headerModel.lstPageMain`, `mainNav.pageChildren`,
+  `childNav.pageChildren`), a **three-level** menu (top nav → child nav → sub-child nav) — deeper
+  than the skill's already-ruled-out two-level container nesting, so it cannot be built as a
+  container at all without inventing a shape the dialog itself does not have (the dialog only
+  captures the top level explicitly; the deeper levels come from resolving `path` against the
+  live page tree, not from authored rows — see below).
+
+### The inheritance finding, confirmed and generalised beyond `footer`
+
+`footer`'s entry found that `conservationBannerTab` is read through
+`HierarchyNodeInheritanceValueMap.getInherited(...)`, cascading from an ancestor page rather than
+being authored per page. Reading `HeaderModel.getDataHeaderByResource()` (lines ~370–446) shows
+the **same mechanism governs nearly every field in this component**, not just one panel:
+`navItems`, `visitOurParksItems`, `searchAltText`/`searchLink`, `ticketLabel`/`ticketLink`,
+`loginText`/`loginUrl`, `welcomeText`/`welcomeUrl`, `title`/`linkPage`/`urlLogo`/
+`urlLogoTransparent`, `mainNavItems` and `memberSettings` are all read via
+`inheritCompProps.getInherited(fieldName, ...)` off a `HierarchyNodeInheritanceValueMap` built
+from the current resource — walking up ancestor pages for the nearest header configuration.
+`languageItems` goes through the same mechanism via a second, separately-constructed
+`InheritanceValueMap` off `getResource()`. So the header, in the source, is configured once
+(typically near the site root) and every descendant page inherits it unless it overrides its own
+copy — this component is site chrome authored once, not per-page content. EDS has no equivalent:
+a block placed on one page renders only on that page. This is the same open question `footer`
+raised, now confirmed to apply to essentially the whole header, not one panel — worth resolving
+once, for both components together, rather than twice.
+
+### `visitOurParksItems` — the one panel built
+
+Confirmed content-shaped and safe to port: `HeaderModel.setDataToVisitOurBarks()` (lines
+476–488) does nothing beyond parse the stored JSON-string array into a `VisitOurParksBean` and
+resolve the URL with `CommonUtils.getProperURL()` — no repository query, no OSGi service, no
+request/session state. Its only dependency on the inheritance mechanism above is the panel's
+authoring cascade, not its rendering logic. The HTL (`header.html` lines 222–232) renders it as a
+plain image-link list:
+
+```html
+<div class="wildlife-park">
+  <div class="grid">
+    <ul class="list-park" data-sly-list.parkNav="${headerModel.listVisitOurPark}">
+      <li><a href="${parkNav.url}" title="${parkNav.title}">
+        <img src="${parkNav.image}" alt="${parkNav.title}" width="100" height="40"/>
+      </a></li>
+    </ul>
+  </div>
+</div>
+```
+
+Confirmed against the dialog XML (`mobileMenuSectionTab` → `parkItems` multifield → fieldset
+`./visitOurParksItems`): three fields per row, `title` (text), `image` (pathbrowser, `rootPath`
+`/content/dam`), `url` (pathbrowser, field name `./url`, `rootPath` `/content/wrs`) — none share
+an underscore prefix and none is a collapsible suffix of another, so they stay three separate
+cells, in that order.
+
+- Folder: `blocks/wrs-visit-our-parks/`, parent id `wrsvisitourparks` (zero fields — no sibling
+  field exists at the multifield's own level in the dialog), child id `wrsvisitourpark` (`title`
+  text, `image` reference, `url` aem-content — 3 cells, dialog order). Registered in
+  `models/_section.json`'s `section` filter.
+- `decorate()` reads each child row positionally (title, image, url — confirmed no grouping
+  applies) and renders a plain anchor around the authored `<picture>`, setting the anchor's
+  `title` and the image's `alt` from the authored title (matching the source's own
+  `title="${parkNav.title}"` / `alt="${parkNav.title}"` duplication). A row authored without an
+  image yet still renders as a text link rather than being dropped, so it stays visible and
+  editable.
+- **CSS gap, stated rather than papered over.** In the source, this panel has **no desktop
+  design** — its base (no-media) rule is `display:none`; it is shown only inside the header's
+  mobile hamburger flyout via `@media (max-width:991px)`, and the ONLY reason it is ever visible
+  is that positioning context, which `.md-header .mobile-header .wildlife-park` supplies and
+  which this standalone block does not have (per the task constraint, `blocks/header/` was not
+  touched or extended to host it). `wrs-visit-our-parks.css` ports only the mobile ruleset and
+  applies it at all widths, un-gated, rather than inventing a desktop layout with no source
+  evidence — flagged in the CSS file's own docblock as an extrapolation needing design review
+  once this block is actually authored, not a verified port.
+
+### What was flagged, not built, and why — the stateful half
+
+**login/logout/welcome** (`loginText`, `loginUrl`, `welcomeText`, `welcomeUrl`, `logoutMessage`,
+`logoutCtaLabel`, `redirectPath`) and **`memberSettings`** (each row: `textLink`, `urlLink`,
+`isLogout` checkbox) govern **per-visitor CIAM auth state**. The HTL never renders these dialog
+values as static content — `headerModel.settings` drives `#headerMemberSettingsLogin` /
+`#headerMemberSettingsLoginMobile`, both authored `hidden` by default and toggled by
+`header.js`/`sidebar-menu.js` (JS runtime, not in this bundle) reading live CIAM session state at
+request time; `HeaderModel` itself resolves `isCIAMIntegratedPage`
+(`CIAMHelper.isCIAMIntegratedPage(currentPage.getPath())`) and, when true, calls
+`ConfigurationUtils.getServiceReference(CIAMServices.class)` to build a live logout endpoint URL
+(`ciamLogoutEndpoint`, embedding `client_id` and a post-logout redirect). None of that is dialog
+content that a block's `decorate()` can read positionally — it is a live OSGi service call, the
+exact "calls an OSGi service" case the skill says to flag rather than invent an equivalent for.
+
+**ticket/cart** (`ticketLabel`, `ticketLink`) reach the same problem from the commerce side.
+`ticketLink` itself is dialog content and safe, but the HTL also renders a live cart count next to
+it (`<span class="count-number" data-number="${headerModel.numberTicket}">`), and
+`HeaderModel.getNumberTicket()` (lines 337–362) reads it out of `request.getSession()`
+(`TicketConstants.TICKET`), parses it as `CartInfoParent`/`ProductCart`/`TicketStep` JSON, and
+sums quantities across the cart and any add-on products. `ticketLink` itself is further
+overridden at render time by `getCurrentStepURL()` (lines 591–609) — again read off the session
+cart — whenever the visitor is mid-checkout and not on a thank-you/maintenance page.
+
+**Why a cached endpoint is the wrong shape for both, stated plainly:** EDS content — including
+anything a servlet-backed block would fetch through a path-cached endpoint — is shared across
+every visitor who requests that path. Login state and cart contents are **per-visitor session
+state**, not per-page content. Serving one visitor's "Welcome, Jane" or their 3-item cart count
+out of a cache keyed by URL means the next visitor to hit that same cached response sees Jane's
+name and Jane's cart — not a stale-content nuance, a correctness and privacy failure. The only
+shapes that do not leak one visitor's state to another are (a) a client-side call the visitor's
+own browser makes, authenticated with their own session, to the existing CIAM/commerce services
+directly, bypassing EDS's page cache entirely, or (b) leaving this panel in AEM, where
+per-request server-side rendering already handles it correctly. Building a servlet or GraphQL
+endpoint for either would be inventing a client-side substitute for genuinely stateful,
+per-visitor server logic — exactly what the skill says to flag rather than invent.
+
+**`topparkadvisory` embed.** `header.html` line 14:
+`<div data-sly-resource="${'topparkadvisory' @ resourceType='wrs/components/commons/topparkadvisory'}" data-sly-unwrap></div>`
+— the only wrs→wrs component reference in the whole 19-component set. `topparkadvisory` is
+component 19 of this run and is itself blocked (JCR traversal + OSGi service, per its own survey
+entry) — flagged here as a dependency, not re-solved.
+
+**`useTransparent` (dialog node `removePadding`) / `makeHeaderSolid`.** Pure presentation toggles
+— `useTransparent` controls top padding and (combined with `makeHeaderSolid` and
+`headerModel.hideBreadcrumb`) a `transparent` CSS modifier class on `.wrapper-header`
+(`header.html` line 123); `makeHeaderSolid` forces the solid variant regardless. Both are genuine
+per-instance dialog booleans with no repository/service dependency, so — unlike everything above
+— these are safe to port mechanically. They were not built here only because they belong to
+`blocks/header/`'s own model, not to `wrs-visit-our-parks`, and `blocks/header/` was explicitly
+out of scope for this pass (constraint: do not modify it). If/when `blocks/header/`'s model is
+extended for WRS branding, these two map cleanly onto boolean fields there, alongside the
+`logo`/`logo-transparent`/`linkPage`/`title` fields the same tab holds.
+
+**`navItems`, `languageItems`, `mainNavItems`, `searchAltText`/`searchLink`.** Content-shaped site
+navigation, same call `footer`'s entry made for its six nav columns: belongs in whatever document
+or fragment `blocks/header/` loads (its `/nav` fragment today), authored as navigation content,
+not as new dialog-shaped blocks. `mainNavItems`' three-level nesting (top nav → resolved page
+children → resolved grandchildren, driven by `PageManager`/`pageChildren` walks over the live page
+tree, not by authored rows past the top level) has no direct multifield equivalent regardless —
+it would need either a hand-authored nav structure at all three levels, or a page-tree-aware nav
+component, which is an architecture decision for whoever designs the `/nav` document's authoring
+model, not something this component's migration should invent.
+
+**Hardcoded asset.** `/etc/designs/wrs/clientlib-site/images/mandai/md-tick.svg` (the logout-modal
+success icon, `header.html` line 104) — an `/etc/designs` path, not portable as-is; belongs with
+whatever logout-modal UI is eventually built (see login/logout above), re-hosted under
+`/content/dam` or bundled as a static asset, a decision for that build, not this one.
+
+### What a human needs to decide
+
+- **Login/logout/welcome and `memberSettings`** — whether and how to surface per-visitor CIAM
+  state client-side (a script that calls the existing CIAM services directly from the browser,
+  bypassing EDS's cache), or leave this panel served from AEM. Not a content-authoring question;
+  an architecture one.
+- **Ticket/cart count and current-step redirect** — same call, for the existing commerce/ticketing
+  service. `ticketLink`/`ticketLabel` as static dialog content are safe to migrate whenever the
+  navigation content above is; the live cart count and mid-checkout redirect are not.
+- **The page-hierarchy inheritance cascade**, now confirmed to govern nearly the whole component
+  (not just `visitOurParksItems`) — whether it needs a compensating authoring convention (e.g. a
+  header/footer configuration authored once and referenced, rather than EDS's per-page model), or
+  whether explicit per-page block placement is acceptable. Worth resolving once, together with the
+  same question `footer`'s entry raised, rather than per component.
+- **`topparkadvisory`** — blocked on its own survey; no action from this component's side beyond
+  noting the dependency.
+- **Whether `useTransparent`/`makeHeaderSolid` and the nav/language content are worth adding to
+  `blocks/header/`'s own model** — a scoped, reviewable change to shared site-chrome
+  infrastructure, not something this component's migration pass should do unilaterally (the task
+  constraint here was explicit: do not modify `blocks/header/`).
+
+### Files touched
+
+- `blocks/wrs-visit-our-parks/_wrs-visit-our-parks.json` — new; parent `wrsvisitourparks` (zero
+  fields) with a `filter` naming the child; child `wrsvisitourpark` (`title`/`image`/`url`, 3
+  cells, no grouping).
+- `blocks/wrs-visit-our-parks/wrs-visit-our-parks.js` — new; `decorate()` reading the 3 child
+  cells positionally, rendering a plain image-link list (no `.rb-cta` — the source has no CTA
+  styling here, just a linked logo).
+- `blocks/wrs-visit-our-parks/wrs-visit-our-parks.css` — new; ports only the source's mobile
+  ruleset for `.wildlife-park`/`.list-park` (the only one with a real design), applied at all
+  widths since this block has no hamburger-flyout host to inherit visibility from — flagged as an
+  extrapolation in the file's own docblock, not a verified desktop port.
+- `models/_section.json` — appended `"wrsvisitourparks"` to the `section` filter's `components`
+  array (child id intentionally not added).
+- `tests/blocks.test.mjs` — added 7 cases: two-park normal render, title/href/alt correctness per
+  row (no cross-row bleed), instrumentation moved onto the item not the row, a park authored
+  without an image yet, and the unconfigured-outside-editor / unconfigured-in-editor-placeholder
+  pair.
+- `npm run build:json`, `npm run lint` and `npm test` all pass (105/105 tests).
+- `blocks/header/` was **not** touched, as required — it already covers the destination for the
+  navigation content flagged above (the `/nav` fragment it loads).

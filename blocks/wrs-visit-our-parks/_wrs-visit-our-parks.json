@@ -1,0 +1,73 @@
+{
+  "definitions": [
+    {
+      "title": "WRS Visit Our Parks",
+      "id": "wrsvisitourparks",
+      "plugins": {
+        "xwalk": {
+          "page": {
+            "resourceType": "core/franklin/components/block/v1/block",
+            "template": {
+              "name": "WRS Visit Our Parks",
+              "model": "wrsvisitourparks",
+              "filter": "wrsvisitourparks"
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "WRS Visit Our Park",
+      "id": "wrsvisitourpark",
+      "plugins": {
+        "xwalk": {
+          "page": {
+            "resourceType": "core/franklin/components/block/v1/block/item",
+            "template": {
+              "name": "WRS Visit Our Park",
+              "model": "wrsvisitourpark"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "models": [
+    {
+      "id": "wrsvisitourparks",
+      "fields": []
+    },
+    {
+      "id": "wrsvisitourpark",
+      "fields": [
+        {
+          "component": "text",
+          "name": "title",
+          "label": "Title",
+          "valueType": "string"
+        },
+        {
+          "component": "reference",
+          "name": "image",
+          "label": "Image",
+          "multi": false,
+          "valueType": "string"
+        },
+        {
+          "component": "aem-content",
+          "name": "url",
+          "label": "Path",
+          "valueType": "string"
+        }
+      ]
+    }
+  ],
+  "filters": [
+    {
+      "id": "wrsvisitourparks",
+      "components": [
+        "wrsvisitourpark"
+      ]
+    }
+  ]
+}

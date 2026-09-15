@@ -1,0 +1,92 @@
+/*
+ * WRS Visit Our Parks
+ *
+ * Port of the DEPLOYED bundle, not the LESS checkout - see
+ * ../../../wrs-components-export/header/styles/deployed-bundle-extract.css
+ * (`wildlife-park`, `list-park` are both named in its own "extracted by"
+ * header comment).
+ *
+ * The extract carries THREE separate rulesets for `.wildlife-park`/
+ * `.list-park`, scoped to three different parents: `footer .wildlife-park`,
+ * `.mega-menu .wildlife-park`, and the one this block ports, the bare
+ * `.wildlife-park` / `.wildlife-park .list-park` rules (lines ~3455-3512)
+ * plus their `@media (max-width:991px)` override. The header's OWN literal
+ * markup context, `.md-header .mobile-header .wildlife-park` (inside
+ * `@media (max-width:1024px)`, lines ~2452-2494), is deliberately NOT ported
+ * here: those declarations (`position:absolute; bottom:0; z-index:1;
+ * border-top`) exist to overlay this panel inside the header's hamburger
+ * flyout, a positioning context this block does not have - it is authored as
+ * an ordinary section-placed block, not nested inside `blocks/header/`'s
+ * mobile menu (blocks/header/ was not touched, per the migration brief).
+ *
+ * IMPORTANT GAP, stated rather than papered over: in the source, this panel
+ * has NO desktop design at all. Its bare (no-media) rule is
+ * `display:none` - on screens above 991px the source never shows it; it is
+ * strictly a mobile hamburger-menu amenity, revealed only by the
+ * `@media (max-width:991px) { display:block }` override, which is the ONLY
+ * ruleset this file ports. Because this block is authored standalone (any
+ * section, any viewport), not nested inside the header's mobile-only flyout,
+ * rendering it "desktop: display:none" would make it invisible everywhere an
+ * author places it above 991px wide - clearly wrong for a standalone block.
+ * So the single mobile ruleset below is applied at ALL widths rather than
+ * gated behind a breakpoint. This is a deliberate, flagged extrapolation,
+ * not a verified port: there is no source evidence for what this panel
+ * should look like wide, and it needs a design review once authored, not an
+ * invented desktop layout presented as ground truth.
+ *
+ * `#faf5e9` matches the `--wrs-bg-base` token already added for
+ * `backgroundsection` (docs/wrs-migration-notes.md "## backgroundsection");
+ * not reused here because the source rule for this panel is `#fff`, not
+ * `#faf5e9` - kept literal instead, matching the house style of the other
+ * wrs-*.css files in this repo for values with no existing token.
+ */
+
+.wrs-visit-our-parks-grid {
+  width: 100%;
+  text-align: center;
+  padding: 0.625rem 0;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.wrs-visit-our-parks-list {
+  list-style: none;
+  margin: 0.813rem 0 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.wrs-visit-our-parks-item {
+  float: left;
+  width: 25%;
+  padding: 0 1.25rem;
+  margin: 0 0 0.313rem;
+  box-sizing: border-box;
+}
+
+.wrs-visit-our-parks-item:nth-child(5n) {
+  clear: both;
+}
+
+.wrs-visit-our-parks-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wrs-visit-our-parks-link img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+@media (width >= 1025px) and (width <= 1439px) {
+  /* Source: `.wildlife-park .list-park li img { height:2.188rem }` at
+     min-width:1025px/max-width:1439px - the one desktop-range rule the
+     extract does carry for this component, kept as-is even though the panel
+     itself has no desktop display rule (see the docblock above). */
+  .wrs-visit-our-parks-link img {
+    height: 2.188rem;
+  }
+}

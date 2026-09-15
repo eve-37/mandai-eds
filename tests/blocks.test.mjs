@@ -1014,6 +1014,75 @@ test('wrs-conservation-banner: unconfigured block stays selectable in the editor
   assert.ok(wcbEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Visit Our Parks - no published markup exists yet (this component
+ * hasn't been authored). Fixtures are constructed from this repo's own
+ * confirmed cell shapes: a bare-text single-field cell (four-column-tiles'
+ * caption cell), a `<picture>`-holding reference cell (four-column-tiles'
+ * image cell), and a single `<a href>` aem-content cell (wrs-featured-listing's
+ * fragmentPath cell / secondary-button's link cell) - not copied from a
+ * published page, and must be re-verified once this block is authored for
+ * real.
+ * ------------------------------------------------------------------ */
+const parkRow = (n, { title = `Park ${n}`, image = true, link = `/content/wrs/en/park-${n}` } = {}) => `<div data-aue-resource="urn:park${n}" data-aue-model="wrsvisitourpark">
+  <div>${title}</div>
+  <div>${image ? `<picture><img src="/park${n}.png"></picture>` : ''}</div>
+  <div>${link ? `<a href="${link}">${link}</a>` : ''}</div>
+</div>`;
+
+const WVOP = `<div class="wrs-visit-our-parks">
+  ${parkRow(1, { title: 'River Safari', link: '/content/wrs/en/river-safari' })}
+  ${parkRow(2, { title: 'Night Safari', link: '/content/wrs/en/night-safari' })}
+</div>`;
+
+const wvop = await decorateBlock('../blocks/wrs-visit-our-parks/wrs-visit-our-parks.js', WVOP);
+
+test('wrs-visit-our-parks: one item per authored park', () => {
+  assert.equal(wvop.querySelectorAll('.wrs-visit-our-parks-item').length, 2);
+});
+
+test('wrs-visit-our-parks: title becomes both the link title attribute and the image alt text', () => {
+  const link = wvop.querySelector('.wrs-visit-our-parks-item:first-child .wrs-visit-our-parks-link');
+  assert.equal(link.getAttribute('title'), 'River Safari');
+  assert.equal(link.getAttribute('href'), '/content/wrs/en/river-safari');
+  assert.equal(link.querySelector('img').getAttribute('alt'), 'River Safari');
+});
+
+test('wrs-visit-our-parks: the second park is read independently of the first (no cross-row bleed)', () => {
+  const link = wvop.querySelector('.wrs-visit-our-parks-item:last-child .wrs-visit-our-parks-link');
+  assert.equal(link.getAttribute('title'), 'Night Safari');
+  assert.equal(link.getAttribute('href'), '/content/wrs/en/night-safari');
+});
+
+test('wrs-visit-our-parks: instrumentation moves onto the item, not the row it replaces', () => {
+  const items = [...wvop.querySelectorAll('.wrs-visit-our-parks-item')];
+  assert.deepEqual(items.map((el) => el.getAttribute('data-aue-resource')), ['urn:park1', 'urn:park2']);
+  assert.equal(wvop.querySelectorAll('[data-aue-resource="urn:park1"]').length, 1);
+});
+
+const wvopNoImage = await decorateBlock(
+  '../blocks/wrs-visit-our-parks/wrs-visit-our-parks.js',
+  `<div class="wrs-visit-our-parks">${parkRow(3, { title: 'Bird Paradise', image: false })}</div>`,
+);
+test('wrs-visit-our-parks: a park authored without an image yet still renders as a text link, not dropped', () => {
+  const link = wvopNoImage.querySelector('.wrs-visit-our-parks-link');
+  assert.equal(link.querySelector('picture'), null);
+  assert.equal(link.textContent, 'Bird Paradise');
+});
+
+const wvopEmpty = await decorateBlock('../blocks/wrs-visit-our-parks/wrs-visit-our-parks.js', '<div class="wrs-visit-our-parks"></div>');
+test('wrs-visit-our-parks: renders nothing when unconfigured outside the editor', () => {
+  assert.equal(wvopEmpty.children.length, 0);
+});
+
+const wvopEdit = await decorateBlock(
+  '../blocks/wrs-visit-our-parks/wrs-visit-our-parks.js',
+  '<div class="wrs-visit-our-parks" data-aue-resource="urn:block1"></div>',
+);
+test('wrs-visit-our-parks: unconfigured block stays selectable in the editor', () => {
+  assert.ok(wvopEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {

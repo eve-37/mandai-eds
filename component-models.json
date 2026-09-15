@@ -1533,5 +1533,33 @@
         "valueType": "string"
       }
     ]
+  },
+  {
+    "id": "wrsvisitourparks",
+    "fields": []
+  },
+  {
+    "id": "wrsvisitourpark",
+    "fields": [
+      {
+        "component": "text",
+        "name": "title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "image",
+        "label": "Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "aem-content",
+        "name": "url",
+        "label": "Path",
+        "valueType": "string"
+      }
+    ]
   }
 ]
