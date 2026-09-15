@@ -34,7 +34,8 @@
       "wrsadmissiontypes",
       "wrsfeaturedlisting",
       "wrsconservationbanner",
-      "wrsvisitourparks"
+      "wrsvisitourparks",
+      "wrsfourcollisting"
     ]
   },
   {
@@ -111,6 +112,12 @@
     "id": "wrsfeaturedlisting",
     "components": [
       "wrsfeaturedlistingitem"
+    ]
+  },
+  {
+    "id": "wrsfourcollisting",
+    "components": [
+      "wrsfourcollistingitem"
     ]
   },
   {

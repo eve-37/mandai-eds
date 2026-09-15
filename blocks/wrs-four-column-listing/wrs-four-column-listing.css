@@ -1,0 +1,329 @@
+/*
+ * WRS Four Column Listing
+ *
+ * Port of the DEPLOYED bundle
+ * (../../../wrs-components-export/mandaicffourcollisting/styles/deployed-bundle-extract.css),
+ * not the two LESS checkouts - md-4-col-content-fragment.less is behind what
+ * is deployed, and md-3-col-content-fragment-with-filter-and-cta.less is a
+ * DIFFERENT, 3-column sibling component, not this one. Rules in the extract
+ * scoped under `.md-3-col-content-fragment-with-filter-and-cta__item` were
+ * excluded for the same reason (checked by selector, per COMPONENT.md's
+ * warning that a rule can appear because it shares a class with another
+ * component); so were every brand-skin override (`.zoo-style`,
+ * `.bird-park-style`, `.night-safari-style`, `.river-safari-style`,
+ * `.mrr-style`) - this repo is WRS-only, and the `.wrs-style .md-button-big`
+ * rule repeats the same #fc0/#003400 values the unscoped base rule already
+ * has, so only the base rule is ported.
+ *
+ * THIS IS A SHELL, NOT A FULL PORT (see wrs-four-column-listing.js): the
+ * per-item Content-Fragment-derived content (title, location/date/time
+ * labels, tags, description, image, CTA) is not resolved yet, so the
+ * `.all-content`/`.md-icon-text`/`.md-tag-label`/`.md-link-with-arrow`/
+ * `.md-button-big.item-with-button` rules below are ported now so they are
+ * ready the moment the CF seam is filled in, but they are NOT exercised by
+ * the current unresolved-card placeholder. Re-check this file against the
+ * extract once that happens.
+ *
+ * Grid gap: the source's desktop 4-up layout comes from Bootstrap's
+ * `.row > .col-md-3`, which is NOT in this repo (no Bootstrap) and is not in
+ * the extract either (COMPONENT.md/the extract's own header note there are no
+ * grid/width rules for `col-md-*` in the deployed bundle - they come from the
+ * site's global Bootstrap). The grid below is a reconstruction using this
+ * repo's own CSS Grid conventions (four-column-tiles, cards), not a verified
+ * port - flagged for re-check once authored.
+ *
+ * `.md-4-col-content-fragment.no-padding-bottom .row .col-md-3:last-child`
+ * (extract) does not match anything the HTL actually emits - the HTL's own
+ * padding-toggle classes are `no-top-padding`/`no-bottom-padding` (see
+ * mandaicffourcollisting.html line 5), not `no-padding-bottom`. This looks
+ * like stale/dead CSS left over from an earlier markup revision - not ported,
+ * since porting it under a name that never matches would be silently useless
+ * and porting it under a name that DOES match would be inventing behaviour
+ * the source never actually exercised.
+ *
+ * `#003400` does not match any existing `--rb-*` token in styles/styles.css
+ * (closest is `--rb-dark-green: #00441f`, a different value) - same call
+ * `backgroundsection` made for its own two colours: given its own
+ * `--wrs-dark-green` custom property rather than forced onto the `--rb-*`
+ * palette, which belongs to the separately-migrated Ranger Buddies brand.
+ *
+ * Media queries rewritten mobile-first to this repo's `(width >= Npx)` range
+ * syntax; the source is desktop-first with cutoffs at max-width:768/992px.
+ * Hover rules wrapped in `(hover: hover) and (pointer: fine)`, replacing the
+ * source's `.no-touch` class (a JS-added feature-detection class this repo
+ * has no equivalent loader for).
+ */
+
+.wrs-four-column-listing-inner {
+  --wrs-dark-green: #003400;
+
+  padding: 40px 0;
+}
+
+@media (width >= 768px) {
+  .wrs-four-column-listing-inner {
+    padding: 60px 0;
+  }
+}
+
+.wrs-four-column-listing-inner.bg-sap-white {
+  background-color: var(--wrs-bg-sap-white, #fbebce);
+}
+
+.wrs-four-column-listing-inner.bg-base {
+  background-color: var(--wrs-bg-base, #faf5e9);
+}
+
+.wrs-four-column-listing-inner.no-top-padding {
+  padding-top: 0;
+}
+
+.wrs-four-column-listing-inner.no-bottom-padding {
+  padding-bottom: 0;
+}
+
+.wrs-four-column-listing-title {
+  margin-bottom: 20px;
+  color: var(--wrs-dark-green);
+  z-index: 8;
+}
+
+.wrs-four-column-listing-title.text-center {
+  text-align: center;
+}
+
+/* h2 specifically gets a larger bottom margin in the source (extract: 40px vs 20px for h3-h6). */
+h2.wrs-four-column-listing-title {
+  margin-bottom: 40px;
+}
+
+/* ---- Grid: reconstruction, see file header. ---- */
+.wrs-four-column-listing-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (width >= 600px) {
+  .wrs-four-column-listing-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (width >= 992px) {
+  .wrs-four-column-listing-list {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
+  }
+}
+
+.wrs-four-column-listing-list.items-center {
+  justify-items: center;
+}
+
+.wrs-four-column-listing-item {
+  margin-bottom: 20px;
+  background-color: #fff;
+  border-radius: 20px;
+}
+
+@media (width >= 992px) {
+  .wrs-four-column-listing-item {
+    margin-bottom: 40px;
+  }
+}
+
+.wrs-four-column-listing-card {
+  height: 100%;
+}
+
+.wrs-four-column-listing-card img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+.wrs-four-column-listing-card h4 {
+  overflow-wrap: anywhere;
+}
+
+.wrs-four-column-listing-card .all-content {
+  padding: 10px 17px 17px;
+}
+
+.wrs-four-column-listing-card .md-icon-text {
+  display: flex;
+  position: relative;
+  margin-top: 10px;
+}
+
+.wrs-four-column-listing-card .md-icon-text i {
+  position: absolute;
+  left: 0;
+  color: var(--wrs-dark-green);
+  font-size: 16px;
+}
+
+.wrs-four-column-listing-card .body-text3 {
+  margin-top: 15px;
+  font-size: 1rem;
+  line-height: normal;
+}
+
+.wrs-four-column-listing-card .md-icon-text .body-text3 {
+  margin-top: 0;
+  margin-left: 30px;
+}
+
+.wrs-four-column-listing-card .body-text3 p {
+  display: block;
+  margin-top: 0.875rem;
+  font-size: 1rem;
+  line-height: normal;
+}
+
+.wrs-four-column-listing-card ul {
+  list-style: initial !important;
+}
+
+.wrs-four-column-listing-card ol {
+  list-style: decimal !important;
+  padding-left: 20px;
+}
+
+.wrs-four-column-listing-item.item-with-button {
+  margin-bottom: 10px;
+}
+
+/* Tag list - `.md .md-tag-label` in the extract, `.md` being this component's own top-level wrapper class. */
+.wrs-four-column-listing-card .md-tag-label {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.wrs-four-column-listing-card .md-tag-label .md-tag {
+  margin-top: 0.938rem;
+  margin-right: 0.625rem;
+  padding: 0.063rem 0.625rem;
+  color: var(--wrs-dark-green);
+  background-color: #e6e6e6;
+  border-radius: 0.781rem;
+}
+
+.wrs-four-column-listing-card .md-tag-label .md-tag:last-child {
+  margin-right: 0;
+}
+
+/* Link/button used by the per-item CTA once resolved (item.ctaText / item.ctaLink), and by the shared .md-link-with-arrow shape. */
+.wrs-four-column-listing-card .md-link-with-arrow {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  color: var(--wrs-dark-green);
+  font-weight: 700;
+  font-size: 16px;
+  text-transform: capitalize;
+}
+
+.md-link-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 0.625rem;
+  color: #fbebce;
+  background-color: var(--wrs-dark-green);
+  border-radius: 50%;
+  font-size: 0.875rem;
+}
+
+@media (width >= 992px) {
+  .md-link-arrow {
+    width: 1.875rem;
+    height: 1.875rem;
+    font-size: 1.125rem;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wrs-four-column-listing-card .md-link-with-arrow:hover .md-link-arrow {
+    background-color: #009b4d;
+  }
+}
+
+/* Section-level and per-item CTA button (`.md-button-big` in the extract). */
+.wrs-four-column-listing-cta-button {
+  display: inline-block;
+  min-width: 190px;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  color: var(--wrs-dark-green);
+  background-color: #fc0;
+  border: none;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 24px;
+  text-align: center;
+  text-transform: capitalize;
+  text-shadow: none;
+  outline: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wrs-four-column-listing-cta-button:hover {
+    background-color: #ffe88e;
+  }
+}
+
+.wrs-four-column-listing-cta {
+  margin-top: 30px;
+  text-align: center;
+}
+
+@media (width >= 992px) {
+  .wrs-four-column-listing-cta {
+    margin-top: 0;
+  }
+}
+
+/* Per-item button variant (`.item-with-button` on `.md-button-big`) - future use, see file header. */
+.wrs-four-column-listing-item .wrs-four-column-listing-cta-button.item-with-button {
+  min-width: 100%;
+  margin-bottom: 40px;
+}
+
+@media (width < 992px) {
+  .wrs-four-column-listing-item .wrs-four-column-listing-cta-button.item-with-button {
+    margin-top: 0;
+    margin-bottom: 20px;
+  }
+}
+
+/*
+ * Not a source port: a visible marker for the unresolved Content-Fragment
+ * state, so an author/reviewer can see which cards still need the CF
+ * architecture decision (docs/wrs-migration-notes.md) before they render for
+ * real. Modelled on wrs-featured-listing's identical placeholder.
+ */
+.wrs-four-column-listing-unresolved {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  padding: 0.75rem;
+  background-color: var(--rb-light-beige);
+  border: 1px dashed var(--rb-dark-beige);
+  border-radius: 20px;
+}
+
+.wrs-four-column-listing-unresolved-label {
+  margin: 0;
+  color: var(--text-color);
+  font-size: var(--body-font-size-xs);
+  word-break: break-all;
+  text-align: center;
+}

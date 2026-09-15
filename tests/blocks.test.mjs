@@ -1083,6 +1083,130 @@ test('wrs-visit-our-parks: unconfigured block stays selectable in the editor', (
   assert.ok(wvopEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Four Column Listing - fixtures are CONSTRUCTED from this repo's own
+ * confirmed cell shapes (readCta-style grouped cells - four-column-tiles;
+ * single aem-content + boolean child rows - wrs-visit-our-parks), not copied
+ * from a published AEM page (none of these WRS components has been authored
+ * yet). Must be re-verified once wrs-four-column-listing has real published
+ * markup to check against. See wrs-four-column-listing.js and
+ * docs/wrs-migration-notes.md "## mandaicffourcollisting" for why the shell
+ * has no Content Fragment resolution.
+ * ------------------------------------------------------------------ */
+const wfcItemRow = (n, { cfPath = `/content/dam/fragments/things-to-do/item-${n}`, hide = false } = {}) => `<div data-aue-resource="urn:cf${n}" data-aue-model="wrsfourcollistingitem">
+  <div>${cfPath ? `<a href="${cfPath}">${cfPath}</a>` : ''}</div>
+  <div>${hide}</div>
+</div>`;
+
+const wfcRow = ({
+  title = 'Discover the Reserves',
+  ctaHref = '/content/wrs/en/all-parks',
+  ctaText = 'See all parks',
+  ctaStyle = 'button',
+  layout = 'h2 title-center bg-base items-center quick-facts none',
+} = {}) => `<div>${title}</div>
+  <div><p><a href="${ctaHref}">${ctaText}</a></p><p>${ctaStyle}</p></div>
+  <div>${layout.split(' ').filter(Boolean).map((v) => `<p>${v}</p>`).join('')}</div>`;
+
+const WFC = `<div class="wrs-four-column-listing" data-aue-resource="urn:block1">
+  ${wfcRow()}
+  ${wfcItemRow(1, { cfPath: '/content/dam/fragments/things-to-do/lion-encounter' })}
+  ${wfcItemRow(2, { cfPath: '/content/dam/fragments/things-to-do/river-cruise', hide: true })}
+</div>`;
+
+const wfc = await decorateBlock('../blocks/wrs-four-column-listing/wrs-four-column-listing.js', WFC);
+
+test('wrs-four-column-listing: title renders as the selected heading level, centered', () => {
+  const heading = wfc.querySelector('.wrs-four-column-listing-title');
+  assert.equal(heading.tagName, 'H2');
+  assert.equal(heading.textContent, 'Discover the Reserves');
+  assert.ok(heading.classList.contains('text-center'));
+});
+
+test('wrs-four-column-listing: bgColor select drives the modifier class', () => {
+  assert.ok(wfc.querySelector('.wrs-four-column-listing-inner.bg-base'));
+  assert.equal(wfc.querySelector('.wrs-four-column-listing-inner.bg-sap-white'), null);
+});
+
+test('wrs-four-column-listing: anchorLink becomes the wrapper id, not confused with the enumerated values around it', () => {
+  assert.equal(wfc.querySelector('.wrs-four-column-listing-inner').id, 'quick-facts');
+});
+
+test('wrs-four-column-listing: alignItems select reaches the list', () => {
+  assert.ok(wfc.querySelector('.wrs-four-column-listing-list.items-center'));
+});
+
+test('wrs-four-column-listing: one card per authored Content Fragment path, each unresolved', () => {
+  const labels = [...wfc.querySelectorAll('.wrs-four-column-listing-unresolved-label')].map((el) => el.textContent);
+  assert.deepEqual(labels, [
+    'Content Fragment not resolved: /content/dam/fragments/things-to-do/lion-encounter',
+    'Content Fragment not resolved: /content/dam/fragments/things-to-do/river-cruise (CTA hidden)',
+  ]);
+});
+
+test('wrs-four-column-listing: the section CTA renders as a button, from the grouped cta_ cell', () => {
+  const link = wfc.querySelector('.wrs-four-column-listing-cta a');
+  assert.equal(link.getAttribute('href'), '/content/wrs/en/all-parks');
+  const button = link.querySelector('.wrs-four-column-listing-cta-button');
+  assert.equal(button.textContent, 'See all parks');
+});
+
+test('wrs-four-column-listing: instrumentation moves onto the title, item and CTA elements that replace their rows, not onto a sibling', () => {
+  assert.equal(wfc.querySelectorAll('[data-aue-resource="urn:cf1"]').length, 1);
+  assert.equal(wfc.querySelector('[data-aue-resource="urn:cf1"]').className, 'wrs-four-column-listing-item');
+  assert.equal(wfc.querySelectorAll('[data-aue-resource="urn:cf2"]').length, 1);
+});
+
+/*
+ * The trap the task brief calls out: two same-domain checkboxes
+ * (noTopPadding/noBottomPadding) grouped into one cell would both render as
+ * bare "true"/"false" with no way to tell which is which. Collapsed here into
+ * one four-value select (layout_padding) instead - each state is checked.
+ */
+// eslint-disable-next-line no-restricted-syntax
+for (const padding of ['none', 'no-top', 'no-bottom', 'no-top-bottom']) {
+  const html = `<div class="wrs-four-column-listing">${wfcRow({ layout: `h2 title-center bg-base items-center ${padding}` })}${wfcItemRow(1)}</div>`;
+  // eslint-disable-next-line no-await-in-loop
+  const el = await decorateBlock('../blocks/wrs-four-column-listing/wrs-four-column-listing.js', html);
+  test(`wrs-four-column-listing: layout_padding="${padding}" sets the expected top/bottom classes unambiguously`, () => {
+    const inner = el.querySelector('.wrs-four-column-listing-inner');
+    assert.equal(inner.classList.contains('no-top-padding'), padding === 'no-top' || padding === 'no-top-bottom');
+    assert.equal(inner.classList.contains('no-bottom-padding'), padding === 'no-bottom' || padding === 'no-top-bottom');
+  });
+}
+
+const wfcNoTitleNoCta = await decorateBlock(
+  '../blocks/wrs-four-column-listing/wrs-four-column-listing.js',
+  `<div class="wrs-four-column-listing">${wfcRow({ title: '', ctaHref: '', ctaText: '' })}${wfcItemRow(1)}</div>`,
+);
+test('wrs-four-column-listing: blank optional title and CTA cells do not crash decorate(), items still render', () => {
+  assert.equal(wfcNoTitleNoCta.querySelector('.wrs-four-column-listing-title'), null);
+  assert.equal(wfcNoTitleNoCta.querySelector('.wrs-four-column-listing-cta'), null);
+  assert.equal(wfcNoTitleNoCta.querySelectorAll('.wrs-four-column-listing-item').length, 1);
+});
+
+const wfcBlankItem = await decorateBlock(
+  '../blocks/wrs-four-column-listing/wrs-four-column-listing.js',
+  `<div class="wrs-four-column-listing">${wfcRow()}${wfcItemRow(1, { cfPath: '' })}</div>`,
+);
+test('wrs-four-column-listing: a row with no Content Fragment picked yet still renders, not crashes', () => {
+  const label = wfcBlankItem.querySelector('.wrs-four-column-listing-unresolved-label');
+  assert.equal(label.textContent, 'No Content Fragment selected');
+});
+
+const wfcEmpty = await decorateBlock('../blocks/wrs-four-column-listing/wrs-four-column-listing.js', '<div class="wrs-four-column-listing"></div>');
+test('wrs-four-column-listing: renders nothing when unconfigured outside the editor', () => {
+  assert.equal(wfcEmpty.children.length, 0);
+});
+
+const wfcEdit = await decorateBlock(
+  '../blocks/wrs-four-column-listing/wrs-four-column-listing.js',
+  '<div class="wrs-four-column-listing" data-aue-resource="urn:block1"></div>',
+);
+test('wrs-four-column-listing: unconfigured block stays selectable in the editor', () => {
+  assert.ok(wfcEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {

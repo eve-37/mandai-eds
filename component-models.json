@@ -1535,6 +1535,186 @@
     ]
   },
   {
+    "id": "wrsfourcollisting",
+    "fields": [
+      {
+        "component": "text",
+        "name": "title",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "aem-content",
+        "name": "cta_link",
+        "label": "CTA Path",
+        "description": "Bottom-of-section CTA button path.",
+        "rootPath": "/content",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "cta_linkText",
+        "label": "CTA Text",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "cta_style",
+        "label": "Items CTA Style",
+        "description": "How each item's own CTA renders - link or button. Applies to items, not the section CTA above, matching the source dialog's single ctaStyle field driving both.",
+        "valueType": "string",
+        "value": "link",
+        "options": [
+          {
+            "name": "Link",
+            "value": "link"
+          },
+          {
+            "name": "Button",
+            "value": "button"
+          }
+        ]
+      },
+      {
+        "component": "select",
+        "name": "layout_style",
+        "label": "Title Style (heading level)",
+        "valueType": "string",
+        "value": "h2",
+        "options": [
+          {
+            "name": "H1",
+            "value": "h1"
+          },
+          {
+            "name": "H2",
+            "value": "h2"
+          },
+          {
+            "name": "H3",
+            "value": "h3"
+          },
+          {
+            "name": "H4",
+            "value": "h4"
+          },
+          {
+            "name": "H5",
+            "value": "h5"
+          },
+          {
+            "name": "H6",
+            "value": "h6"
+          }
+        ]
+      },
+      {
+        "component": "select",
+        "name": "layout_align",
+        "label": "Title Align",
+        "valueType": "string",
+        "value": "title-center",
+        "options": [
+          {
+            "name": "Center",
+            "value": "title-center"
+          },
+          {
+            "name": "Left",
+            "value": "title-left"
+          }
+        ]
+      },
+      {
+        "component": "select",
+        "name": "layout_bgColor",
+        "label": "Background Color",
+        "description": "Please select the background color",
+        "valueType": "string",
+        "value": "bg-base",
+        "options": [
+          {
+            "name": "Base",
+            "value": "bg-base"
+          },
+          {
+            "name": "Sap White",
+            "value": "bg-sap-white"
+          }
+        ]
+      },
+      {
+        "component": "select",
+        "name": "layout_alignItems",
+        "label": "Align Items",
+        "valueType": "string",
+        "value": "items-center",
+        "options": [
+          {
+            "name": "Center",
+            "value": "items-center"
+          },
+          {
+            "name": "Left",
+            "value": ""
+          }
+        ]
+      },
+      {
+        "component": "text",
+        "name": "layout_anchorLink",
+        "label": "Anchor Link ID",
+        "description": "Input id link of anchor item. Ex: quick-facts",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "layout_padding",
+        "label": "Section Padding",
+        "description": "Combines the source's two noTopPadding/noBottomPadding checkboxes into one field, so the two booleans never land in the same grouped cell with no way to tell which is which (see block docblock).",
+        "valueType": "string",
+        "value": "none",
+        "options": [
+          {
+            "name": "Normal padding",
+            "value": "none"
+          },
+          {
+            "name": "No top padding",
+            "value": "no-top"
+          },
+          {
+            "name": "No bottom padding",
+            "value": "no-bottom"
+          },
+          {
+            "name": "No top or bottom padding",
+            "value": "no-top-bottom"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "wrsfourcollistingitem",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "cfPath",
+        "label": "Content Fragment",
+        "description": "Path to the Content Fragment to display. Despite the source dialog's label ('Content Fragment Folder Path'), the Sling Model resolves this path AS a single Content Fragment, not as a folder to enumerate - see docs/wrs-migration-notes.md.",
+        "rootPath": "/content/dam/fragments",
+        "valueType": "string"
+      },
+      {
+        "component": "boolean",
+        "name": "hideCTAButton",
+        "label": "Hide CTA",
+        "valueType": "boolean"
+      }
+    ]
+  },
+  {
     "id": "wrsvisitourparks",
     "fields": []
   },

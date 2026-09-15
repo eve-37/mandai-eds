@@ -981,3 +981,200 @@ whatever logout-modal UI is eventually built (see login/logout above), re-hosted
 - `npm run build:json`, `npm run lint` and `npm test` all pass (105/105 tests).
 - `blocks/header/` was **not** touched, as required — it already covers the destination for the
   navigation content flagged above (the `/nav` fragment it loads).
+
+## mandaicffourcollisting
+
+**Source:** `wrs-components-export/mandaicffourcollisting/` — `wrs/components/mandai/mandaicffourcollisting`
+(no `sling:resourceSuperType` — a standalone `cq:Component`). 11 top-level dialog fields, one
+composite multifield (`listingitems` → fieldset `./cfItems`, 2 fields per row).
+
+**Decision: built a shell, same shape as `featuredlistingv2` above.** No fetch, no servlet, no
+GraphQL client. Read that entry first — this one is the second Content-Fragment-backed component
+in the run and reuses its analysis rather than repeating it.
+
+### The dialog's own label is wrong — checked, not assumed
+
+The survey that scoped this component flagged `cfPath` as possibly enumerating a **folder**
+(`fieldLabel="Content Fragment Folder Path"`, `fieldDescription="Please Provide Content Fragment
+Folder Path"`), which would put it on a different servlet-vs-GraphQL branch than
+`featuredlistingv2`'s single-fragment-per-row shape (branch 2, filtering/listing, not branch 3).
+Reading `MandaiCFFourColListingModel.getAllCFDetails()`/`isValidCF()` settles it the other way:
+
+```java
+private void getAllCFDetails(String path, boolean hideCTAButton) {
+    Resource cfResourceOne = resourceResolver.getResource(path);   // path IS the CF, not a folder
+    if (cfResourceOne == null) { return; }
+    getContentFragmentList(cfResourceOne, hideCTAButton);
+}
+```
+
+There is no `NodeIterator`, no `QueryBuilder`, no `resourceResolver.getResource(path).listChildren()`
+anywhere in the class — `isValidCF()` checks `cfResource.getChild("jcr:content/data")`'s own
+`cq:model` directly, and `getCFDetails()` adapts `cfResource`'s own `jcr:content/data/master` child.
+`cfPath` has to be a Content Fragment's own path for this to work at all; a folder path would fail
+`isValidCF()` and the row would silently render nothing. The dialog's field label is simply
+misleading — probably copy-pasted from a sibling component that genuinely does take a folder — not
+a listing operation. Combined with the multifield's own `eaem-min-items="1" eaem-max-items="4"`
+cap, this is exactly `featuredlistingv2`'s shape: an author-curated set of up to a handful of
+individually-picked fragment paths, one per row, not a query over a folder's contents.
+
+### Where this DOES differ from `featuredlistingv2`, and why it matters
+
+`featuredlistingv2`'s recommendation (servlet, not GraphQL) rested on a specific, visible finding:
+`FeatureListingV2Model` itself calls `CommonUtils.getCompressedResizedImageURL()` for both image
+variants and `I18nUtils.getLabel()` for the button copy — real derived-string logic that a GraphQL
+migration would have to reinvent client-side. Working the same rule here:
+
+1. **Page-level data?** No — `getCtaPath()` calls `CommonUtils.getProperURL(ctaPath,
+   resourceResolver)`, the same simple internal-link-resolution idiom this repo's own
+   `resolveHref()` already ports elsewhere; `resourceResolver` is otherwise used only to resolve
+   `cfPath`. No page property reaches a card. Branch 1 does not match.
+2. **Filtering/sorting/pagination?** No, per the "folder" finding above — author-curated rows,
+   confirmed. Branch 2 does not match.
+3. **Branch 3, with the same "no derived strings" caveat `featuredlistingv2` raised — except here
+   it cannot be checked at all**, and that inability is the material finding for this component:
+   everything the HTL renders per item — `title`, `locationLabels`, `dateLabels`, `timeLabels`,
+   `tags`, `shortDescription`, `image`, `imageAltText`, `imageIsDecorative`, `ctaText`, `ctaLink` —
+   comes from `masterResource.adaptTo(MandaiColumnListingCFDetails.class)`. That bean class is a
+   **transitive dependency not in this bundle** (COMPONENT.md's "Not copied" list: Java imports
+   under `.models.beans.*` were not followed). `featuredlistingv2`'s derived-string logic was found
+   because it sat directly in the Sling Model that WAS in the bundle; this component's equivalent
+   logic, if any, is invisible from here.
+
+   The HTL's own hints lean toward "yes, there is formatting logic to find": three of the ten CF
+   fields render as **lists** (`data-sly-list.locationLabel="${item.locationLabels}"`, `dateLabels`,
+   `timeLabels`) and a fourth (`tags`) does too — plural getter names on a bean adapting a single CF
+   resource strongly suggest the bean parses/splits a raw CF field into an array (the same shape of
+   work `FeatureListingV2Model` did explicitly for its two image variants), which is exactly the
+   kind of logic the rule says a GraphQL migration would have to reinvent client-side rather than
+   reuse from a known-good server-side class.
+
+**Recommendation: lean servlet, consistent with `featuredlistingv2`, but with lower confidence** —
+the missing bean means this cannot be confirmed to the same standard. `MandaiColumnListingCFDetails.java`
+(package `sg.com.wrs.core.mandai.objects`, per the model's import) must be sourced from
+`Mandai-AEM` and read before either architecture decision is finalized. If it turns out to do
+nothing but expose raw CF fields with no parsing/formatting, the GraphQL branch becomes viable here
+even though it was rejected for `featuredlistingv2` — a genuine case where the two sibling
+components could reasonably land on different answers, not an inconsistency to resolve away.
+
+### What was built
+
+A container block, matching the dialog's own nesting:
+
+- parent `wrsfourcollisting` — the 9 non-multifield dialog fields (`title`, `style`, `align`,
+  `anchorLink`, `bgColor`, `alignItems`, `noTopPadding`, `noBottomPadding`, `ctaStyle`, `ctaText`,
+  `ctaPath` — 11 fields total) collapsed into **3 cells**:
+  - `title` — its own cell, unchanged.
+  - `cta_link` (`ctaPath`, aem-content) + `cta_linkText` (`ctaText`) + `cta_style` (`ctaStyle`) —
+    grouped by the shared `cta_` prefix, the section-level "view all" CTA at the bottom of the
+    component (`modal.ctaPath && modal.ctaText`), not the per-item CTA (that one is CF-derived,
+    see above).
+  - `layout_style` / `layout_align` / `layout_bgColor` / `layout_alignItems` / `layout_anchorLink`
+    / `layout_padding` — grouped by the shared `layout_` prefix. Six model fields represent the
+    remaining seven dialog fields; see the boolean trap below for where the count changes.
+- child `wrsfourcollistingitem` — `cfPath` (aem-content, `rootPath: /content/dam/fragments`) +
+  `hideCTAButton` (boolean), 2 cells, no grouping needed (fits the brief's prediction).
+
+**The boolean-grouping trap, and the fix chosen.** `noTopPadding`/`noBottomPadding` are two
+same-shape checkboxes (dialog text: "Grouped with item above" / "Grouped with item below") that,
+if placed in the same grouped `layout_` cell, would each render as a bare `true`/`false` `<p>` with
+no field name attached — indistinguishable from each other, exactly the trap the task brief
+describes. Two ways to avoid it were considered:
+
+1. **Keep them in separate cells** (positional index tells them apart). Rejected: this component's
+   cell budget already groups everything else into `layout_`, and splitting these two into their
+   own cells each would burn 2 of the remaining budget for two fields that are visually two facets
+   of ONE setting (how the section's own padding works), while other, more clearly-distinct fields
+   (`anchorLink`) would still need a place — more fragile bookkeeping for no benefit.
+2. **Collapse both into one select field with a distinct vocabulary** — the fix built here:
+   `layout_padding` with four values, `none` / `no-top` / `no-bottom` / `no-top-bottom`, covering
+   exactly the four states the two checkboxes could combine into. Because every value in this
+   vocabulary is unique and known ahead of time, the block's reader (`readLayout()`) can identify
+   it by content match the same way it identifies `layout_style`/`layout_align`/`layout_bgColor`,
+   with no risk of two values in the same cell being confused for each other. This is a genuine
+   field-shape change (2 checkboxes → 1 select) but loses no authoring capability — the same four
+   reachable combinations are still reachable, just via one control instead of two.
+
+   One residual, deliberately-accepted risk, called out in the block's own docblock: the free-text
+   `layout_anchorLink` field sits in the same cell as this vocabulary. If an author ever typed an
+   anchor id that happened to exactly match one of the enumerated values (`none`, `h2`,
+   `title-center`, `bg-base`, `items-center`, …), the reader would misclassify it. This was accepted
+   rather than engineered around because every other value in the cell already carries a real,
+   pre-existing default from its own `select`'s `value` attribute (so it always emits something
+   distinguishable), leaving `anchorLink` as the only genuinely free-text field in the group — the
+   same "whatever is left over" pattern `four-column-tiles`' own `readParent()` already uses for its
+   title/subtitle pair, not a new risk this component introduces.
+
+- **CSS**: ported from `styles/deployed-bundle-extract.css`, scoped by class name to
+  `md-4-col-content-fragment`/`md-4-col-content-fragment__item` and the shared bare classes
+  (`md-button-big`, `md-link-with-arrow`, `md-tag-label`). The sibling `.less` file in the same
+  bundle (`md-3-col-content-fragment-with-filter-and-cta.less`) and the matching
+  `md-3-col-content-fragment-with-filter-and-cta__item` rules in the extract belong to a
+  **different, 3-column component**, not this one — excluded by selector, per the extract's own
+  warning that a rule can appear because it shares a class with another component. One dead rule
+  found and NOT ported: the extract's `.md-4-col-content-fragment.no-padding-bottom .row
+  .col-md-3:last-child` targets a class (`no-padding-bottom`) the HTL never emits — the HTL's own
+  toggle classes are `no-top-padding`/`no-bottom-padding` — read as a stale leftover from an earlier
+  markup revision, not carried across. The desktop 4-up grid itself is a reconstruction (Bootstrap
+  `col-md-3`, not in this repo and not in the extract, which has no grid/width rules at all for this
+  component per its own header note) — flagged for re-check once authored, same caveat
+  `columncontrol`'s entry raised for the same missing-Bootstrap-grid situation.
+- `match-height.js` (`data-load-plugins="[\"match-height.js\"]"` on each item, `data-match-height`)
+  is referenced in the HTL but, per the task brief, is not in this component's own export bundle —
+  it IS present in the `columncontrol` bundle. Not built: it exists to equalize card heights across
+  a row, which this port already achieves for free via CSS Grid's default row-height behaviour
+  (`display: grid` rows stretch every cell in the row to the tallest by default) — a case where the
+  native layout primitive replaces the JS rather than needing it ported, not an omission.
+
+### Should this merge with `four-column-tiles`?
+
+Read `blocks/four-column-tiles/` before answering, as instructed — **not recommended**, and for
+reasons specific to what each component actually is, not just surface naming:
+
+- `four-column-tiles` is a Ranger Buddies component: a horizontally-scrolling, dot-navigated
+  carousel (`rb-track`/`rb-dots`, native scroll-snap) of image+caption tiles inside the `rb-section`
+  torn-edge-mask band system, with a single shared parent CTA.
+- `wrs-four-column-listing` is a WRS component: a static wrapping grid of Content-Fragment-backed
+  cards (image, tags, multi-line meta, description, per-item CTA), no carousel, no mask artwork, a
+  flat `bg-base`/`bg-sap-white` fill instead of `rb-section`'s masked bands, and a per-item CTA
+  whose data isn't even resolved yet.
+- The only real overlap is "four columns of things on desktop" and the coincidence of both source
+  names containing "4 col" / "Four Column" — the same shape of false-cognate `backgroundsection`'s
+  entry already found when checking `rb-section.bg-*` against WRS's own flat backgrounds. Forcing
+  one block to cover both would mean branching most of `decorate()` on which brand's shape is
+  authored, for a code-reuse gain smaller than the branching complexity it would add.
+
+### What a human needs to decide
+
+- **Source and read `MandaiColumnListingCFDetails.java`** before finalizing servlet vs GraphQL —
+  this is the one piece of evidence `featuredlistingv2`'s equivalent decision had and this one
+  does not.
+- Whether to build the servlet (leaning recommendation above) or accept the GraphQL tradeoffs, same
+  choice `featuredlistingv2` left open, once the bean is read.
+- `match-height.js`'s equalize-height behaviour is treated here as already covered by CSS Grid — if
+  a Content-Fragment card render (once built) breaks out of a simple grid cell (e.g. an
+  absolutely-positioned element), re-verify this assumption.
+
+### Files touched
+
+- `blocks/wrs-four-column-listing/_wrs-four-column-listing.json` — new; parent `wrsfourcollisting`
+  (11 dialog fields in 3 cells: `title`, `cta_*`, `layout_*`) with a `filter` naming the child;
+  child `wrsfourcollistingitem` (`cfPath`, `hideCTAButton`, 2 cells).
+- `blocks/wrs-four-column-listing/wrs-four-column-listing.js` — new; shell `decorate()`, no fetch,
+  one commented seam for the CF-resolution architecture decision above.
+- `blocks/wrs-four-column-listing/wrs-four-column-listing.css` — new; ports the section/heading/
+  button/tag/link-arrow geometry that does not depend on CF data from
+  `styles/deployed-bundle-extract.css`, plus a reconstructed grid (see above) and the same
+  "unresolved" placeholder style pattern as `wrs-featured-listing`.
+- `models/_section.json` — appended `"wrsfourcollisting"` to the `section` filter's `components`
+  array (child id intentionally not added).
+- `tests/blocks.test.mjs` — added 15 cases: title/heading-level render, bgColor modifier, anchorLink
+  extraction (including the specific case that caught a real bug during development — `'none'`
+  being misread as the anchor id until added to the padding vocabulary), alignItems, one
+  unresolved card per authored path (with the `hideCTAButton` marker), the section CTA, 
+  instrumentation on title/item/CTA, all four `layout_padding` states, blank title/CTA, a blank
+  Content Fragment pick, and the unconfigured-outside-editor / unconfigured-in-editor-placeholder
+  pair.
+- `npm run build:json`, `npm run lint` and `npm test` all pass (120/120 tests).
+- `blocks/four-column-tiles/` was **not** touched or extended, per the constraint and the
+  not-recommended finding above.
