@@ -699,6 +699,15 @@ main .section.highlight {
 
 .rb-section.bg-brown { background-image: url('/assets/section/bg-brown-mobile.jpg'); }
 
+/*
+ * Missions has its own band, and it is the one that stays anchored to the TOP
+ * at every width - every other band flips to bottom on desktop.
+ */
+.rb-section.bg-missions {
+  background-image: url('/assets/section/bg-missions-mobile.jpg');
+  background-position: top;
+}
+
 /* The inner column every section shares. */
 .rb-section-inner {
   max-width: 1200px;
@@ -716,6 +725,12 @@ main .section.highlight {
   .rb-section.bg-beige { background-image: url('/assets/section/bg-beige-desktop.jpg'); }
   .rb-section.bg-brown { background-image: url('/assets/section/bg-brown-desktop.jpg'); }
   .rb-section.bg-dark-green { background-image: url('/assets/section/bg-dark-green-desktop.jpg'); }
+
+  /* Desktop image, but the position stays top - see the note above. */
+  .rb-section.bg-missions {
+    background-image: url('/assets/section/bg-missions-desktop.jpg');
+    background-position: top;
+  }
 
   .rb-section.bg-green,
   .rb-section.bg-beige,

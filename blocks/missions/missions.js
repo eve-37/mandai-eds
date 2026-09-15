@@ -131,7 +131,8 @@ export default function decorate(block) {
   }
 
   const section = document.createElement('div');
-  section.className = `rb-section ${parent.mask || 'mask-1'} bg-brown`;
+  // Missions has its own band in the source - SectionLayout background="bg-missions".
+  section.className = `rb-section ${parent.mask || 'mask-1'} bg-missions`;
 
   const inner = document.createElement('div');
   inner.className = 'rb-section-inner';

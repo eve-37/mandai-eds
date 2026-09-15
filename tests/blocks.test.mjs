@@ -433,7 +433,7 @@ test('tabs: each panel keeps its own CTA variant', () => {
  * ------------------------------------------------------------------ */
 const BANNER = (n) => `<div data-aue-resource="urn:b${n}">
   <div><p>Carousel ${n}</p><p>more description here</p></div>
-  <div><p><picture><img src="/desktop${n}.png" alt=""></picture></p><p><picture><img src="/mobile${n}.png" alt=""></picture></p></div>
+  <div><p><picture><img src="/desktop${n}.png?width=750&format=png&optimize=medium" alt=""></picture></p><p><picture><img src="/mobile${n}.png?width=750&format=png&optimize=medium" alt=""></picture></p></div>
   <div><p><a href="/">View More</a></p><p>green</p><p>true</p></div>
 </div>`;
 /* mask, align and gradient are the CAROUSEL's own three property rows - the
@@ -461,8 +461,8 @@ test('one-column-banner-carousel: grouped copy cell splits into title and descri
 
 test('one-column-banner-carousel: desktop and mobile backgrounds are told apart', () => {
   const section = carousel.querySelector('li .rb-section');
-  assert.match(section.style.getPropertyValue('--banner-bg-desktop'), /desktop1\.png/);
-  assert.match(section.style.getPropertyValue('--banner-bg-mobile'), /mobile1\.png/);
+  assert.match(section.style.getPropertyValue('--banner-bg-desktop'), /desktop1\.png\?.*width=2000.*format=webply/);
+  assert.match(section.style.getPropertyValue('--banner-bg-mobile'), /mobile1\.png\?.*width=750.*format=webply/);
 });
 
 test('one-column-banner-carousel: every slide shares the carousel style', () => {
@@ -489,6 +489,11 @@ const MISSIONS = `<div class="missions">
   <div data-aue-resource="urn:m1"><div><p>Mission one</p><p>Jan 2026</p><p>Singapore</p><p>What we did</p></div><div><picture><img src="/m1.png" alt=""></picture></div><div><picture><img src="/l1.png" alt=""></picture><picture><img src="/l2.png" alt=""></picture></div></div>
 </div>`;
 const ms = await decorateBlock('../blocks/missions/missions.js', MISSIONS);
+
+test('missions: uses its own band, not the brown one', () => {
+  assert.ok(ms.querySelector('.rb-section.bg-missions'));
+  assert.equal(ms.querySelectorAll('.bg-brown').length, 0);
+});
 
 test('missions: the grouped content_ cell splits into title, description and mask', () => {
   assert.equal(ms.querySelector('.missions-info h3').textContent, 'Missions');
@@ -573,10 +578,23 @@ test('secondary-button: an empty new-tab cell does not open a new tab', () => {
 const SUB_HEADER = `<div class="sub-header">
   <div><div>Sub Header</div></div>
   <div><div>more subheader description</div></div>
-  <div><div><picture><img src="/desktop.png" alt=""></picture></div></div>
-  <div><div><picture><img src="/mobile.png" alt=""></picture></div></div>
+  <div><div><picture><img src="/desktop.png?width=750&format=png&optimize=medium" alt=""></picture></div></div>
+  <div><div><picture><img src="/mobile.png?width=750&format=png&optimize=medium" alt=""></picture></div></div>
 </div>`;
 const sh = await decorateBlock('../blocks/sub-header/sub-header.js', SUB_HEADER);
+/* EDS makes the <img> fallback the smallest, least optimised variant - 750px
+ * PNG. A full-bleed desktop band must not load that. */
+test('sub-header: the desktop background asks for a 2000px WebP, not the fallback', () => {
+  const w = sh.querySelector('.sub-header-wrapper');
+  const desktop = w.style.getPropertyValue('--sub-header-bg-desktop');
+  assert.match(desktop, /width=2000/);
+  assert.match(desktop, /format=webply/);
+  assert.doesNotMatch(desktop, /format=png/);
+  const mobile = w.style.getPropertyValue('--sub-header-bg-mobile');
+  assert.match(mobile, /width=750/);
+  assert.match(mobile, /format=webply/);
+});
+
 test('sub-header: copy and both backgrounds are read', () => {
   assert.equal(sh.querySelector('.sub-header-heading').textContent, 'Sub Header');
   assert.equal(sh.querySelector('.sub-header-desc').textContent, 'more subheader description');
@@ -616,7 +634,7 @@ test('masthead: no video id means poster only, and no player request', () => {
 
 const ONE_COL_BANNER = `<div class="one-column-banner">
   <div><div><p>One Column Banner</p><p>just testing this out</p></div></div>
-  <div><div><p><picture><img src="/d.png" alt=""></picture></p><p><picture><img src="/m.png" alt=""></picture></p></div></div>
+  <div><div><p><picture><img src="/d.png?width=750&format=png&optimize=medium" alt=""></picture></p><p><picture><img src="/m.png?width=750&format=png&optimize=medium" alt=""></picture></p></div></div>
   <div><div>mask-1</div></div>
   <div><div><p><a href="/">View More</a></p><p>green</p><p>true</p></div></div>
 </div>`;
@@ -627,8 +645,8 @@ test('one-column-banner: title and description are separate, not run together', 
 });
 test('one-column-banner: both backgrounds and the CTA are read', () => {
   const s = ocb.querySelector('.rb-section');
-  assert.match(s.style.getPropertyValue('--banner-bg-desktop'), /d\.png/);
-  assert.match(s.style.getPropertyValue('--banner-bg-mobile'), /m\.png/);
+  assert.match(s.style.getPropertyValue('--banner-bg-desktop'), /d\.png\?.*width=2000.*format=webply/);
+  assert.match(s.style.getPropertyValue('--banner-bg-mobile'), /m\.png\?.*width=750.*format=webply/);
   assert.equal(ocb.querySelector('.rb-cta a').getAttribute('target'), '_blank');
 });
 

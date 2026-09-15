@@ -1,8 +1,9 @@
 import { moveInstrumentation } from '../../scripts/scripts.js';
+import { backgroundUrl, cellText } from '../../scripts/rb-helpers.js';
 
-function cellText(el) {
-  return el?.textContent?.trim() ?? '';
-}
+/* Intrinsic widths asked of the delivery service for each breakpoint. */
+const DESKTOP_WIDTH = 2000;
+const MOBILE_WIDTH = 750;
 
 /**
  * Sub Header.
@@ -20,10 +21,9 @@ export default function decorate(block) {
   const imageRows = rows.filter((row) => row.querySelector('picture, img'));
   const textRows = rows.filter((row) => !row.querySelector('picture, img'));
 
-  const [desktop, mobile] = imageRows.map((row) => {
-    const img = row.querySelector('img');
-    return img?.getAttribute('src') || '';
-  });
+  const [desktopRow, mobileRow] = imageRows;
+  const desktop = backgroundUrl(desktopRow, DESKTOP_WIDTH);
+  const mobile = backgroundUrl(mobileRow, MOBILE_WIDTH);
 
   const [title, desc] = textRows.map(cellText);
 

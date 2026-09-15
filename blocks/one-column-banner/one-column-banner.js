@@ -1,6 +1,6 @@
 import { moveInstrumentation } from '../../scripts/scripts.js';
 import {
-  MASKS, cellText, cellValues, readCta, buildCta, renderEmpty,
+  MASKS, backgroundUrl, cellText, cellValues, readCta, buildCta, renderEmpty,
 } from '../../scripts/rb-helpers.js';
 
 /**
@@ -30,8 +30,10 @@ export default function decorate(block) {
 
   const cta = readCta(ctaRow);
 
-  const [desktop = '', mobile = ''] = [...(bgRow?.querySelectorAll('img') || [])]
-    .map((img) => img.getAttribute('src') || '');
+  // Two authored images in one grouped bg_ cell: desktop first, mobile second.
+  const [desktopImg, mobileImg] = [...(bgRow?.querySelectorAll('img') || [])];
+  const desktop = backgroundUrl(desktopImg, 2000);
+  const mobile = backgroundUrl(mobileImg, 750);
 
   if (!title && !cta && !desktop) {
     renderEmpty(block, 'One Column Banner — add a title and a background');

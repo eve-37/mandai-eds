@@ -1,6 +1,6 @@
 import { moveInstrumentation } from '../../scripts/scripts.js';
 import {
-  MASKS, cellText, cellValues, readCta, buildCta, buildDots, renderEmpty, splitRows,
+  MASKS, backgroundUrl, cellText, cellValues, readCta, buildCta, buildDots, renderEmpty, splitRows,
 } from '../../scripts/rb-helpers.js';
 
 const PREFIX = 'one-column-banner-carousel';
@@ -23,11 +23,14 @@ const PARENT_CELLS = 3;
 function readBanner(row) {
   const [contentCell, bgCell, ctaCell] = [...row.children];
   const [title = '', desc = ''] = cellValues(contentCell);
-  const [desktop = '', mobile = ''] = [...(bgCell?.querySelectorAll('img') || [])]
-    .map((img) => img.getAttribute('src') || '');
+  const [desktopImg, mobileImg] = [...(bgCell?.querySelectorAll('img') || [])];
 
   return {
-    title, desc, desktop, mobile, cta: readCta(ctaCell),
+    title,
+    desc,
+    desktop: backgroundUrl(desktopImg, 2000),
+    mobile: backgroundUrl(mobileImg, 750),
+    cta: readCta(ctaCell),
   };
 }
 

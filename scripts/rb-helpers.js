@@ -42,6 +42,36 @@ export function cellValues(el) {
 }
 
 /**
+ * A CSS-background-sized URL for an authored image.
+ *
+ * EDS renders every image as a `<picture>` whose `<source>` elements carry the
+ * optimised variants and whose `<img>` fallback is deliberately the SMALLEST and
+ * least optimised of them - 750px PNG. Blocks that put an authored image into a
+ * CSS background were reading that fallback `src`, so a full-bleed desktop band
+ * loaded a 750px PNG and looked soft.
+ *
+ * The delivery service takes its parameters from the query string, so the right
+ * variant is a rewrite rather than a lookup. WebP costs nothing in support
+ * terms here: these bands are already shaped with `mask-image`, which is the
+ * narrower requirement of the two.
+ *
+ * @param {Element|null} scope element containing the picture, or the img itself
+ * @param {number} width intrinsic width to request
+ */
+export function backgroundUrl(scope, width) {
+  const img = scope?.tagName === 'IMG' ? scope : scope?.querySelector('img');
+  const src = img?.getAttribute('src');
+  if (!src) return '';
+
+  const [path, query] = src.split('?');
+  const params = new URLSearchParams(query || '');
+  params.set('width', String(width));
+  params.set('format', 'webply');
+  params.set('optimize', 'medium');
+  return `${path}?${params.toString()}`;
+}
+
+/**
  * Ports the `.html` suffix every rb-aem Sling Model appended to internal paths
  * (`getLink()`, `getCtaURL()` and friends). External URLs are left alone.
  */
