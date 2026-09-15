@@ -1453,5 +1453,22 @@
         "valueType": "string"
       }
     ]
+  },
+  {
+    "id": "wrsfeaturedlisting",
+    "fields": []
+  },
+  {
+    "id": "wrsfeaturedlistingitem",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "fragmentPath",
+        "label": "Content Fragment",
+        "description": "Path to the Content Fragment to display.",
+        "rootPath": "/content/dam/fragments",
+        "valueType": "string"
+      }
+    ]
   }
 ]

@@ -337,3 +337,146 @@ None. `blocks/columns/**` and `models/_section.json` were both read but not modi
 is already registered in the `section` filter's `components` array, so no second edit was needed
 either. `npm run build:json`, `npm run lint` and `npm test` were re-run to confirm the repo is
 unchanged and still green (83/83 tests passing).
+
+## featuredlistingv2
+
+**Source:** `wrs-components-export/featuredlistingv2/` — `wrs/components/commons/featuredlistingv2`
+(`sling:resourceSuperType="wcm/foundation/components/parsys"`).
+
+**Decision: built a shell only. No fetch, no servlet, no GraphQL client.**
+
+### Shape
+
+This is the first Content-Fragment-backed component in the run, and it has a shape none of the
+`rb-*`/other `wrs-*` blocks so far do: the dialog carries **no parent-level fields at all** — just
+one multifield (`largeImages` → fieldset `./listItems`) holding a single `fragmentPath`
+pathbrowser (`rootPath="/content/dam/fragments"`) per row. Confirmed by reading the dialog XML as
+a tree: `<content><layout/><items><column><items><largeImages
+sling:resourceType=".../multifield"><field .../fieldset name="./listItems"><items><column><items>
+<fragmentPath .../pathbrowser name="./fragmentPath" rootPath="/content/dam/fragments"/>` — nothing
+sits outside that nesting.
+
+`FeatureListingV2Model.java` confirms the storage is as odd as the survey said: `@ValueMapValue
+String[] listItems` is an array of **JSON strings**, not child nodes — `init()` parses each string
+with GSON and reads only its `fragmentPath` key (`PROPS_PATH = "fragmentPath"`), skipping blanks
+and malformed entries. Everything the HTL actually renders — `header`, `descriptionDetail`,
+`image360x540`, `image1x1`, `pathHTML` — comes from resolving that path as a Content Fragment:
+`resolver.getResource(cfPath + WRSConstants.FRAGMENT_DATA_RESOURCE_PATH_PROPERTIES)`, a
+`WRSUtils.isTargetContentFragment(..., CONTENT_FRAGMENT_MODEL_ZONE)` model check,
+`fragmentResource.adaptTo(ContentFragment.class)`, then `WRSUtils.getCFProperty(fragment, "name" /
+"summary" / "imageDesktop" / "imageDesktop1x1" / "detailLink", String.class)`. Two of those are
+also run through derived formatting before they reach the HTL:
+`CommonUtils.getCompressedResizedImageURL(...)` (both images) and, separately,
+`I18nUtils.getLabel("viewall"/"viewless", currentPage, null)` for the show/hide button copy. None
+of this is dialog content — it cannot be read positionally off authored cells the way every other
+block in this repo works.
+
+`show-all.js`, wired via `data-load-plugins="[\"show-all.js\"]"` on the wrapper for the
+`>6 items` view-all/view-less behaviour (`data-show-all-min="6"`), is referenced in the HTL but is
+**not present** in the export bundle. Its button (`.wrapp-btn.hide-desktop`, shown only when
+`featureListing.listZone.size > 6`) is therefore not built either — flagged, not invented.
+
+### What was built
+
+A container block, matching the dialog's own nesting exactly:
+
+- parent `wrsfeaturedlisting` — **zero fields**, because the dialog has none at the top level.
+  `PARENT_CELLS = 0` in the JS, so every row in the block is a child row.
+- child `wrsfeaturedlistingitem` — one field, `fragmentPath`, component `aem-content`,
+  `rootPath: "/content/dam/fragments"` (the dialog's own pathbrowser root, more precise than the
+  generic `/content/dam` a DAM-rooted `aem-content` field would default to).
+
+`decorate()` reads each child row's single cell positionally (the same
+`<div><div><a href="...">label</a></div></div>` shape this repo's other lone-`aem-content`-field
+cells produce, confirmed against `secondary-button` and `four-column-tiles`' `cta_link` cell), and
+renders one card per authored item with a clearly-marked "Content Fragment not resolved:
+`<path>`" state in place of real content. Every row keeps its own `moveInstrumentation()` call, so
+it stays independently selectable and editable in the Universal Editor even though it renders no
+real copy yet. A single, commented seam in `wrs-featured-listing.js` marks exactly where CF
+resolution would be added once the architecture decision below is made — no fetch is implemented.
+
+**Inversion worth noting explicitly:** in every other block in this repo, an authored cell holding
+a `/content/dam/...` path is a sign the row reader is broken (DAM paths belong in image cells, not
+link cells). Here it is the *opposite* — a `/content/dam/fragments/...` path is exactly what
+`fragmentPath` is supposed to hold, and the shell does not reject or warn on it.
+
+### Servlet vs GraphQL — applying the rule
+
+Working the rule in order:
+
+1. **Does the block need anything that lives on the page rather than the fragment?** No. Every
+   field the HTL uses (`name`, `summary`, `imageDesktop`, `imageDesktop1x1`, `detailLink`) comes
+   off the Content Fragment itself via `ContentFragment`/`getCFProperty`. `currentPage` is injected
+   into the model, but it is used only to pass to `I18nUtils.getLabel(..., currentPage, null)` for
+   the view-all/view-less button labels — a per-locale UI string lookup, not a page property being
+   read onto the card. Branch 1 does not match.
+2. **Does it need filtering, sorting or pagination over many fragments?** No. `listItems` is an
+   author-curated, explicitly ordered list of specific fragment paths (one `fragmentPath` per
+   multifield row) — there is no query, no "all fragments of model X" selection, nothing for a
+   `...List` GraphQL query to do that authoring order does not already do. Branch 2 does not
+   match.
+3. **Neither, and no display strings derived from the data?** This is where it lands — except the
+   "no derived display strings" half is false, and that is the material finding here.
+
+**Recommendation: servlet, not GraphQL** — but flagged, because branch 3's own caveat is directly
+in play and worth stating plainly rather than waving through:
+
+- `CommonUtils.getCompressedResizedImageURL(imageDesktop, RESIZE_720, true)` and
+  `..getCompressedResizedImageURL(imageDesktop1x1, RESIZE_512, true)` are exactly the "derived
+  display string" case the rule calls out. Under GraphQL, that resize/compress logic would have to
+  move into the block's `decorate()` (client-side) or a build/edge step — this repo does have
+  jsdom tests, so that formatting *could* be unit-tested here, unlike most GraphQL migrations. That
+  mitigates but does not remove the concern: it is still image-processing logic moving from a
+  known-good server-side utility into hand-written client JS, for two image variants specifically
+  sized for this card (720 and 512), not something a generic query result would already contain.
+- `I18nUtils.getLabel("viewall"/"viewless", currentPage, null)` is server-side i18n resource
+  bundle lookup keyed by the current page's language root. There is no client-side equivalent
+  already in this repo, and reimplementing it is exactly the kind of thing the rule warns is easy
+  to wave through under "no derived strings."
+- The GraphQL HTTP-200-with-`errors` risk applies here too: a persisted `...List`/single-fragment
+  query for the `CONTENT_FRAGMENT_MODEL_ZONE` model would return 200 even if `imageDesktop1x1` (or
+  any of the five fields) were renamed or removed from the model, silently rendering "no data" with
+  nothing in the console — versus a servlet whose named-key contract makes that field's absence
+  explicit.
+- A servlet reads the **master variation only** unless variation support is written in — no
+  evidence in this bundle (dialog, HTL, or model) that featuredlistingv2 uses CF variations at all,
+  so this is a disclosure, not a known gap.
+- A persisted GraphQL query has a fixed selection set; a servlet whose key list already names
+  `name`/`summary`/`imageDesktop`/`imageDesktop1x1`/`detailLink` would pick up no *new* CF model
+  field without a code change either way, since it names exactly those five keys today — this cuts
+  both ways here rather than favouring one option, so it did not move the recommendation.
+
+The deciding factor is the two image-resize calls plus the i18n label lookup: real, non-trivial
+server-side logic that a GraphQL migration would have to reinvent client-side, not just a
+convenience the servlet happens to already provide. A servlet function that wraps
+`getCompressedResizedImageURL`/`getCFProperty`/`I18nUtils.getLabel` and returns the five named
+fields plus the two button labels is the safer target.
+
+### What a human needs to decide
+
+- **Whether to build the servlet** (recommended above) or accept the GraphQL tradeoffs (client-side
+  image URL construction + a client-side i18n label source) — this is an architecture decision, not
+  a mechanical one, and neither was implemented here.
+- **`show-all.js` is missing from the export bundle.** Its view-all/view-less behaviour
+  (`data-show-all-min="6"`) is not built. Either source it from `Mandai-EMP-Frontend` and port it,
+  or decide the `>6 items` case is out of scope for this migration pass.
+- **Whether Content Fragment variations matter for this component.** Not evidenced in this bundle;
+  worth confirming against live authored content before building the servlet, since a servlet
+  defaults to master-only unless told otherwise.
+
+### Files touched
+
+- `blocks/wrs-featured-listing/_wrs-featured-listing.json` — new (parent `wrsfeaturedlisting` with
+  zero fields; child `wrsfeaturedlistingitem` with one `aem-content` field; parent filter naming
+  the child).
+- `blocks/wrs-featured-listing/wrs-featured-listing.js` — new; shell `decorate()`, no fetch, one
+  commented seam for the CF-resolution architecture decision above.
+- `blocks/wrs-featured-listing/wrs-featured-listing.css` — new; ports the grid/card geometry that
+  does not depend on CF data from `styles/deployed-bundle-extract.css`, plus a visible
+  "unresolved" placeholder style that is not a source port.
+- `models/_section.json` — appended `"wrsfeaturedlisting"` to the `section` filter's `components`
+  array (child id intentionally not added — reachable only through the parent's own filter).
+- `tests/blocks.test.mjs` — added 6 cases: normal render (two CF paths), the DAM-path inversion
+  called out above, instrumentation-moved, a blank/unpicked row, unconfigured-outside-editor, and
+  unconfigured-in-editor placeholder.
+- `npm run build:json`, `npm run lint` and `npm test` all pass (89/89 tests).

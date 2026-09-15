@@ -31,7 +31,8 @@
       "rbtabs",
       "missions",
       "wrsaccordiontabs",
-      "wrsadmissiontypes"
+      "wrsadmissiontypes",
+      "wrsfeaturedlisting"
     ]
   },
   {
@@ -102,6 +103,12 @@
     "id": "wrsadmissiontypes",
     "components": [
       "wrsadmissiontype"
+    ]
+  },
+  {
+    "id": "wrsfeaturedlisting",
+    "components": [
+      "wrsfeaturedlistingitem"
     ]
   }
 ]

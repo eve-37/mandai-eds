@@ -854,6 +854,73 @@ test('wrs-admission-types: unconfigured block stays selectable in the editor', (
   assert.ok(watEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Featured Listing.
+ *
+ * Content-Fragment-backed: none of this component's real content (header,
+ * description, images) has ever been authored or published, because
+ * decorate() deliberately does not resolve the Content Fragment yet (see
+ * wrs-featured-listing.js and docs/wrs-migration-notes.md
+ * "## featuredlistingv2"). These fixtures are therefore constructed from
+ * this repo's own confirmed single-`aem-content`-field cell shape (the same
+ * `<div><div><a href="...">label</a></div></div>` shape secondary-button and
+ * four-column-tiles' cta_link cell use), not copied from a published page,
+ * and must be re-verified once a real page authors this block AND once the
+ * CF resolution seam is filled in.
+ * ------------------------------------------------------------------ */
+const wflItemRow = (n, path) => `<div data-aue-resource="urn:item${n}" data-aue-model="wrsfeaturedlistingitem"><div><a href="${path}">${path}</a></div></div>`;
+
+const WFL = `<div class="wrs-featured-listing">
+  ${wflItemRow(1, '/content/dam/fragments/zones/lions')}
+  ${wflItemRow(2, '/content/dam/fragments/zones/tigers')}
+</div>`;
+
+const wfl = await decorateBlock('../blocks/wrs-featured-listing/wrs-featured-listing.js', WFL);
+
+test('wrs-featured-listing: one item per authored row, each holding its CF path', () => {
+  const labels = [...wfl.querySelectorAll('.wrs-featured-listing-unresolved-label')].map((el) => el.textContent);
+  assert.deepEqual(labels, [
+    'Content Fragment not resolved: /content/dam/fragments/zones/lions',
+    'Content Fragment not resolved: /content/dam/fragments/zones/tigers',
+  ]);
+});
+
+test('wrs-featured-listing: a /content/dam path is the expected shape here, not a broken row', () => {
+  // Unlike every other block in this repo, a DAM path in this cell is
+  // correct - it is the authored Content Fragment reference, not a
+  // misread row. The item still renders (as unresolved), it is not dropped.
+  assert.equal(wfl.querySelectorAll('.wrs-featured-listing-item').length, 2);
+});
+
+test('wrs-featured-listing: instrumentation moves onto each item, not the row it replaces', () => {
+  const items = [...wfl.querySelectorAll('.wrs-featured-listing-item')];
+  assert.deepEqual(items.map((el) => el.getAttribute('data-aue-resource')), ['urn:item1', 'urn:item2']);
+  assert.equal(wfl.querySelectorAll('[data-aue-resource="urn:item1"]').length, 1);
+});
+
+const wflBlankRow = '<div data-aue-resource="urn:item3" data-aue-model="wrsfeaturedlistingitem"><div></div></div>';
+const wflBlank = await decorateBlock(
+  '../blocks/wrs-featured-listing/wrs-featured-listing.js',
+  `<div class="wrs-featured-listing">${wflBlankRow}</div>`,
+);
+test('wrs-featured-listing: a row with no fragment picked yet still renders, not crashes', () => {
+  const label = wflBlank.querySelector('.wrs-featured-listing-unresolved-label');
+  assert.equal(label.textContent, 'No Content Fragment selected');
+});
+
+const wflEmpty = await decorateBlock('../blocks/wrs-featured-listing/wrs-featured-listing.js', '<div class="wrs-featured-listing"></div>');
+test('wrs-featured-listing: renders nothing when unconfigured outside the editor', () => {
+  assert.equal(wflEmpty.children.length, 0);
+});
+
+const wflEdit = await decorateBlock(
+  '../blocks/wrs-featured-listing/wrs-featured-listing.js',
+  '<div class="wrs-featured-listing" data-aue-resource="urn:block1"></div>',
+);
+test('wrs-featured-listing: unconfigured block stays selectable in the editor', () => {
+  assert.ok(wflEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {

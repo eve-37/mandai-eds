@@ -1,0 +1,100 @@
+/*
+ * WRS Featured Listing
+ *
+ * Port of the DEPLOYED bundle
+ * (../../../wrs-components-export/featuredlistingv2/styles/deployed-bundle-extract.css),
+ * not the LESS checkout - COMPONENT.md notes `.wrapper-feature-listing` has
+ * 139 hits in the compiled bundle, so the two LESS files in the export are a
+ * starting point, not the complete picture.
+ *
+ * This is a SHELL only: the block's decorate() does not resolve the authored
+ * Content Fragment yet (see wrs-featured-listing.js and
+ * docs/wrs-migration-notes.md "## featuredlistingv2"), so there is no header,
+ * description or image to style. What is ported here is the grid/card
+ * geometry that does not depend on Content Fragment data - the
+ * `.list-animals`/`.animals-item` layout, the image aspect-ratio reservation
+ * `.lazyload` used (extract L23-33, `padding-bottom:56%` on an `::after`),
+ * and the hide-on-desktop rule for the "view all" button area (the button
+ * itself is not built - see the JS docblock on `show-all.js` not being in
+ * the export bundle). The `.desc`/typography rules that style the CF-derived
+ * header/summary text (e.g. the brand-scoped
+ * `.wrs-style .md.wrapper-feature-listing .list-animals .animals-item .desc h4`
+ * rules) are intentionally NOT ported - there is nothing to apply them to
+ * until the CF data seam is filled in. Re-check this file against the
+ * extract once that happens.
+ *
+ * Selectors below are doubly scoped under `.wrs-featured-listing` per this
+ * repo's convention, rather than reusing the source's bare `.list-animals`/
+ * `.wrapp-img`/`.animals-item` names, which collide with dozens of other WRS
+ * components in the same bundle.
+ *
+ * Media queries rewritten mobile-first to this repo's `(width >= Npx)` range
+ * syntax; the source is desktop-first with cutoffs at max-width:991/992px.
+ */
+
+.wrs-featured-listing {
+  padding-bottom: 2rem;
+}
+
+.wrs-featured-listing-list {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0;
+  text-align: center;
+  min-height: 220px;
+}
+
+@media (width >= 992px) {
+  .wrs-featured-listing-list {
+    min-height: 0;
+  }
+}
+
+.wrs-featured-listing-item {
+  display: inline-block;
+  width: 50%;
+  overflow: hidden;
+}
+
+@media (width >= 992px) {
+  .wrs-featured-listing-item {
+    width: 25%;
+  }
+}
+
+/* extract L23-33: reserves the image's aspect ratio before it loads. */
+.wrs-featured-listing-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.wrs-featured-listing-card::after {
+  content: '';
+  display: block;
+  padding-bottom: 56%;
+}
+
+/*
+ * No card content is rendered yet (see file header) - this is a visible
+ * placeholder for the unresolved state, not a port of any source rule, so an
+ * author/reviewer can see which rows still need the CF architecture decision
+ * before they render for real.
+ */
+.wrs-featured-listing-unresolved {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  background-color: var(--rb-light-beige);
+  border: 1px dashed var(--rb-dark-beige);
+}
+
+.wrs-featured-listing-unresolved-label {
+  margin: 0;
+  font-size: var(--body-font-size-xs);
+  color: var(--text-color);
+  word-break: break-all;
+}
