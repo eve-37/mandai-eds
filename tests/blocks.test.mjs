@@ -325,6 +325,39 @@ test('tabs: a tab with only a name still gets its label', () => {
   assert.equal(tbSparse.querySelector('.tabs-nav-item').textContent, 'Only a name');
 });
 
+/* Editor mode: a hidden panel is not a drop target, so with only the first
+ * panel visible a tile could only ever be dropped into the first tab. */
+const tbEdit = await decorateBlock(
+  '../blocks/tabs/tabs.js',
+  `<div class="tabs" data-aue-resource="urn:tabs">${tabsTabRow(1, 'green')}${tabsTabRow(2, 'yellow')}</div>`,
+);
+test('tabs: every panel is a drop target in the editor', () => {
+  const panels = [...tbEdit.querySelectorAll('.tabs-panel')];
+  assert.equal(panels.length, 2);
+  assert.ok(panels.every((p) => p.hidden === false), 'no panel may be hidden while editing');
+  assert.ok(tbEdit.classList.contains('tabs-editing'));
+});
+
+test('tabs: a tab with no tiles still gets an empty grid to drop into', () => {
+  const grids = tbEdit.querySelectorAll('.tabs-tiles');
+  assert.equal(grids.length, 2);
+  assert.equal(grids[1].children.length, 0);
+});
+
+test('tabs: each editor panel is labelled with its tab name', () => {
+  assert.deepEqual(
+    [...tbEdit.querySelectorAll('.tabs-panel-label')].map((l) => l.textContent),
+    ['Tab 1', 'Tab 2'],
+  );
+});
+
+test('tabs: the published page still hides all but the first panel', () => {
+  const panels = [...tb.querySelectorAll('.tabs-panel')];
+  assert.equal(panels[1].hidden, true);
+  assert.ok(!tb.classList.contains('tabs-editing'));
+  assert.equal(tb.querySelectorAll('.tabs-panel-label').length, 0);
+});
+
 /* A tile dragged above every tab must not vanish. */
 const TAB_ORPHAN = `<div class="tabs">${tabsTileRow(9)}${tabsTabRow(1, 'green')}</div>`;
 const tbOrphan = await decorateBlock('../blocks/tabs/tabs.js', TAB_ORPHAN);

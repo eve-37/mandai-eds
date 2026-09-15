@@ -68,6 +68,23 @@ export default function decorate(block) {
     return;
   }
 
+  /*
+   * In the editor every panel is shown at once, stacked and labelled.
+   *
+   * Tiles are siblings of tabs in the model, and the Universal Editor works out
+   * where a dragged tile lands from the DOM position of the instrumented
+   * elements inside the block. The rendered order here - tab 1, its tiles,
+   * tab 2, its tiles - is exactly the model order, so that calculation is
+   * correct. But a hidden panel is not a drop target, so with only the first
+   * panel visible the author could only ever drop a tile into the first tab.
+   * Nothing is wrong with the content model; there is simply nowhere to aim.
+   *
+   * Showing every panel gives each tab a visible target, including an empty
+   * grid for a tab with no tiles yet. The published page is unaffected.
+   */
+  const isEditMode = block.hasAttribute('data-aue-resource');
+  if (isEditMode) block.classList.add('tabs-editing');
+
   const nav = document.createElement('div');
   nav.className = `${PREFIX}-nav`;
   const navList = document.createElement('ul');
@@ -106,8 +123,15 @@ export default function decorate(block) {
     panel.id = `${id}-panel`;
     panel.setAttribute('role', 'tabpanel');
     panel.setAttribute('aria-labelledby', `${id}-tab`);
-    if (index !== 0) panel.hidden = true;
+    if (index !== 0 && !isEditMode) panel.hidden = true;
     if (tabRow) moveInstrumentation(tabRow, panel);
+
+    if (isEditMode) {
+      const label = document.createElement('p');
+      label.className = `${PREFIX}-panel-label`;
+      label.textContent = tabName;
+      panel.append(label);
+    }
 
     if (title) {
       const h2 = document.createElement('h2');
@@ -116,7 +140,7 @@ export default function decorate(block) {
       panel.append(h2);
     }
 
-    if (tileRows.length) {
+    if (tileRows.length || isEditMode) {
       const grid = document.createElement('ul');
       grid.className = `${PREFIX}-tiles`;
       tileRows.forEach((tileRow) => {
@@ -161,7 +185,10 @@ export default function decorate(block) {
         b.setAttribute('aria-selected', selected ? 'true' : 'false');
         b.classList.toggle('active', selected);
       });
-      [...panels.children].forEach((p, i) => { p.hidden = i !== index; });
+      // In the editor the panels all stay open, so the nav scrolls to one
+      // rather than hiding the rest and taking away the drop targets.
+      if (isEditMode) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      else [...panels.children].forEach((p, i) => { p.hidden = i !== index; });
     });
     if (index === 0) navButton.classList.add('active');
   });
