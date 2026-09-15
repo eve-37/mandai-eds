@@ -1,5 +1,5 @@
 import { moveInstrumentation } from '../../scripts/scripts.js';
-import { cellText, renderEmpty } from '../../scripts/rb-helpers.js';
+import { cellText, cellValues, renderEmpty } from '../../scripts/rb-helpers.js';
 
 /** The source's own breakpoint for "big enough to autoplay video". */
 const DESKTOP = 992;
@@ -70,32 +70,25 @@ function upgradeToVideo(media, { accountId, videoId, playerId }) {
 }
 
 export default function decorate(block) {
-  const rows = [...block.children];
+  /*
+   * Read by position. The model is four cells in a fixed order - title, desc,
+   * videoThumbnail, video_ - and a property row is emitted even when its value
+   * is empty, so the order is reliable where content matching is not.
+   *
+   * Identifying the video_ cell by "has more than one value" was wrong: an
+   * author who fills in only the account id, or only the video id, leaves a
+   * single-valued cell that is indistinguishable from the title. The account id
+   * then leaked into the copy, and no video was ever found.
+   */
+  const [titleRow, descRow, posterRow, videoRow] = [...block.children];
 
-  let posterRow = null;
-  let video = null;
-  const texts = [];
+  const title = cellText(titleRow) ? { row: titleRow, text: cellText(titleRow) } : null;
+  const desc = cellText(descRow) ? { row: descRow, text: cellText(descRow) } : null;
 
-  rows.forEach((row) => {
-    if (row.querySelector('picture, img')) { posterRow = row; return; }
+  const [accountId = '', videoId = '', playerId = ''] = cellValues(videoRow);
+  const video = { accountId, videoId, playerId };
 
-    // The grouped video_ cell: account, id and player as separate children.
-    const parts = [...row.querySelectorAll('p, div')]
-      .map((el) => el.textContent.trim())
-      .filter(Boolean);
-    if (parts.length > 1) {
-      const [accountId, videoId, playerId] = parts;
-      video = { accountId, videoId, playerId };
-      return;
-    }
-
-    const text = cellText(row);
-    if (text) texts.push({ row, text });
-  });
-
-  const [title, desc] = texts;
-
-  if (!title && !posterRow && !video?.videoId) {
+  if (!title && !posterRow?.querySelector('picture') && !video.videoId) {
     renderEmpty(block, 'Masthead — add a title and a video');
     return;
   }

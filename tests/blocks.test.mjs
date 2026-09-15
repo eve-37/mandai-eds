@@ -527,6 +527,121 @@ test('missions: the list starts collapsed behind a real button', () => {
   assert.equal(toggle.getAttribute('aria-controls'), ms.querySelector('.missions-list').id);
 });
 
+/* ------------------------------------------------------------------ *
+ * The seven single-cell blocks, all verbatim from the published page.
+ *
+ * Each is four property rows in model order (image-section is one). Nothing is
+ * a container, so every row is a parent property - and an empty one is still
+ * emitted, which is what makes reading by position safe.
+ * ------------------------------------------------------------------ */
+const SECONDARY_BUTTON = `<div class="secondary-button">
+  <div><div><a href="/">Secondary Button</a></div></div>
+  <div><div>green</div></div>
+  <div><div>center</div></div>
+  <div><div></div></div>
+</div>`;
+const sb = await decorateBlock('../blocks/secondary-button/secondary-button.js', SECONDARY_BUTTON);
+test('secondary-button: renders the link, variant and position', () => {
+  assert.equal(sb.querySelector('a').getAttribute('href'), '/');
+  assert.ok(sb.querySelector('.rb-cta.green'));
+  assert.ok(sb.querySelector('.secondary-button-container.center'));
+});
+test('secondary-button: an empty new-tab cell does not open a new tab', () => {
+  assert.equal(sb.querySelector('a').getAttribute('target'), null);
+});
+
+const SUB_HEADER = `<div class="sub-header">
+  <div><div>Sub Header</div></div>
+  <div><div>more subheader description</div></div>
+  <div><div><picture><img src="/desktop.png" alt=""></picture></div></div>
+  <div><div><picture><img src="/mobile.png" alt=""></picture></div></div>
+</div>`;
+const sh = await decorateBlock('../blocks/sub-header/sub-header.js', SUB_HEADER);
+test('sub-header: copy and both backgrounds are read', () => {
+  assert.equal(sh.querySelector('.sub-header-heading').textContent, 'Sub Header');
+  assert.equal(sh.querySelector('.sub-header-desc').textContent, 'more subheader description');
+  const w = sh.querySelector('.sub-header-wrapper');
+  assert.match(w.style.getPropertyValue('--sub-header-bg-desktop'), /desktop\.png/);
+  assert.match(w.style.getPropertyValue('--sub-header-bg-mobile'), /mobile\.png/);
+});
+
+const IMAGE_SECTION = `<div class="image-section">
+  <div><div><picture><img src="/pic.png" alt=""></picture></div></div>
+</div>`;
+const isec = await decorateBlock('../blocks/image-section/image-section.js', IMAGE_SECTION);
+test('image-section: the picture survives into the section band', () => {
+  assert.equal(isec.querySelector('.image-section-figure img').getAttribute('src'), '/pic.png');
+  assert.ok(isec.querySelector('.rb-section'));
+});
+
+/* Verbatim: the author filled only the Brightcove account id - its default -
+ * and left the video and player ids blank, so the grouped video_ cell holds a
+ * single value. Testing "more than one value" read that as copy. */
+const MASTHEAD = `<div class="masthead">
+  <div><div>A New Video</div></div>
+  <div><div>more video description here</div></div>
+  <div><div><picture><img src="/poster.png" alt=""></picture></div></div>
+  <div><div>906043040001</div></div>
+</div>`;
+const mh = await decorateBlock('../blocks/masthead/masthead.js', MASTHEAD);
+test('masthead: the Brightcove account id never leaks into the copy', () => {
+  assert.equal(mh.querySelector('h1').textContent, 'A New Video');
+  assert.equal(mh.querySelector('.masthead-content p').textContent, 'more video description here');
+  assert.doesNotMatch(mh.querySelector('.masthead-content').textContent, /906043040001/);
+});
+test('masthead: no video id means poster only, and no player request', () => {
+  assert.equal(mh.querySelector('.masthead-media img').getAttribute('src'), '/poster.png');
+  assert.equal(mh.querySelector('video-js'), null);
+});
+
+const ONE_COL_BANNER = `<div class="one-column-banner">
+  <div><div><p>One Column Banner</p><p>just testing this out</p></div></div>
+  <div><div><p><picture><img src="/d.png" alt=""></picture></p><p><picture><img src="/m.png" alt=""></picture></p></div></div>
+  <div><div>mask-1</div></div>
+  <div><div><p><a href="/">View More</a></p><p>green</p><p>true</p></div></div>
+</div>`;
+const ocb = await decorateBlock('../blocks/one-column-banner/one-column-banner.js', ONE_COL_BANNER);
+test('one-column-banner: title and description are separate, not run together', () => {
+  assert.equal(ocb.querySelector('h2').textContent, 'One Column Banner');
+  assert.equal(ocb.querySelector('.one-column-banner-content p').textContent, 'just testing this out');
+});
+test('one-column-banner: both backgrounds and the CTA are read', () => {
+  const s = ocb.querySelector('.rb-section');
+  assert.match(s.style.getPropertyValue('--banner-bg-desktop'), /d\.png/);
+  assert.match(s.style.getPropertyValue('--banner-bg-mobile'), /m\.png/);
+  assert.equal(ocb.querySelector('.rb-cta a').getAttribute('target'), '_blank');
+});
+
+const ONE_COL_FEATURE = `<div class="one-column-feature">
+  <div><div>One Column Feature</div></div>
+  <div><div>just trying this out</div></div>
+  <div><div><picture><img src="/f.png" alt=""></picture></div></div>
+  <div><div>mask-1</div></div>
+</div>`;
+const ocf = await decorateBlock('../blocks/one-column-feature/one-column-feature.js', ONE_COL_FEATURE);
+test('one-column-feature: copy and image both land', () => {
+  assert.equal(ocf.querySelector('h2').textContent, 'One Column Feature');
+  assert.equal(ocf.querySelector('.one-column-feature-desc p').textContent, 'just trying this out');
+  assert.equal(ocf.querySelector('.one-column-feature-image img').getAttribute('src'), '/f.png');
+});
+
+const ONE_COL_NEWS = `<div class="one-column-news">
+  <div><div><p>One Column News</p><p>subtitle here</p><p>more description</p></div></div>
+  <div><div><picture><img src="/n.png" alt=""></picture></div></div>
+  <div><div>mask-1</div></div>
+  <div><div><p><a href="/">View More</a></p><p>green</p></div></div>
+</div>`;
+const ocn = await decorateBlock('../blocks/one-column-news/one-column-news.js', ONE_COL_NEWS);
+test('one-column-news: the three grouped values split into heading, subtitle and copy', () => {
+  assert.equal(ocn.querySelector('.one-column-news-heading').textContent, 'One Column News');
+  assert.equal(ocn.querySelector('.one-column-news-content h3').textContent, 'subtitle here');
+  assert.equal(ocn.querySelector('.one-column-news-content p').textContent, 'more description');
+});
+test('one-column-news: image and CTA both survive', () => {
+  assert.equal(ocn.querySelector('.one-column-news-media img').getAttribute('src'), '/n.png');
+  assert.equal(ocn.querySelector('.rb-cta a').textContent, 'View More');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {

@@ -1,6 +1,6 @@
 import { moveInstrumentation } from '../../scripts/scripts.js';
 import {
-  MASKS, cellText, readCta, buildCta, renderEmpty,
+  MASKS, cellText, cellValues, readCta, buildCta, renderEmpty,
 } from '../../scripts/rb-helpers.js';
 
 /**
@@ -10,33 +10,28 @@ import {
  * collapse into a picture, cta_* group, and mask stands alone.
  */
 export default function decorate(block) {
-  const rows = [...block.children];
+  /*
+   * Read by position: content_, image (+imageAlt), mask, cta_ in model order.
+   * A property row is emitted even when empty, so the order holds where content
+   * matching does not.
+   *
+   * The copy was previously pulled with querySelectorAll('p, div'), which also
+   * matches the containing cell - so the first "value" was the title, subtitle
+   * and description run together, and it was rendered as the heading.
+   */
+  const [contentRow, imageRow, maskRow, ctaRow] = [...block.children];
 
-  let mask = '';
-  let cta = null;
-  let imageRow = null;
-  const texts = [];
+  const [titleText = '', subtitleText = '', descText = ''] = cellValues(contentRow);
+  const title = titleText ? { row: contentRow, text: titleText } : null;
+  const subtitle = subtitleText ? { text: subtitleText } : null;
+  const desc = descText ? { text: descText } : null;
 
-  rows.forEach((row) => {
-    const rowCta = readCta(row);
-    if (rowCta) { cta = rowCta; return; }
+  const maskText = cellText(maskRow).toLowerCase();
+  const mask = MASKS.includes(maskText) ? maskText : '';
 
-    if (row.querySelector('picture, img')) { imageRow = row; return; }
+  const cta = readCta(ctaRow);
 
-    const text = cellText(row);
-    if (MASKS.includes(text.toLowerCase())) {
-      mask = text.toLowerCase();
-    } else if (text) {
-      const parts = [...row.querySelectorAll('p, div')]
-        .map((el) => el.textContent.trim())
-        .filter(Boolean);
-      (parts.length ? parts : [text]).forEach((t) => texts.push({ row, text: t }));
-    }
-  });
-
-  const [title, subtitle, desc] = texts;
-
-  if (!title && !imageRow && !cta) {
+  if (!title && !imageRow?.querySelector('picture') && !cta) {
     renderEmpty(block, 'One Column News — add a title, an image and a CTA');
     return;
   }

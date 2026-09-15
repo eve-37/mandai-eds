@@ -1,6 +1,6 @@
 import { moveInstrumentation } from '../../scripts/scripts.js';
 import {
-  MASKS, cellText, readCta, buildCta, renderEmpty,
+  MASKS, cellText, cellValues, readCta, buildCta, renderEmpty,
 } from '../../scripts/rb-helpers.js';
 
 /**
@@ -10,38 +10,28 @@ import {
  * cta_* to a third, leaving mask on its own.
  */
 export default function decorate(block) {
-  const rows = [...block.children];
+  /*
+   * Read by position: content_, bg_, mask, cta_ in model order. A property row
+   * is emitted even when empty, so the order holds where content matching does
+   * not.
+   *
+   * The copy was previously pulled with querySelectorAll('p, div'), which also
+   * matches the containing cell - so the first "value" was the title and the
+   * description run together, and it was rendered as the heading.
+   */
+  const [contentRow, bgRow, maskRow, ctaRow] = [...block.children];
 
-  let mask = '';
-  let cta = null;
-  let images = [];
-  const texts = [];
+  const [titleText = '', descText = ''] = cellValues(contentRow);
+  const title = titleText ? { row: contentRow, text: titleText } : null;
+  const desc = descText ? { text: descText } : null;
 
-  rows.forEach((row) => {
-    const rowCta = readCta(row);
-    if (rowCta) { cta = rowCta; return; }
+  const maskText = cellText(maskRow).toLowerCase();
+  const mask = MASKS.includes(maskText) ? maskText : '';
 
-    const pictures = [...row.querySelectorAll('img')];
-    if (pictures.length) {
-      // The grouped bg_ cell: desktop first, mobile second.
-      images = pictures.map((img) => img.getAttribute('src') || '');
-      return;
-    }
+  const cta = readCta(ctaRow);
 
-    const text = cellText(row);
-    if (MASKS.includes(text.toLowerCase())) {
-      mask = text.toLowerCase();
-    } else if (text) {
-      // The grouped content_ cell arrives as separate children.
-      const parts = [...row.querySelectorAll('p, div')]
-        .map((el) => el.textContent.trim())
-        .filter(Boolean);
-      (parts.length ? parts : [text]).forEach((t) => texts.push({ row, text: t }));
-    }
-  });
-
-  const [title, desc] = texts;
-  const [desktop, mobile] = images;
+  const [desktop = '', mobile = ''] = [...(bgRow?.querySelectorAll('img') || [])]
+    .map((img) => img.getAttribute('src') || '');
 
   if (!title && !cta && !desktop) {
     renderEmpty(block, 'One Column Banner — add a title and a background');
