@@ -6,6 +6,11 @@
  * Carousel is native scroll-snap rather than Slick - same decision as
  * four-column-tiles. One quote per view at every width, matching the source.
  *
+ * NO DOTS, deliberately. The other four carousels here have them, so this reads
+ * as an oversight and is not one: it was raised after seeing the block render
+ * and left as it is. Slides are 80% wide so the next quote peeks in, which is
+ * the affordance. Do not "fix" the inconsistency without asking.
+ *
  * Markup is blockquote + cite rather than two divs. The content is literally a
  * quotation and its attribution, and the semantic elements cost nothing.
  *
