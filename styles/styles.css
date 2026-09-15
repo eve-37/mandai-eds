@@ -656,12 +656,24 @@ main .section.highlight {
  *
  * Usage from a block:  <div class="rb-section mask-1 bg-green">
  *
- * Backgrounds present: green, beige, dark-green. SectionLayout also defines
- * bg-brown and bg-missions - add those (and their JPEGs) when a component needs
- * them rather than shipping unused ones.
+ * Backgrounds present: green, beige, brown, dark-green and missions - every one
+ * SectionLayout defines, because an rb-aem component uses each.
+ */
+
+/*
+ * The band's minimum height is load-bearing, not padding.
+ *
+ * The torn mask is a tall portrait canvas (3840x4401) sized with `cover` and
+ * anchored to the top, so on a landscape band the scale is driven by width: at
+ * 1440px wide the mask renders 1650px tall. A band shorter than that shows only
+ * the top slice of the tear, and the shorter the band the smaller the slice.
+ * The source pins 800px / 645px so the tear always reads at a consistent size;
+ * without it a one-image section came out noticeably shallower than the
+ * original.
  */
 .rb-section {
   width: 100%;
+  min-height: 645px;
   margin-top: -50px;
   padding: 60px 0 80px;
   background-color: var(--rb-light-beige);
@@ -717,6 +729,7 @@ main .section.highlight {
 
 @media (width >= 992px) {
   .rb-section {
+    min-height: 800px;
     margin-top: -70px;
     padding: 120px 0 140px;
   }
