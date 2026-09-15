@@ -2073,6 +2073,447 @@
     ]
   },
   {
+    "id": "wrsmastheadcarousel",
+    "fields": [
+      {
+        "component": "select",
+        "name": "viewportScaling",
+        "label": "Viewport Height Scaling",
+        "description": "Please select option to adjust viewport scaling.",
+        "valueType": "string",
+        "value": "100",
+        "options": [
+          {
+            "name": "100% – Component scales to full height of viewport (Default)",
+            "value": "100"
+          },
+          {
+            "name": "75% – Component scales to 75% of viewport height",
+            "value": "75"
+          },
+          {
+            "name": "OFF – No scaling; uses content’s intrinsic height",
+            "value": "0"
+          }
+        ]
+      },
+      {
+        "component": "boolean",
+        "name": "isAutoplayCarousel",
+        "label": "Autoplay the carousel?",
+        "description": "Check the checkbox to autoplay the carousel",
+        "valueType": "boolean"
+      },
+      {
+        "component": "number",
+        "name": "carouselSpeed",
+        "label": "Carousel Speed (Milliseconds)",
+        "description": "Configure Carousel Speed in Milliseconds. Only used when Autoplay is on.",
+        "valueType": "number",
+        "value": 5000
+      }
+    ]
+  },
+  {
+    "id": "wrsmastheadimageslide",
+    "fields": [
+      {
+        "component": "select",
+        "name": "image_kind",
+        "label": "Slide Type (do not change)",
+        "description": "Structural marker - identifies this row as an image slide on a published page, where no editor instrumentation is present to ask. Always Image.",
+        "valueType": "string",
+        "value": "image",
+        "options": [
+          {
+            "name": "Image",
+            "value": "image"
+          }
+        ]
+      },
+      {
+        "component": "reference",
+        "name": "image_desktop",
+        "label": "Desktop Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "image_mobile",
+        "label": "Mobile Image",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "image_alt",
+        "label": "Image Alt Text",
+        "valueType": "string"
+      },
+      {
+        "component": "boolean",
+        "name": "image_fetchPriority",
+        "label": "Enable High Fetch Priority",
+        "description": "Enable fetchpriority=high to load image faster on initial page load. Do not enable if not the first slide in the carousel.",
+        "valueType": "boolean"
+      },
+      {
+        "component": "text",
+        "name": "content_header",
+        "label": "Header",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "content_subHeader",
+        "label": "Sub Header",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "content_textAlignment",
+        "label": "Text & CTA Alignment (Desktop)",
+        "description": "On mobile sizes, text & CTA are centered regardless of this setting.",
+        "valueType": "string",
+        "value": "text-left",
+        "options": [
+          {
+            "name": "Left",
+            "value": "text-left"
+          },
+          {
+            "name": "Center",
+            "value": "text-center"
+          }
+        ]
+      },
+      {
+        "component": "select",
+        "name": "content_gradient",
+        "label": "Gradient Type",
+        "valueType": "string",
+        "value": "",
+        "options": [
+          {
+            "name": "None",
+            "value": ""
+          },
+          {
+            "name": "On the text",
+            "value": "onText"
+          },
+          {
+            "name": "On the image",
+            "value": "onImage"
+          }
+        ]
+      },
+      {
+        "component": "number",
+        "name": "content_bottomSpacing",
+        "label": "CTA Bottom Spacing (%)",
+        "description": "To use only for mastheads without text. Sets the spacing from the bottom of the masthead (source dialog default: 15%). Applies to the whole text/CTA panel, matching the source - it is a property of the panel, not of the CTA button alone.",
+        "valueType": "number"
+      },
+      {
+        "component": "aem-content",
+        "name": "cta_link",
+        "label": "CTA Link",
+        "rootPath": "/content/wrs",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "cta_linkText",
+        "label": "CTA Text",
+        "valueType": "string"
+      },
+      {
+        "component": "boolean",
+        "name": "countdown_enabled",
+        "label": "Enable countdown timer",
+        "valueType": "boolean"
+      },
+      {
+        "component": "select",
+        "name": "countdown_gmt",
+        "label": "GMT",
+        "description": "The source dialog populated this from a live OSGi datasource (~600 java.util.TimeZone ids). That has no Universal Editor equivalent, so this is a curated finite list: Singapore (the site's primary market, and the source servlet's own default) plus the other Mandai-relevant Asia-Pacific and major source-market zones. If a broader zone is needed, extend this list rather than inventing an unbounded free-text field.",
+        "valueType": "string",
+        "value": "Asia/Singapore",
+        "options": [
+          {
+            "name": "(GMT+8:00) Asia/Singapore",
+            "value": "Asia/Singapore"
+          },
+          {
+            "name": "(GMT+8:00) Asia/Kuala_Lumpur",
+            "value": "Asia/Kuala_Lumpur"
+          },
+          {
+            "name": "(GMT+7:00) Asia/Jakarta",
+            "value": "Asia/Jakarta"
+          },
+          {
+            "name": "(GMT+7:00) Asia/Bangkok",
+            "value": "Asia/Bangkok"
+          },
+          {
+            "name": "(GMT+8:00) Asia/Manila",
+            "value": "Asia/Manila"
+          },
+          {
+            "name": "(GMT+8:00) Asia/Hong_Kong",
+            "value": "Asia/Hong_Kong"
+          },
+          {
+            "name": "(GMT+8:00) Asia/Shanghai",
+            "value": "Asia/Shanghai"
+          },
+          {
+            "name": "(GMT+9:00) Asia/Tokyo",
+            "value": "Asia/Tokyo"
+          },
+          {
+            "name": "(GMT+9:00) Asia/Seoul",
+            "value": "Asia/Seoul"
+          },
+          {
+            "name": "(GMT+5:30) Asia/Kolkata",
+            "value": "Asia/Kolkata"
+          },
+          {
+            "name": "(GMT+4:00) Asia/Dubai",
+            "value": "Asia/Dubai"
+          },
+          {
+            "name": "(GMT+10:00) Australia/Sydney",
+            "value": "Australia/Sydney"
+          },
+          {
+            "name": "(GMT+8:00) Australia/Perth",
+            "value": "Australia/Perth"
+          },
+          {
+            "name": "(GMT+0:00) Europe/London",
+            "value": "Europe/London"
+          },
+          {
+            "name": "(GMT+1:00) Europe/Paris",
+            "value": "Europe/Paris"
+          },
+          {
+            "name": "(GMT-5:00) America/New_York",
+            "value": "America/New_York"
+          },
+          {
+            "name": "(GMT-8:00) America/Los_Angeles",
+            "value": "America/Los_Angeles"
+          },
+          {
+            "name": "(GMT+13:00) Pacific/Auckland",
+            "value": "Pacific/Auckland"
+          },
+          {
+            "name": "(GMT+0:00) UTC",
+            "value": "UTC"
+          }
+        ]
+      },
+      {
+        "component": "date-time",
+        "name": "countdown_timer",
+        "label": "Date & Time",
+        "valueType": "string"
+      },
+      {
+        "component": "aem-content",
+        "name": "countdown_redirectLink",
+        "label": "Redirect Link",
+        "rootPath": "/content/wrs",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "countdown_description",
+        "label": "Countdown Timer Description",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
+    "id": "wrsmastheadvideoslide",
+    "fields": [
+      {
+        "component": "select",
+        "name": "video_kind",
+        "label": "Slide Type (do not change)",
+        "description": "Structural marker, always Video.",
+        "valueType": "string",
+        "value": "video",
+        "options": [
+          {
+            "name": "Video",
+            "value": "video"
+          }
+        ]
+      },
+      {
+        "component": "reference",
+        "name": "video_desktop",
+        "label": "Desktop Video",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "video_mobile",
+        "label": "Mobile Video",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "fallback_image",
+        "label": "Mobile Fallback Image",
+        "description": "Shown on mobile instead of video when Mobile Video is empty.",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "fallback_alt",
+        "label": "Mobile Fallback Image Alt Text",
+        "valueType": "string"
+      },
+      {
+        "component": "boolean",
+        "name": "controls_mute",
+        "label": "Enable mute/un-mute button",
+        "valueType": "boolean"
+      },
+      {
+        "component": "boolean",
+        "name": "controls_playPause",
+        "label": "Enable play/pause button",
+        "valueType": "boolean"
+      }
+    ]
+  },
+  {
+    "id": "wrsmastheadyoutubeslide",
+    "fields": [
+      {
+        "component": "select",
+        "name": "youtube_kind",
+        "label": "Slide Type (do not change)",
+        "description": "Structural marker, always YouTube.",
+        "valueType": "string",
+        "value": "youtube",
+        "options": [
+          {
+            "name": "YouTube",
+            "value": "youtube"
+          }
+        ]
+      },
+      {
+        "component": "text",
+        "name": "youtube_path",
+        "label": "YouTube Video Path",
+        "description": "Without parameters, e.g. https://www.youtube.com/embed/rHpIus4qGg4",
+        "valueType": "string"
+      },
+      {
+        "component": "boolean",
+        "name": "youtube_unmute",
+        "label": "Enable mute/unmute button",
+        "valueType": "boolean"
+      }
+    ]
+  },
+  {
+    "id": "wrsmastheadvimeoslide",
+    "fields": [
+      {
+        "component": "select",
+        "name": "vimeo_kind",
+        "label": "Slide Type (do not change)",
+        "description": "Structural marker, always Vimeo.",
+        "valueType": "string",
+        "value": "vimeo",
+        "options": [
+          {
+            "name": "Vimeo",
+            "value": "vimeo"
+          }
+        ]
+      },
+      {
+        "component": "text",
+        "name": "vimeo_desktop",
+        "label": "Vimeo Video ID (Desktop)",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "vimeo_mobile",
+        "label": "Vimeo Video ID (Mobile)",
+        "valueType": "string"
+      },
+      {
+        "component": "reference",
+        "name": "fallback_image",
+        "label": "Mobile Fallback Image",
+        "description": "Shown on mobile instead of video when Vimeo Video ID (Mobile) is empty.",
+        "multi": false,
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "fallback_alt",
+        "label": "Mobile Fallback Image Alt Text",
+        "valueType": "string"
+      },
+      {
+        "component": "select",
+        "name": "playback_behavior",
+        "label": "Video Playback Behavior",
+        "valueType": "string",
+        "value": "inline",
+        "options": [
+          {
+            "name": "Inline",
+            "value": "inline"
+          },
+          {
+            "name": "Pop Up",
+            "value": "popup"
+          }
+        ]
+      },
+      {
+        "component": "boolean",
+        "name": "playback_autoloop",
+        "label": "Autoloop the video",
+        "valueType": "boolean"
+      },
+      {
+        "component": "boolean",
+        "name": "controls_mute",
+        "label": "Enable mute/unmute button",
+        "valueType": "boolean"
+      },
+      {
+        "component": "boolean",
+        "name": "controls_playPause",
+        "label": "Enable play/pause button",
+        "valueType": "boolean"
+      }
+    ]
+  },
+  {
     "id": "wrsvisitourparks",
     "fields": []
   },

@@ -679,6 +679,82 @@
           }
         },
         {
+          "title": "WRS Masthead Carousel",
+          "id": "wrsmastheadcarousel",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block",
+                "template": {
+                  "name": "WRS Masthead Carousel",
+                  "model": "wrsmastheadcarousel",
+                  "filter": "wrsmastheadcarousel"
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "WRS Masthead Image Slide",
+          "id": "wrsmastheadimageslide",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block/item",
+                "template": {
+                  "name": "WRS Masthead Image Slide",
+                  "model": "wrsmastheadimageslide"
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "WRS Masthead Video Slide",
+          "id": "wrsmastheadvideoslide",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block/item",
+                "template": {
+                  "name": "WRS Masthead Video Slide",
+                  "model": "wrsmastheadvideoslide"
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "WRS Masthead YouTube Slide",
+          "id": "wrsmastheadyoutubeslide",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block/item",
+                "template": {
+                  "name": "WRS Masthead YouTube Slide",
+                  "model": "wrsmastheadyoutubeslide"
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "WRS Masthead Vimeo Slide",
+          "id": "wrsmastheadvimeoslide",
+          "plugins": {
+            "xwalk": {
+              "page": {
+                "resourceType": "core/franklin/components/block/v1/block/item",
+                "template": {
+                  "name": "WRS Masthead Vimeo Slide",
+                  "model": "wrsmastheadvimeoslide"
+                }
+              }
+            }
+          }
+        },
+        {
           "title": "WRS Visit Our Parks",
           "id": "wrsvisitourparks",
           "plugins": {

@@ -1281,3 +1281,204 @@ Buddies palette, since WRS is a separately-migrated brand with its own colours.
   a blank optional description, and the unconfigured-outside-editor /
   unconfigured-in-editor-placeholder pair.
 - `npm run build:json`, `npm run lint` and `npm test` all pass (140/140 tests).
+
+## mandaimastheadcarousel
+
+**Source:** `wrs-components-export/mandaimastheadcarousel/` — `wrs/components/mandai/mandaimastheadcarousel`
+(`sling:resourceSuperType="wcm/foundation/components/parsys"`). 3 parent fields
+(`viewportScaling`, `isAutoplayCarousel`, `carouselSpeed`) plus one `bannerItems` multifield of 33
+fields, gated by a `mediaOption` select into five branches (image / video / youtube / vimeo, plus a
+countdown-timer panel nested inside the image branch's own show/hide target).
+
+**Decision: built, split into a container plus FOUR sibling child block types** — image, video,
+youtube, vimeo — not one child model, not two, not a "build image only" deferral.
+
+### The split, and what was rejected
+
+One child model cannot hold 33 fields — even grouped into the underscore-prefixed cells every
+other block in this repo uses, that is well past the 4-cell maximum a single model is allowed.
+Three shapes were weighed (per the task prompt):
+
+1. **One container, one child model holding all branches.** Rejected outright for the reason
+   above — this is the shape the task prompt itself already ruled out.
+2. **One container, one MERGED "video" child (video/youtube/vimeo combined behind a `source`
+   select), plus the image child.** Rejected. The three video-ish branches share almost no fields:
+   youtube has no mobile-fallback-image pair at all (the dialog genuinely omits it — confirmed by
+   reading the dialog XML tree, not an oversight in this port), vimeo has a `videoPlaybackBehavior`
+   toggle neither of the others has, and video/vimeo each have their own distinct mute/play-pair
+   naming. A merged model needs the union of all three branches' fields, which puts the count
+   problem right back where option 1 left it, in exchange for a field grouping ("video vs
+   youtube vs vimeo, picked by a select") that does not exist anywhere in the source dialog. The
+   ground rule ("do not add fields the dialog does not have") weighs against inventing that
+   merge more than it weighs against a fourth child model.
+3. **Image-only now, others flagged as follow-up.** Rejected. Unlike `featuredlistingv2`'s Content
+   Fragment resolution or `header`/`footer`'s inherited site-chrome panels — genuine
+   architecture gaps with no client-side answer — video/youtube/vimeo here are ordinary,
+   client-renderable HTML (a `<video>` tag, two flavours of iframe). There is no architectural
+   reason to leave them unbuilt, only an effort one, and the task explicitly asked for that
+   tradeoff to be made deliberately rather than by default.
+
+**Chosen: option 2 read literally as FOUR child types, not two.** Checked field-by-field, each
+branch's own fields — grouped exactly the way every other multi-field block in this repo groups
+fields — fit comfortably inside 4 cells **on its own**:
+
+| Child | Source fields | Cells | Grouping |
+|---|---|---|---|
+| `wrsmastheadimageslide` | 16 (11 image/content/cta + 5 countdown) | 4 | `image_*`, `content_*` (+bottomSpacing), `cta_link`/`cta_linkText`, `countdown_*` |
+| `wrsmastheadvideoslide` | 6 | 3 | `video_*`, `fallback_*`, `controls_*` |
+| `wrsmastheadyoutubeslide` | 2 | 1 | `youtube_*` |
+| `wrsmastheadvimeoslide` | 8 | 4 | `vimeo_*`, `fallback_*`, `playback_*`, `controls_*` |
+
+A container's filter can name multiple accepted child components (`blocks/tabs/_tabs.json` already
+does this for `rbtab`/`rbtabtile`), so `wrsmastheadcarousel`'s filter names all four. This is the
+"block item cannot itself be a container, flatten nested multifields to siblings" technique the
+skill documents, applied to four sibling types instead of two.
+
+### Telling four child types apart, not two
+
+`tabs.js` distinguishes 2 child types by re-reading an existing `align` select's value — reusing a
+field that was going to be authored anyway. Four types is one too many to safely overload a shared
+field this way (there is no field common to all four branches at all), so each child model was
+given one dedicated, first-declared marker field: `image_kind` / `video_kind` / `youtube_kind` /
+`vimeo_kind`, each a `select` with exactly one fixed, pre-selected option. This is a field the
+source dialog does not have — a deliberate, and here explicitly logged, exception to the ground
+rule, because it is precisely the discriminator the migration skill itself prescribes for this
+exact situation ("a select with a default, whose values are distinct from every other select in
+the block"), not an authoring convenience invented on top of the dialog.
+
+`rowKind()` in `wrs-masthead-carousel.js` asks `data-aue-model` first (reliable in the editor from
+the moment a row is created); on a published page, with no instrumentation at all, it falls back to
+reading the first value of the row's first cell, which is always that kind marker. Covered by its
+own test (`wrs-masthead-carousel: child kinds are told apart on a published page with no
+data-aue-model at all`) with all four kinds interleaved in a non-declaration order, specifically to
+rule out any accidental reliance on row position.
+
+### The `gmt` datasource — a curated finite list, not the live ~600 IDs
+
+`gmt`'s dialog datasource (`datasource/listTimeZoneDataServlet`) is an OSGi servlet with no
+Universal Editor equivalent — confirmed by reading `TimeZoneDataServlet.java` (included in the
+bundle): it builds its option list from `TimeZone.getAvailableIDs()` (~600 entries) at request
+time, formats each as `(GMT±H:MM) <id>`, and pre-selects `Asia/Singapore`. Inlining ~600 options is
+not a sane finite list. `countdown_gmt` in the built model is a curated 19-entry `select`:
+`Asia/Singapore` (default, matching the servlet's own default and the site's primary market) plus
+the other Asia-Pacific zones a Singapore-based wildlife park's other content plausibly touches
+(Malaysia, Indonesia, Thailand, Philippines, Hong Kong, mainland China, Japan, Korea, India, UAE,
+Australia ×2, New Zealand) and the obvious major Western source markets (UK, France, US ×2) plus
+UTC as a catch-all. This is my own judgement call, stated as such — there is no authored WRS
+content in this checkout to derive an actual-usage list from. If a country outside this set turns
+out to matter, extending the list is a one-line addition to `_wrs-masthead-carousel.json`, not a
+redesign.
+
+**`gmt` is modelled but NOT used to compute the countdown's target time** — see the next section.
+
+### `timer-countdown.js` — referenced by the HTL, absent from the bundle
+
+The HTL loads `timer-countdown.js` via `data-load-plugins` on the countdown markup; it is not in
+the export. Rather than leave the countdown entirely unbuilt, a minimal countdown **was**
+implemented (`initCountdown()` in `wrs-masthead-carousel.js`), built from what the markup itself
+implies (`<span class="days">`/`.hours`/`.minutes`/`.seconds` inside a fixed `<ul>`, a
+`data-time-end`/`data-url-redirect` pair) — not copied from any source, because there is no source
+to copy. It ticks down from `Date.parse(countdown_timer)` and, once outside the editor, redirects
+to `countdown_redirectLink` at zero, matching the HTL's own `data-mode="publish"` guard against
+redirecting an author out of the page they are editing.
+
+The stated, unverifiable assumption: `countdown_gmt` is read into the model but not used to build
+the target `Date` — AEM Cloud's `datetime`-typed datepicker serialises with its own UTC offset
+already, so `Date.parse()` alone resolves to the correct absolute instant, and `gmt` has nowhere in
+this markup to be rendered as auxiliary "this countdown is in GMT+8" copy either. If the real,
+missing `timer-countdown.js` combined the two fields differently, this needs revisiting once that
+script — or real authored/published output — is available to test against. This is exactly the
+kind of choice the task asked to be made and stated, not silently guessed.
+
+### A second undocumented gap, found while building the controller buttons
+
+Neither `masthead-carousel.js` nor `video-banner.js` (the two scripts this component's HTL
+actually loads) wires clicks for `.md-masthead__volume-button`/`.md-masthead__play-button` — the
+controller markup this component itself renders. `video-banner.js`'s `embedSoundControl()` targets
+a different, older `.sound-controller` pattern used elsewhere on the site, not this one. So the
+mute/play button behaviour in `wrs-masthead-carousel.js` (`buildControls()`, native `video.muted`/
+`.play()`/`.pause()` for the mp4 branch, the documented YouTube and Vimeo postMessage protocols for
+the other two — no extra SDK script load for either) is original code providing equivalent UX, not
+a verified port of anything in this bundle. Flagged here as its own finding, separate from the
+already-known `timer-countdown.js` gap.
+
+### The gradient classes — a reconstruction
+
+`item.imageGradient`/`item.textGradient` in the HTL are computed by `MastheadCarouselItem.java`,
+which is **not** in this bundle (only the parent `MandaiMastheadCarouselModel.java` is). The
+dialog's own `gradientOption` values are `onText`/`onImage`; the deployed CSS extract's gradient
+rules are keyed on differently-named classes (`gradients-right-left`/`gradients-bottom-top`/
+`gradients-left-right`) with no visible mapping back to those two dialog values, because the bean
+that would resolve one into the other is missing. `wrs-masthead-carousel.css` ports `onImage` as a
+bottom-anchored dark fade over the picture (the extract's `gradients-bottom-top` shape — the one
+gradient direction that does not depend on `content_textAlignment`, and the most common masthead
+treatment) and `onText` as a soft radial gradient behind the text panel. Both are this migration's
+own best-effort reconstruction from the CSS alone, explicitly flagged in the CSS file's own header
+— re-check once authored.
+
+### What is built, what is not
+
+- **Image slides: built completely.** Desktop/mobile image swap at the source's own 1025px
+  breakpoint, heading, sub-heading, CTA (reusing `readCta()`), gradient overlay, text alignment,
+  bottom-spacing, `fetchPriority`, and the countdown described above.
+- **Video (mp4) slides: built.** Desktop/mobile `<source>` swap at the shared 992px breakpoint
+  (matching `blocks/masthead/masthead.js`'s own `DESKTOP` constant, duplicated rather than
+  imported — see "Consolidation" below), mobile fallback image, mute/play controller buttons.
+- **YouTube slides: built.** Lazy iframe embed via `IntersectionObserver` (matching
+  `blocks/masthead/masthead.js`'s own lazy-Brightcove rationale — a masthead is the LCP element,
+  third-party JS/iframes should not load ahead of it), mute/unmute via the documented YouTube
+  postMessage command protocol.
+- **Vimeo slides: built, with one sub-branch NOT built.** Lazy iframe embed, "inline" playback
+  behaviour, mute/play via Vimeo's documented postMessage protocol. The **"popup" playback
+  behaviour's actual modal is not built** — `#vimeoModal` in the source HTL is shared, page-level
+  markup living outside this component's own DOM, wired by a script not present in this bundle
+  either. "Popup" falls back to rendering the same inline embed "inline" uses, rather than being
+  invented from nothing — flagged in the JS's own docblock, not silently dropped.
+- **One field genuinely unverifiable, flagged rather than guessed past:** how a DAM **video**
+  asset renders through a `reference` field is not evidenced anywhere in this repo — every other
+  `reference` field example (images) confirms a `<picture>`, but there is no video-asset precedent
+  to check against. `readAssetPairCell()` is deliberately defensive (tries `<img>`, then
+  `<source>`, then `<a>`) rather than assuming one shape; flagged for re-check once this block has
+  been authored with a real video asset.
+
+### Consolidation with `blocks/masthead/` and `blocks/hero/`
+
+Not attempted, and neither block was touched, per the task's constraints. Two things worth a human
+decision later, both noted in `wrs-masthead-carousel.js`'s own docblock:
+
+- `blocks/masthead/masthead.js`'s `DESKTOP = 992` breakpoint constant is duplicated here rather
+  than imported, because it is a private convention of that module, not an exported shared
+  constant. Promoting it to a shared helper once both blocks have real authored content (and this
+  one's actual media-type usage is known) would remove the duplication cleanly — not done
+  speculatively here.
+- Structurally, this block is a strict superset of `masthead` (a single slide vs a multi-slide
+  carousel, over the same four media types once `masthead`'s own sibling `mandaimasthead` — if in
+  scope elsewhere in this run — is checked). If that turns out to need the same four media types,
+  unifying the two behind one shared renderer would be the natural next step. Not attempted here,
+  to avoid touching a block outside this task's stated scope (`blocks/masthead/` and
+  `blocks/hero/` were both explicitly off-limits).
+
+### Files touched
+
+- `blocks/wrs-masthead-carousel/_wrs-masthead-carousel.json` — new; parent `wrsmastheadcarousel`
+  (3 fields, 3 cells, `filter` naming all four children) plus four child models
+  (`wrsmastheadimageslide`, `wrsmastheadvideoslide`, `wrsmastheadyoutubeslide`,
+  `wrsmastheadvimeoslide`) as detailed in the table above.
+- `blocks/wrs-masthead-carousel/wrs-masthead-carousel.js` — new; `rowKind()` discrimination, four
+  per-kind cell readers and renderers, the fetchPriority pass (ported exactly from
+  `MandaiMastheadCarouselModel.init()`), the minimal countdown, and the controller-button wiring —
+  all flagged where reconstructed rather than ported, per this entry's own sections above.
+- `blocks/wrs-masthead-carousel/wrs-masthead-carousel.css` — new; ports
+  `styles/deployed-bundle-extract.css`'s `banner__content-item`/`cover-picture`/`md-button-big`/
+  `countdown-wrapper`/`md-masthead__controller` rules, doubly-scoped under
+  `.wrs-masthead-carousel`, with the gradient/base-text-panel gaps called out in its own header
+  comment.
+- `models/_section.json` — appended `"wrsmastheadcarousel"` to the `section` filter's `components`
+  array (child ids intentionally not added — reachable only through the parent's own filter).
+- `tests/blocks.test.mjs` — added 11 cases: all four kinds rendering together, image content/
+  CTA/countdown together, instrumentation on every slide (not the track), child-kind discrimination
+  on a published page with no `data-aue-model` at all (the case the task explicitly asked for),
+  the fetchPriority high/low/absent sequencing across mixed kinds, an image slide with only a
+  header (no CTA/sub-heading/countdown), `viewportScaling`/`isAutoplayCarousel` read from the
+  parent rows, and the unconfigured-outside-editor / unconfigured-in-editor-placeholder pair.
+- `npm run build:json`, `npm run lint` and `npm test` all pass (161/161 tests).

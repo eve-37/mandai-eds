@@ -1552,6 +1552,177 @@ test('wrs-feature-carousel: unconfigured block stays selectable in the editor', 
   assert.ok(wfeatEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
 });
 
+/* ------------------------------------------------------------------ *
+ * WRS Masthead Carousel - constructed fixtures, not copied from a
+ * published page (none of this run's WRS components has been authored
+ * yet - see the migration brief). Shapes are derived from this repo's own
+ * confirmed cell conventions: a plain value cell (`primary-button`), a
+ * grouped multi-value cell with pictures wrapped in <p> (`missions`,
+ * `wrs-conservation-banner`), a bare aem-content anchor with no separate
+ * label (`wrs-featured-listing`'s fragmentPath cell). Re-verify once this
+ * block has real authored/published markup - see the block's own JS
+ * docblock for the specific things flagged as unverified (video-asset
+ * `reference` rendering, the gradient class mapping, the countdown's `gmt`
+ * handling).
+ * ------------------------------------------------------------------ */
+const wmcParentRows = (scaling = '100', autoplay = 'true', speed = '4000') => `
+  <div><div>${scaling}</div></div>
+  <div><div>${autoplay}</div></div>
+  <div><div>${speed}</div></div>`;
+
+const wmcImageRow = ({
+  aueModel = true, header = 'See the Elephants', subHeader = 'Book now', cta = true,
+  countdown = false, fetchPriority = 'false', alt = 'Elephant herd',
+} = {}) => `
+  <div${aueModel ? ' data-aue-model="wrsmastheadimageslide"' : ''} data-aue-resource="urn:slide-image">
+    <div><p>image</p><p><picture><img src="/elephants-d.jpg"></picture></p><p><picture><img src="/elephants-m.jpg"></picture></p><p>${alt}</p><p>${fetchPriority}</p></div>
+    <div><p>${header}</p>${subHeader ? `<p>${subHeader}</p>` : ''}<p>text-left</p><p>onImage</p><p>15</p></div>
+    <div>${cta ? '<p><a href="/tickets">Buy Tickets</a></p>' : ''}</div>
+    <div>${countdown ? '<p>true</p><p>2026-12-31T23:59:00+08:00</p><a href="/redirect">/redirect</a><p>Ends soon!</p>' : ''}</div>
+  </div>`;
+
+const wmcVideoRow = ({ aueModel = true } = {}) => `
+  <div${aueModel ? ' data-aue-model="wrsmastheadvideoslide"' : ''} data-aue-resource="urn:slide-video">
+    <div><p>video</p><p><picture><img src="/video-d.mp4"></picture></p><p><picture><img src="/video-m.mp4"></picture></p></div>
+    <div><picture><img src="/video-fallback.jpg"></picture><p>Fallback shot</p></div>
+    <div><p>true</p><p>false</p></div>
+  </div>`;
+
+const wmcYoutubeRow = ({ aueModel = true } = {}) => `
+  <div${aueModel ? ' data-aue-model="wrsmastheadyoutubeslide"' : ''} data-aue-resource="urn:slide-youtube">
+    <div><p>youtube</p><p>https://www.youtube.com/embed/abc123</p><p>true</p></div>
+  </div>`;
+
+const wmcVimeoRow = ({ aueModel = true } = {}) => `
+  <div${aueModel ? ' data-aue-model="wrsmastheadvimeoslide"' : ''} data-aue-resource="urn:slide-vimeo">
+    <div><p>vimeo</p><p>111222333</p><p>444555666</p></div>
+    <div><picture><img src="/vimeo-fallback.jpg"></picture><p>Vimeo fallback</p></div>
+    <div><p>inline</p><p>true</p></div>
+    <div><p>true</p><p>true</p></div>
+  </div>`;
+
+const WMC_ALL_KINDS = `<div class="wrs-masthead-carousel">${wmcParentRows()}
+  ${wmcImageRow({ countdown: true })}
+  ${wmcVideoRow()}
+  ${wmcYoutubeRow()}
+  ${wmcVimeoRow()}
+</div>`;
+const wmcAll = await decorateBlock('../blocks/wrs-masthead-carousel/wrs-masthead-carousel.js', WMC_ALL_KINDS);
+
+test('wrs-masthead-carousel: all four child kinds render, one slide each, in author order', () => {
+  const slides = wmcAll.querySelectorAll('.wrs-masthead-carousel-slide');
+  assert.equal(slides.length, 4);
+  assert.ok(slides[0].querySelector('h1')?.textContent === 'See the Elephants');
+  assert.ok(slides[1].querySelector('video'));
+  assert.ok(slides[2].querySelector('.youtube-wrapper iframe'));
+  assert.ok(slides[3].querySelector('.vimeo-wrapper iframe'));
+});
+
+test('wrs-masthead-carousel: image slide content, CTA and countdown all survive', () => {
+  const slide = wmcAll.querySelector('.wrs-masthead-carousel-slide');
+  assert.equal(slide.querySelector('h1').textContent, 'See the Elephants');
+  assert.equal(slide.querySelector('.wrs-masthead-carousel-content > span:not(.countdown-description)')?.textContent, 'Book now');
+  const cta = slide.querySelector('.md-button-big');
+  assert.equal(cta.tagName, 'A');
+  assert.equal(cta.getAttribute('href'), '/tickets');
+  assert.equal(cta.textContent, 'Buy Tickets');
+  assert.ok(slide.querySelector('.countdown-wrapper'), 'expected a countdown to render when enabled');
+  assert.equal(slide.querySelector('.countdown-description').textContent, 'Ends soon!');
+});
+
+test('wrs-masthead-carousel: instrumentation moves onto each rendered slide, not the track', () => {
+  const slides = wmcAll.querySelectorAll('.wrs-masthead-carousel-slide');
+  ['urn:slide-image', 'urn:slide-video', 'urn:slide-youtube', 'urn:slide-vimeo'].forEach((urn, i) => {
+    assert.equal(slides[i].getAttribute('data-aue-resource'), urn);
+  });
+  assert.equal(wmcAll.querySelector('.wrs-masthead-carousel-track').hasAttribute('data-aue-resource'), false);
+});
+
+/* Same four kinds, but with NO data-aue-model anywhere - the published-page
+ * shape, where the only signal is each child model's own `_kind` marker
+ * field (see rowKind() in the block's own JS). This is the test the task
+ * explicitly calls for: distinguishing interleaved child types correctly. */
+const WMC_PUBLISHED = `<div class="wrs-masthead-carousel">${wmcParentRows()}
+  ${wmcVimeoRow({ aueModel: false })}
+  ${wmcImageRow({ aueModel: false, header: 'Published Slide' })}
+  ${wmcYoutubeRow({ aueModel: false })}
+  ${wmcVideoRow({ aueModel: false })}
+</div>`;
+const wmcPublished = await decorateBlock('../blocks/wrs-masthead-carousel/wrs-masthead-carousel.js', WMC_PUBLISHED);
+
+test('wrs-masthead-carousel: child kinds are told apart on a published page with no data-aue-model at all', () => {
+  const slides = wmcPublished.querySelectorAll('.wrs-masthead-carousel-slide');
+  assert.equal(slides.length, 4);
+  assert.ok(slides[0].querySelector('.vimeo-wrapper iframe'), 'row 1 should be read as vimeo');
+  assert.equal(slides[1].querySelector('h1')?.textContent, 'Published Slide', 'row 2 should be read as image');
+  assert.ok(slides[2].querySelector('.youtube-wrapper iframe'), 'row 3 should be read as youtube');
+  assert.ok(slides[3].querySelector('video'), 'row 4 should be read as video');
+});
+
+/* fetchPriority - ports MandaiMastheadCarouselModel's own pass exactly: the
+ * FIRST image slide with its checkbox on gets "high"; every slide of ANY
+ * kind authored after it gets "low"; slides before it get no attribute. */
+const WMC_PRIORITY = `<div class="wrs-masthead-carousel">${wmcParentRows()}
+  ${wmcImageRow({ fetchPriority: 'false', header: 'First (no priority)' })}
+  ${wmcImageRow({ fetchPriority: 'true', header: 'Second (high)' })}
+  ${wmcVideoRow()}
+  ${wmcImageRow({ fetchPriority: 'true', header: 'Fourth (still low)' })}
+</div>`;
+const wmcPriority = await decorateBlock('../blocks/wrs-masthead-carousel/wrs-masthead-carousel.js', WMC_PRIORITY);
+
+test('wrs-masthead-carousel: fetchPriority is high on the first flagged image, low after, absent before', () => {
+  const slides = wmcPriority.querySelectorAll('.wrs-masthead-carousel-slide');
+  const firstImg = slides[0].querySelector('.wrs-masthead-carousel-media img');
+  const secondImg = slides[1].querySelector('.wrs-masthead-carousel-media img');
+  const fourthImg = slides[3].querySelector('.wrs-masthead-carousel-media img');
+  assert.equal(firstImg.hasAttribute('fetchpriority'), false, 'first slide is before the flagged one');
+  assert.equal(secondImg.getAttribute('fetchpriority'), 'high');
+  assert.equal(fourthImg.getAttribute('fetchpriority'), 'low', 'a later slide of any kind still gets low');
+});
+
+test('wrs-masthead-carousel: an image slide with only a header renders no CTA, sub-heading or countdown', () => {
+  const bare = `<div class="wrs-masthead-carousel">${wmcParentRows()}
+    <div data-aue-model="wrsmastheadimageslide">
+      <div><p>image</p><p><picture><img src="/only.jpg"></picture></p><p><picture><img src="/only-m.jpg"></picture></p></div>
+      <div><p>Only A Header</p></div>
+      <div></div>
+      <div></div>
+    </div>
+  </div>`;
+  return decorateBlock('../blocks/wrs-masthead-carousel/wrs-masthead-carousel.js', bare).then((block) => {
+    const slide = block.querySelector('.wrs-masthead-carousel-slide');
+    assert.equal(slide.querySelector('h1').textContent, 'Only A Header');
+    assert.equal(slide.querySelector('.md-button-big'), null);
+    assert.equal(slide.querySelector('.countdown-wrapper'), null);
+  });
+});
+
+test('wrs-masthead-carousel: viewportScaling and isAutoplayCarousel are read from the parent rows', () => {
+  const scaled75 = wmcParentRows('75', 'false', '9000');
+  return decorateBlock(
+    '../blocks/wrs-masthead-carousel/wrs-masthead-carousel.js',
+    `<div class="wrs-masthead-carousel">${scaled75}${wmcImageRow()}</div>`,
+  ).then((block) => {
+    assert.ok(block.querySelector('.wrs-masthead-carousel-scale-75'));
+  });
+});
+
+const wmcEmptyOutside = await decorateBlock(
+  '../blocks/wrs-masthead-carousel/wrs-masthead-carousel.js',
+  `<div class="wrs-masthead-carousel">${wmcParentRows()}</div>`,
+);
+test('wrs-masthead-carousel: renders nothing outside the editor with no slides authored', () => {
+  assert.equal(wmcEmptyOutside.children.length, 0);
+});
+
+const wmcEmptyEdit = await decorateBlock(
+  '../blocks/wrs-masthead-carousel/wrs-masthead-carousel.js',
+  `<div class="wrs-masthead-carousel" data-aue-resource="urn:block1">${wmcParentRows()}</div>`,
+);
+test('wrs-masthead-carousel: an unconfigured block stays selectable in the editor', () => {
+  assert.ok(wmcEmptyEdit.querySelector('.rb-placeholder'), 'expected a placeholder to click');
+});
+
 /* ------------------------------------------------------------------ */
 let failed = 0;
 results.forEach(([status, name]) => {

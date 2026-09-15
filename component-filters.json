@@ -37,7 +37,8 @@
       "wrsvisitourparks",
       "wrsfourcollisting",
       "wrsexperiencecarousel",
-      "wrsfeaturecarousel"
+      "wrsfeaturecarousel",
+      "wrsmastheadcarousel"
     ]
   },
   {
@@ -132,6 +133,15 @@
     "id": "wrsfourcollisting",
     "components": [
       "wrsfourcollistingitem"
+    ]
+  },
+  {
+    "id": "wrsmastheadcarousel",
+    "components": [
+      "wrsmastheadimageslide",
+      "wrsmastheadvideoslide",
+      "wrsmastheadyoutubeslide",
+      "wrsmastheadvimeoslide"
     ]
   },
   {

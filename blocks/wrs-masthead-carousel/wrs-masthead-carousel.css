@@ -1,0 +1,312 @@
+/**
+ * WRS Masthead Carousel
+ *
+ * Ported from styles/deployed-bundle-extract.css (the deployed, ground-truth
+ * stylesheet - see wrs-masthead-carousel.js's own docblock for why the LESS
+ * in this bundle was not used directly). Selectors below are doubly-scoped
+ * under `.wrs-masthead-carousel`, house style, but the CLASS NAMES on the
+ * rendered elements themselves intentionally keep the source's own names
+ * (`banner__content-item`, `cover-picture`, `md-button-big`, `countdown-wrapper`,
+ * `md-masthead__controller`, ...) alongside a `wrs-masthead-carousel-*` class,
+ * because the extract's rules select on those exact names and a chunk of this
+ * component's real styling (gradients, controller buttons, countdown list,
+ * the CTA button) is otherwise lost.
+ *
+ * NOT PORTED, and stated plainly rather than invented:
+ * - `.banner__content__text`'s BASE absolute-position rule (920 rules, not
+ *   extracted - shared, too broad to attribute; see COMPONENT.md's own
+ *   "NOT EXTRACTED" note). Reconstructed below as `position:absolute; inset:0;
+ *   display:flex; flex-direction:column; justify-content:center;`, the same
+ *   kind of gap `wrs-conservation-banner`'s `.wrapp-content` centering had -
+ *   flag for re-check once authored.
+ * - The exact `gradients-*` class shapes (`imageGradient`/`textGradient`
+ *   computed by the missing `MastheadCarouselItem.java`) - see the JS
+ *   docblock's own note. `-gradient-ontext`/`-gradient-onimage` below are this
+ *   migration's own reconstruction of the intent, not a verified port.
+ * - Slick's dot/arrow chrome (`.slick-dots`, `.slick-slider`) - replaced by
+ *   this repo's own `.btn-pre-zoo`/`.btn-next-zoo` reuse (class names kept
+ *   from source so the extract's own `.btn.btn-next-zoo`/`.btn.btn-pre-zoo`
+ *   position rules still apply) with no dot indicator - the source's dots
+ *   were plugin-only chrome with no rule of their own in the extract either.
+ */
+
+.wrs-masthead-carousel {
+  position: relative;
+  overflow: hidden;
+}
+
+.wrs-masthead-carousel-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* viewportScaling - "100"/"75"/"0" (off), the parent's own field. */
+.wrs-masthead-carousel-scale-100 { min-height: 100vh; }
+.wrs-masthead-carousel-scale-75 { min-height: 75vh; }
+.wrs-masthead-carousel-scale-off { min-height: auto; }
+
+.wrs-masthead-carousel-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+}
+
+.wrs-masthead-carousel-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .4s linear;
+}
+
+.wrs-masthead-carousel-slide.is-active {
+  position: relative;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* .cover-picture - pointer-events:none so the media never intercepts clicks
+   meant for the text panel/CTA above it (deployed-bundle-extract.css ~1448). */
+.wrs-masthead-carousel .cover-picture {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  min-height: auto;
+  overflow: hidden;
+}
+
+.wrs-masthead-carousel-media img,
+.wrs-masthead-carousel .cover-picture img,
+.wrs-masthead-carousel .cover-picture video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wrs-masthead-carousel-media-desktop { display: none; }
+.wrs-masthead-carousel-media-mobile { display: block; }
+
+@media (width >= 1025px) {
+  .wrs-masthead-carousel-media-desktop { display: block; }
+  .wrs-masthead-carousel-media-mobile { display: none; }
+}
+
+/* Gradient overlays - see this file's own top note; reconstructed, not a
+   verified port of the missing MastheadCarouselItem.java mapping. */
+.wrs-masthead-carousel-gradient-onimage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgb(0 0 0 / 60%) 0%, rgb(0 0 0 / 25%) 40%, rgb(255 255 255 / 0%) 60%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.wrs-masthead-carousel-text-gradient {
+  background: radial-gradient(ellipse at center, rgb(0 0 0 / 45%) 0%, rgb(0 0 0 / 0%) 70%);
+}
+
+/* .banner__content__text base positioning - reconstructed, see top note. */
+.wrs-masthead-carousel-content {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-self: center;
+  padding: 0 2rem;
+  color: #fff;
+  text-align: left;
+}
+
+.wrs-masthead-carousel-content.text-center {
+  align-items: center;
+  text-align: center;
+  padding: 0 10rem;
+}
+
+@media (width >= 1025px) {
+  .wrs-masthead-carousel-content.text-left {
+    padding-right: 30rem;
+  }
+}
+
+.wrs-masthead-carousel-align-end {
+  justify-content: flex-end;
+  top: initial;
+}
+
+.wrs-masthead-carousel-content h1 {
+  margin: 0 0 .5rem;
+  font-family: var(--heading-font-family);
+  font-size: var(--heading-font-size-xl, 2.5rem);
+}
+
+.wrs-masthead-carousel-content span {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/* .md-button-big (deployed-bundle-extract.css ~1264, wrs-style). */
+.wrs-masthead-carousel .md-button-big {
+  display: inline-block;
+  padding: .75rem 2rem;
+  border-radius: 999px;
+  background: var(--rb-yellow, #f5c518);
+  color: #1a1a1a;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wrs-masthead-carousel .md-button-big:hover {
+    opacity: .85;
+  }
+}
+
+/* .countdown-wrapper / .countdown-description (~2017-2560, wrs-style). */
+.wrs-masthead-carousel .countdown-wrapper ul {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  margin: 0 0 .5rem;
+  padding: 0;
+}
+
+.wrs-masthead-carousel .countdown-wrapper ul li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: .8rem;
+  text-transform: uppercase;
+}
+
+.wrs-masthead-carousel .countdown-wrapper ul li span {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.wrs-masthead-carousel .countdown-description {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: .9rem;
+}
+
+/* video / youtube / vimeo media wrappers. */
+.wrs-masthead-carousel .video-wrapper,
+.wrs-masthead-carousel .youtube-wrapper,
+.wrs-masthead-carousel .vimeo-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.wrs-masthead-carousel .youtube-wrapper iframe,
+.wrs-masthead-carousel .vimeo-wrapper iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  border: 0;
+  transform: translate(-50%, -50%);
+}
+
+.wrs-masthead-carousel .mobile-fallback-img {
+  position: absolute;
+  inset: 0;
+}
+
+/* .md-masthead__controller (~3274-3627, wrs-style .md-masthead-component--rfn).
+   Selectors below target this file's own kebab-case companion classes
+   (stylelint's selector-class-pattern forbids the source's `__` classes as
+   selectors) - the JS still sets both classes on each element, so the
+   source's own extract rules, if reused verbatim elsewhere, still apply. */
+.wrs-masthead-carousel-controller {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 4;
+}
+
+.wrs-masthead-carousel-controller-wrapper {
+  display: flex;
+  gap: .5rem;
+}
+
+.wrs-masthead-carousel-volume-button,
+.wrs-masthead-carousel-play-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 40%);
+  color: #fff;
+  cursor: pointer;
+}
+
+.wrs-masthead-carousel .md-icon.hidden {
+  display: none;
+}
+
+.wrs-masthead-carousel .controller-wrapper.sound-controller {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 4;
+  cursor: pointer;
+}
+
+.wrs-masthead-carousel .volume-up-button.hidden,
+.wrs-masthead-carousel .volume-off-button.hidden {
+  display: none;
+}
+
+/* Prev/next arrows - class names kept so the extract's own
+   .btn.btn-next-zoo / .btn.btn-pre-zoo position rules still select them. */
+.wrs-masthead-carousel-arrow {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.wrs-masthead-carousel-arrow .btn {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 80%);
+  cursor: pointer;
+  pointer-events: auto;
+  transform: translateY(-50%);
+}
+
+.wrs-masthead-carousel-arrow .btn-pre-zoo { left: 1rem; }
+.wrs-masthead-carousel-arrow .btn-next-zoo { right: 1rem; }
+
+@media (width <= 991px) {
+  .wrs-masthead-carousel-content.text-left,
+  .wrs-masthead-carousel-content.text-center {
+    align-items: center;
+    padding: 0 1.5rem;
+    text-align: center;
+  }
+}
