@@ -74,12 +74,7 @@
   {
     "id": "rbtabs",
     "components": [
-      "rbtab"
-    ]
-  },
-  {
-    "id": "rbtab",
-    "components": [
+      "rbtab",
       "rbtabtile"
     ]
   },

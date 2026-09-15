@@ -1171,19 +1171,19 @@
         "name": "align",
         "label": "Text Align",
         "valueType": "string",
-        "value": "left",
+        "value": "tile-left",
         "options": [
           {
             "name": "Left",
-            "value": "left"
+            "value": "tile-left"
           },
           {
             "name": "Center",
-            "value": "center"
+            "value": "tile-center"
           },
           {
             "name": "Right",
-            "value": "right"
+            "value": "tile-right"
           }
         ]
       }

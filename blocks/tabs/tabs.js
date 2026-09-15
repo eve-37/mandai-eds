@@ -1,51 +1,69 @@
 import { moveInstrumentation } from '../../scripts/scripts.js';
-import { readCta, buildCta, renderEmpty } from '../../scripts/rb-helpers.js';
+import {
+  cellValues, readCta, buildCta, renderEmpty,
+} from '../../scripts/rb-helpers.js';
 
 const PREFIX = 'tabs';
-const ALIGNS = ['left', 'center', 'right'];
 
 /**
- * NESTED CONTAINER - the only component here with two levels of children
- * (tabs -> tab -> tile). component-filters.json expresses it, and the xwalk
- * linter accepts it, but the DOM shape AEM produces for a nested container has
- * NOT been verified in the editor.
+ * The tile's `align` values are deliberately prefixed - `tile-left`, not `left`.
  *
- * So the tile reader below accepts either plausible shape: tiles nested inside
- * their tab's row, or flattened as sibling rows following it. Whichever AEM
- * actually emits, one branch handles it. Confirm against a real authored
- * instance and then simplify this - do not leave it guessing forever.
+ * The source dialog nests a Content Tiles multifield inside the Tabs multifield,
+ * which Granite allows. The EDS content model does not: a block item cannot
+ * itself be a container, so Tabs -> Tab -> Tab Tile is unauthorable - the editor
+ * simply offers no insert under a Tab. `columns` is the one two-level component
+ * in the platform and it gets there through a purpose-built resource type.
+ *
+ * So the two levels are flattened: Tabs accepts both Tab and Tab Tile, and each
+ * tile joins the tab above it. That means rows of two different types are
+ * interleaved and have to be told apart. Cell count cannot do it - AEM drops
+ * empty cells, so a barely-filled tile collapses to the shape of a tab. The
+ * prefixed align value is the discriminator instead: it is a select with a
+ * default, so it is present on every tile and can never be blanked, and the
+ * prefix means a tab whose title happens to read "Center" is not mistaken for
+ * one. The author still just sees "Left" / "Center" / "Right".
  */
-function collectTiles(tabRow) {
-  // Shape A: nested rows inside the tab row.
-  const nested = [...tabRow.querySelectorAll(':scope > div > div > div')]
-    .filter((el) => el.querySelector('picture, img'));
-  if (nested.length) return nested;
+const TILE_ALIGNS = ['tile-left', 'tile-center', 'tile-right'];
 
-  // Shape B: any descendant carrying a picture that is not the tab's own cells.
-  return [...tabRow.querySelectorAll('picture')]
-    .map((p) => p.closest('div'))
-    .filter(Boolean);
+function isTileRow(row) {
+  return [...row.children]
+    .flatMap(cellValues)
+    .some((v) => TILE_ALIGNS.includes(v.toLowerCase()));
 }
 
 function readTile(row) {
   const tile = {
     title: '', desc: '', align: '', picture: row.querySelector('picture'),
   };
-  const values = [...row.querySelectorAll('p, div')]
-    .map((el) => el.textContent.trim())
-    .filter(Boolean);
-  values.forEach((v) => {
+  [...row.children].flatMap(cellValues).forEach((v) => {
     const lower = v.toLowerCase();
-    if (ALIGNS.includes(lower)) tile.align = lower;
+    if (TILE_ALIGNS.includes(lower)) tile.align = lower.replace('tile-', '');
     else if (!tile.title) tile.title = v;
     else if (!tile.desc) tile.desc = v;
   });
   return tile;
 }
 
+/** Regroups the flat row list into one entry per tab, each with its tiles. */
+function groupTabs(block) {
+  const groups = [];
+  [...block.children].forEach((row) => {
+    if (isTileRow(row)) {
+      // A tile authored before any tab has nothing to belong to. Dropping it
+      // would lose content silently, so it opens an unnamed tab instead - a
+      // visible prompt to move it.
+      if (!groups.length) groups.push({ row: null, tiles: [] });
+      groups[groups.length - 1].tiles.push(row);
+    } else {
+      groups.push({ row, tiles: [] });
+    }
+  });
+  return groups;
+}
+
 export default function decorate(block) {
-  const tabRows = [...block.children];
-  if (!tabRows.length) {
+  const groups = groupTabs(block);
+  if (!groups.length) {
     renderEmpty(block, 'Tabs — add some tabs');
     return;
   }
@@ -60,15 +78,13 @@ export default function decorate(block) {
   const panels = document.createElement('div');
   panels.className = `${PREFIX}-panels`;
 
-  tabRows.forEach((tabRow, index) => {
-    const cta = readCta(tabRow);
-    const tileRows = collectTiles(tabRow);
+  groups.forEach(({ row: tabRow, tiles: tileRows }, index) => {
+    const cta = tabRow ? readCta(tabRow) : null;
 
-    // Copy that is not a tile and not the CTA: tab name, then title.
-    const copy = [...tabRow.children]
-      .filter((cell) => !cell.querySelector('picture, img') && !cell.querySelector('a'))
-      .flatMap((cell) => [...cell.querySelectorAll('p, div')].map((el) => el.textContent.trim()))
-      .filter(Boolean);
+    // Copy that is not the CTA: tab name, then title.
+    const copy = tabRow ? [...tabRow.children]
+      .filter((cell) => !cell.querySelector('a'))
+      .flatMap(cellValues) : [];
     const [tabName = `Tab ${index + 1}`, title = ''] = copy;
 
     const id = `${PREFIX}-${index}`;
@@ -91,7 +107,7 @@ export default function decorate(block) {
     panel.setAttribute('role', 'tabpanel');
     panel.setAttribute('aria-labelledby', `${id}-tab`);
     if (index !== 0) panel.hidden = true;
-    moveInstrumentation(tabRow, panel);
+    if (tabRow) moveInstrumentation(tabRow, panel);
 
     if (title) {
       const h2 = document.createElement('h2');

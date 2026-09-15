@@ -248,12 +248,18 @@ test('three-column-tiles: the tile CTA text is not mistaken for the caption', ()
 });
 
 /* ------------------------------------------------------------------ *
- * Tabs - verbatim from the published page. No Tab Tiles were authored, so the
- * nested-container shape is still unverified; these cover the tab level only.
+ * Tabs - tab rows verbatim from the published page.
+ *
+ * A block item cannot itself be a container, so Tabs > Tab > Tab Tile is
+ * unauthorable: the editor offers no insert under a Tab. Tabs and tiles are
+ * therefore siblings, and each tile joins the tab above it.
  * ------------------------------------------------------------------ */
+const tabsTabRow = (n, variant) => `<div data-aue-resource="urn:tab${n}" data-aue-model="rbtab"><div><p>Tab ${n}</p><p>Panel ${n}</p></div><div><p><a href="/">View more</a></p><p>${variant}</p><p>true</p></div></div>`;
+const tabsTileRow = (n) => `<div data-aue-resource="urn:tile${n}" data-aue-model="rbtabtile"><div><p>Tile ${n}</p><p>Tile copy ${n}</p></div><div><picture><img src="/tile${n}.png" alt=""></picture></div><div>tile-center</div></div>`;
+
 const TABS = `<div class="tabs">
-  <div data-aue-resource="urn:tab1"><div><p>Tab 1</p><p>Panel one</p></div><div><p><a href="/">View more</a></p><p>green</p><p>true</p></div></div>
-  <div data-aue-resource="urn:tab2"><div><p>Tab 2</p><p>Panel two</p></div><div><p><a href="/">View More</a></p><p>yellow</p><p>true</p></div></div>
+  ${tabsTabRow(1, 'green')}${tabsTileRow(1)}${tabsTileRow(2)}
+  ${tabsTabRow(2, 'yellow')}${tabsTileRow(3)}
 </div>`;
 const tb = await decorateBlock('../blocks/tabs/tabs.js', TABS);
 
@@ -264,7 +270,51 @@ test('tabs: one nav button and one panel per tab', () => {
 
 test('tabs: tabName labels the button, title heads the panel', () => {
   assert.equal(tb.querySelector('.tabs-nav-item').textContent, 'Tab 1');
-  assert.equal(tb.querySelector('.tabs-panel-title').textContent, 'Panel one');
+  assert.equal(tb.querySelector('.tabs-panel-title').textContent, 'Panel 1');
+});
+
+test('tabs: each tile joins the tab above it, not the first tab', () => {
+  const panels = [...tb.querySelectorAll('.tabs-panel')];
+  assert.equal(panels[0].querySelectorAll('.tabs-tile').length, 2);
+  assert.equal(panels[1].querySelectorAll('.tabs-tile').length, 1);
+  assert.equal(panels[1].querySelector('.tabs-tile h3').textContent, 'Tile 3');
+});
+
+test('tabs: a tile is never mistaken for a tab, and never adds one', () => {
+  assert.equal(tb.querySelectorAll('.tabs-nav-item').length, 2);
+  assert.deepEqual(
+    [...tb.querySelectorAll('.tabs-nav-item')].map((b) => b.textContent),
+    ['Tab 1', 'Tab 2'],
+  );
+});
+
+test('tabs: the align prefix is stripped before it reaches the class', () => {
+  assert.ok(tb.querySelector('.tabs-tile.align-center'));
+  assert.equal(tb.querySelectorAll('.tabs-tile.align-tile-center').length, 0);
+});
+
+test('tabs: a tile keeps its image, copy and instrumentation', () => {
+  const tile = tb.querySelector('.tabs-tile');
+  assert.equal(tile.querySelector('img').getAttribute('src'), '/tile1.png');
+  assert.equal(tile.querySelector('h3').textContent, 'Tile 1');
+  assert.equal(tile.querySelector('p').textContent, 'Tile copy 1');
+  assert.equal(tile.getAttribute('data-aue-resource'), 'urn:tile1');
+});
+
+/* A tab whose title is left blank leaves a single bare value in the cell, with
+ * no <p> at all - the tab name must still be found. */
+const TAB_SPARSE = '<div class="tabs"><div><div>Only a name</div></div></div>';
+const tbSparse = await decorateBlock('../blocks/tabs/tabs.js', TAB_SPARSE);
+test('tabs: a tab with only a name still gets its label', () => {
+  assert.equal(tbSparse.querySelector('.tabs-nav-item').textContent, 'Only a name');
+});
+
+/* A tile dragged above every tab must not vanish. */
+const TAB_ORPHAN = `<div class="tabs">${tabsTileRow(9)}${tabsTabRow(1, 'green')}</div>`;
+const tbOrphan = await decorateBlock('../blocks/tabs/tabs.js', TAB_ORPHAN);
+test('tabs: a tile before any tab opens an unnamed tab rather than disappearing', () => {
+  assert.equal(tbOrphan.querySelectorAll('.tabs-nav-item').length, 2);
+  assert.equal(tbOrphan.querySelector('.tabs-panel .tabs-tile h3').textContent, 'Tile 9');
 });
 
 test('tabs: only the first panel is visible, and aria agrees', () => {

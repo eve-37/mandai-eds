@@ -20,6 +20,28 @@ export function cellText(el) {
 }
 
 /**
+ * The values held by one cell, in model order.
+ *
+ * A cell grouping several fields renders one `<p>` per value; a cell holding a
+ * single value renders that text bare, with no `<p>` at all. Both shapes have
+ * to work, so paragraphs are preferred and the element's own text is the
+ * fallback.
+ *
+ * Do NOT widen the selector to `'p, div'`. That also matches the containing
+ * cell, whose textContent is every value run together - which is how the
+ * missions title once came out as "Missionsmore description heremask-1".
+ */
+export function cellValues(el) {
+  if (!el) return [];
+  const parts = [...el.querySelectorAll('p')]
+    .map((p) => p.textContent.trim())
+    .filter(Boolean);
+  if (parts.length) return parts;
+  const own = el.textContent.trim();
+  return own ? [own] : [];
+}
+
+/**
  * Ports the `.html` suffix every rb-aem Sling Model appended to internal paths
  * (`getLink()`, `getCtaURL()` and friends). External URLs are left alone.
  */

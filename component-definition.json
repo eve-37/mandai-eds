@@ -395,8 +395,7 @@
                 "resourceType": "core/franklin/components/block/v1/block/item",
                 "template": {
                   "name": "Tab",
-                  "model": "rbtab",
-                  "filter": "rbtab"
+                  "model": "rbtab"
                 }
               }
             }
