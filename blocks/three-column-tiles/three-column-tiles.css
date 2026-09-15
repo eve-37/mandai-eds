@@ -32,11 +32,13 @@
  * mask-size: cover, which stretches the torn edge to fit; that is what is
  * reproduced here.
  *
- * An opaque background is what the torn edge reads against; without one the
- * mask cuts into the section band behind and is invisible.
+ * The card itself is transparent. Only the info area below the photo is white -
+ * that is where the source puts it, and between them the photo and the info
+ * cover the whole card, so the torn edge still has something to read against.
+ * Putting the white on the card instead leaves it showing around the photo,
+ * which reads as a plain white box rather than a torn-edge one.
  */
 .three-column-tiles .three-column-tiles-item {
-  background-color: var(--rb-white);
   mask-image: url('../../assets/tile-mask-688-814.svg');
   mask-size: cover;
   mask-repeat: no-repeat;
@@ -51,10 +53,17 @@
   object-fit: cover;
 }
 
+/* The caption and the CTA are one white info panel in the source, so they carry
+ * the background between them with no gap to show the card through. */
+.three-column-tiles .three-column-tiles-item-name,
+.three-column-tiles .three-column-tiles-item-cta {
+  background-color: var(--rb-white);
+  text-align: center;
+}
+
 .three-column-tiles .three-column-tiles-item-name {
   flex: 1;
-  padding-top: 16px;
-  text-align: center;
+  padding: 15px 15px 0;
 }
 
 .three-column-tiles .three-column-tiles-item-name h4 {
@@ -62,8 +71,7 @@
 }
 
 .three-column-tiles .three-column-tiles-item-cta {
-  padding-top: 16px;
-  text-align: center;
+  padding: 15px;
 }
 
 .three-column-tiles .three-column-tiles-cta {
