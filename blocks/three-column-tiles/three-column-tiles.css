@@ -23,31 +23,15 @@
 }
 
 /*
- * Portrait torn edge over the WHOLE card, photo, caption and CTA together, as
- * the source does - not over the photo alone.
+ * The torn-edge card mask is NOT applied here.
  *
- * The card is deliberately NOT pinned to the mask's 688x814 ratio. The square
- * photo would then leave under a fifth of the card's height for the caption and
- * CTA, and they would overflow.
- *
- * Which is why the size is `100% 100%` and not the source's `cover`. Cover does
- * not stretch a mask to fit - it scales it to COVER, and a card taller than the
- * mask's ratio pushes the left and right torn edges off the canvas entirely,
- * leaving straight sides and a plain rectangle. `100% 100%` maps the whole mask
- * onto the card, so every torn edge survives; the tear is stretched slightly,
- * which is a far smaller departure than losing two sides of it.
- *
- * The card itself is transparent. Only the info area below the photo is white -
- * that is where the source puts it, and between them the photo and the info
- * cover the whole card, so the torn edge still has something to read against.
- * Putting the white on the card instead leaves it showing around the photo,
- * which reads as a plain white box rather than a torn-edge one.
+ * It was added to match the source and then clipped the caption and CTA off the
+ * bottom of every tile. Three attempts to size it correctly - cover, then
+ * 100% 100% - each failed in a different way, and the cause was never
+ * established from the markup alone. Content being visible matters more than
+ * the torn edge, so the mask is out until it can be verified in a browser.
+ * assets/tile-mask-688-814.svg is still in the repo for that.
  */
-.three-column-tiles .three-column-tiles-item {
-  mask-image: url('../../assets/tile-mask-688-814.svg');
-  mask-size: 100% 100%;
-  mask-repeat: no-repeat;
-}
 
 .three-column-tiles .three-column-tiles-item-photo img {
   display: block;
